@@ -543,7 +543,8 @@ export default function AdminDashboardPage() {
 
   return (
     <div
-      className={`h-screen w-full overflow-hidden flex transition-colors duration-300 ${currentTheme.bgGradient}`}
+      className={`h-screen w-full overflow-hidden flex transition-all duration-300 ${currentTheme.className}`}
+      style={{ background: currentTheme.background }}
     >
       {/* Toast Notice */}
       {toast && (
@@ -1116,7 +1117,7 @@ export default function AdminDashboardPage() {
         {/* RIGHT COLUMN: Pinned Top Bar + Scrollable Main Content */}
         <div className="flex-1 h-full flex flex-col overflow-hidden min-w-0">
           {/* FROZEN TOP BAR — Permanently Pinned at the top, NEVER moves during scroll */}
-          <header className="w-full shrink-0 z-30 px-4 sm:px-7 md:px-8 py-3 sm:py-3.5 border-b border-white/15 bg-[#8a88b5]/85 backdrop-blur-md shadow-sm">
+          <header className="w-full shrink-0 z-30 px-4 sm:px-7 md:px-8 py-3 sm:py-3.5 border-b border-white/15 bg-[#8a88b5]/60 backdrop-blur-md shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               {/* Brand + Mobile Hamburger Toggle */}
               <div className="flex items-center justify-between w-full sm:w-auto">
@@ -1219,6 +1220,7 @@ export default function AdminDashboardPage() {
                   {THEMES.map((t) => (
                     <button
                       key={t.id}
+                      type="button"
                       onClick={() => changeTheme(t.id)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all ${
                         theme === t.id
