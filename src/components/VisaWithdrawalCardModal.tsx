@@ -174,7 +174,7 @@ export default function VisaWithdrawalCardModal({
                   Jumlah Penarikan (Payout)
                 </p>
                 <p className="text-3xl sm:text-4xl font-extrabold text-[#c8f560] tracking-tight drop-shadow tabular-nums">
-                  ${withdrawal.amount.toLocaleString()}
+                  Rp {withdrawal.amount.toLocaleString("id-ID")}
                 </p>
               </div>
             </div>
@@ -259,12 +259,12 @@ export default function VisaWithdrawalCardModal({
           </div>
           <div className="flex items-center justify-between text-white/80">
             <span>Biaya Transfer / Admin Fee:</span>
-            <span className="font-semibold text-[#c8f560]">$0.00 (Gratis)</span>
+            <span className="font-semibold text-[#c8f560]">Rp 0 (Gratis)</span>
           </div>
           <div className="flex items-center justify-between text-white/80 pt-2 border-t border-white/15">
             <span>Total Bersih yang Ditransfer:</span>
             <span className="text-sm font-bold text-[#c8f560]">
-              ${withdrawal.amount.toLocaleString()} USD
+              Rp {withdrawal.amount.toLocaleString("id-ID")}
             </span>
           </div>
         </div>

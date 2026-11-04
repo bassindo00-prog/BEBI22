@@ -19,7 +19,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const amount = Number(body.amount) || 300;
+    const amount = Number(body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      return NextResponse.json(
+        { error: "Jumlah penarikan harus lebih dari Rp 0" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, royaltyBalance: true, name: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "Akun user tidak ditemukan" }, { status: 404 });
+    }
+
+    const currentBalance = user.royaltyBalance || 0;
+    if (amount > currentBalance) {
+      return NextResponse.json(
+        {
+          error: `Saldo tidak mencukupi! Saldo Anda saat ini Rp ${currentBalance.toLocaleString("id-ID")}, tidak dapat menarik Rp ${amount.toLocaleString("id-ID")}.`,
+        },
+        { status: 400 }
+      );
+    }
+
     const now = new Date();
     const formattedDate = `${String(now.getDate()).padStart(2, "0")}-${String(
       now.getMonth() + 1
@@ -45,7 +71,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ withdrawal });
+    return NextResponse.json({ ok: true, withdrawal });
   } catch (error) {
     console.error("POST withdrawal error:", error);
     return NextResponse.json({ error: "Failed to create withdrawal" }, { status: 500 });

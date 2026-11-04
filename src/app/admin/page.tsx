@@ -43,6 +43,17 @@ import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
 
+const formatNumberWithDots = (val: string | number) => {
+  if (val === undefined || val === null || val === "") return "";
+  const clean = String(val).replace(/[^0-9]/g, "");
+  return clean ? Number(clean).toLocaleString("id-ID") : "";
+};
+
+const parseFormattedNumber = (val: string | number) => {
+  const clean = String(val).replace(/[^0-9]/g, "");
+  return clean ? Number(clean) : 0;
+};
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
@@ -1122,7 +1133,7 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-xs text-white/80">Cleared payouts</p>
                 <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                  ${Math.round(totalPayoutAmount * animProgress).toLocaleString()}
+                  Rp {Math.round(totalPayoutAmount * animProgress).toLocaleString("id-ID")}
                 </p>
               </div>
 
@@ -1250,7 +1261,7 @@ export default function AdminDashboardPage() {
 
                 <div className="flex-1 relative h-full">
                   <div className="absolute left-[64%] -top-1 -translate-x-1/2 bg-[#312042] border border-[#c8f560]/60 text-[#c8f560] px-3 py-1 rounded-xl text-xs font-bold shadow-md animate-tooltip-float tabular-nums">
-                    ${Math.round(totalGlobalRoyalty * animProgress).toLocaleString()}
+                    Rp {Math.round(totalGlobalRoyalty * animProgress).toLocaleString("id-ID")}
                     <div className="w-2 h-2 bg-[#312042] rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
                   </div>
 
@@ -1569,7 +1580,7 @@ export default function AdminDashboardPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-sm text-[#c8f560]">
-                                ${w.amount.toLocaleString()}
+                                Rp {w.amount.toLocaleString("id-ID")}
                               </span>
                               <span className="text-white/90 font-medium">• {w.method}</span>
                             </div>
@@ -2194,29 +2205,37 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
                       <label className="block text-white/75 mb-1">
-                        Royalty Balance ($)
+                        Royalty Balance (Rp)
                       </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={inputRoyaltyBalance}
-                        onChange={(e) => setInputRoyaltyBalance(Number(e.target.value))}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-bold text-sm focus:outline-none focus:border-[#c8f560]"
-                      />
+                      <div className="flex items-center px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
+                        <span className="text-[#c8f560] font-bold text-xs mr-2">Rp</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={formatNumberWithDots(inputRoyaltyBalance)}
+                          onChange={(e) => setInputRoyaltyBalance(parseFormattedNumber(e.target.value))}
+                          className="w-full bg-transparent text-white font-bold text-sm focus:outline-none placeholder-white/40"
+                        />
+                      </div>
                       <span className="text-[10px] text-white/60">Saldo siap ditarik</span>
                     </div>
 
                     <div>
                       <label className="block text-white/75 mb-1">
-                        Royalty Pending ($)
+                        Royalty Pending (Rp)
                       </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={inputRoyaltyPending}
-                        onChange={(e) => setInputRoyaltyPending(Number(e.target.value))}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-bold text-sm focus:outline-none focus:border-[#c8f560]"
-                      />
+                      <div className="flex items-center px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
+                        <span className="text-[#c8f560] font-bold text-xs mr-2">Rp</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={formatNumberWithDots(inputRoyaltyPending)}
+                          onChange={(e) => setInputRoyaltyPending(parseFormattedNumber(e.target.value))}
+                          className="w-full bg-transparent text-white font-bold text-sm focus:outline-none placeholder-white/40"
+                        />
+                      </div>
                       <span className="text-[10px] text-white/60">Royalti berjalan</span>
                     </div>
 
@@ -2225,13 +2244,15 @@ export default function AdminDashboardPage() {
                         Total Streams (Angka)
                       </label>
                       <input
-                        type="number"
-                        value={inputTotalStreams}
-                        onChange={(e) => setInputTotalStreams(Number(e.target.value))}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-bold text-sm focus:outline-none focus:border-[#c8f560]"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={formatNumberWithDots(inputTotalStreams)}
+                        onChange={(e) => setInputTotalStreams(parseFormattedNumber(e.target.value))}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-bold text-sm focus:outline-none focus:border-[#c8f560] placeholder-white/40"
                       />
                       <span className="text-[10px] text-[#c8f560]">
-                        Format: {(inputTotalStreams / 1000).toFixed(0)}K
+                        Format: {inputTotalStreams >= 1000 ? `${(inputTotalStreams / 1000).toFixed(0)}K` : inputTotalStreams}
                       </span>
                     </div>
                   </div>
@@ -2242,14 +2263,14 @@ export default function AdminDashboardPage() {
                       Shortcut Tambah Saldo:
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {[100, 250, 500, 1000].map((bonus) => (
+                      {[100000, 500000, 1000000, 5000000].map((bonus) => (
                         <button
                           key={bonus}
                           type="button"
                           onClick={() => setInputRoyaltyBalance((prev) => prev + bonus)}
                           className="px-3 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-xs font-semibold text-white transition-colors"
                         >
-                          +${bonus}
+                          +Rp {bonus.toLocaleString("id-ID")}
                         </button>
                       ))}
                       <button
@@ -2307,7 +2328,7 @@ export default function AdminDashboardPage() {
                             <div className="p-3 rounded-xl bg-white/10">
                               <p className="text-white/60 text-[10px]">Saldo Royalti</p>
                               <p className="font-bold text-base text-[#c8f560]">
-                                ${Number(curr.royaltyBalance).toLocaleString()}
+                                Rp {Number(curr.royaltyBalance || 0).toLocaleString("id-ID")}
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-white/10">
@@ -2498,7 +2519,7 @@ export default function AdminDashboardPage() {
                     >
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-sm text-[#c8f560] group-hover:underline">
-                          ${w.amount.toLocaleString()} — {w.method}
+                          Rp {w.amount.toLocaleString("id-ID")} — {w.method}
                         </p>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 text-white/90">
                           Klik untuk Detail Rekening
@@ -2614,19 +2635,19 @@ export default function AdminDashboardPage() {
                       <div>
                         <p className="text-white/65 text-[11px]">Royalty Balance</p>
                         <p className="font-bold text-sm text-[#c8f560]">
-                          ${Number(u.royaltyBalance).toLocaleString()}
+                          Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                       <div>
                         <p className="text-white/65 text-[11px]">Streams</p>
                         <p className="font-semibold text-white">
-                          {(Number(u.totalStreams) / 1000).toFixed(0)}K
+                          {(Number(u.totalStreams || 0) / 1000).toFixed(0)}K
                         </p>
                       </div>
                       <div>
                         <p className="text-white/65 text-[11px]">Withdrawn</p>
                         <p className="font-semibold text-white">
-                          ${Number(u.totalWithdrawn).toLocaleString()}
+                          Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>

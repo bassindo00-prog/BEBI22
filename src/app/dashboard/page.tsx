@@ -132,6 +132,17 @@ const ANALYTICS_CHART_POINTS = [
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
 
+const formatNumberWithDots = (val: string | number) => {
+  if (val === undefined || val === null || val === "") return "";
+  const clean = String(val).replace(/[^0-9]/g, "");
+  return clean ? Number(clean).toLocaleString("id-ID") : "";
+};
+
+const parseFormattedNumber = (val: string | number) => {
+  const clean = String(val).replace(/[^0-9]/g, "");
+  return clean ? Number(clean) : 0;
+};
+
 export default function UserDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
@@ -472,7 +483,7 @@ export default function UserDashboardPage() {
   // Withdrawal Form State
   const [withdrawMethod, setWithdrawMethod] = useState("Bank • BCA");
   const [accountNumber, setAccountNumber] = useState("1234 5678 9012 3456");
-  const [withdrawAmount, setWithdrawAmount] = useState("300");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [submittingWithdraw, setSubmittingWithdraw] = useState(false);
 
   const showNotice = (msg: string) => {
@@ -641,6 +652,21 @@ export default function UserDashboardPage() {
 
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const amountNum = parseFormattedNumber(withdrawAmount);
+    const currentBalance = user?.royaltyBalance || 0;
+
+    if (amountNum <= 0) {
+      showNotice("Jumlah penarikan harus lebih besar dari Rp 0.");
+      return;
+    }
+
+    if (amountNum > currentBalance) {
+      showNotice(
+        `Saldo tidak mencukupi! Saldo Anda saat ini Rp ${currentBalance.toLocaleString("id-ID")}, tidak dapat menarik Rp ${amountNum.toLocaleString("id-ID")}.`
+      );
+      return;
+    }
+
     setSubmittingWithdraw(true);
     try {
       const res = await fetch("/api/withdrawals", {
@@ -649,13 +675,19 @@ export default function UserDashboardPage() {
         body: JSON.stringify({
           method: withdrawMethod,
           accountNumber,
-          amount: Number(withdrawAmount) || 300,
+          amount: amountNum,
         }),
       });
+      const data = await res.json().catch(() => null);
       if (res.ok) {
         await fetchUserData();
-        showNotice(`Withdrawal of $${withdrawAmount} via ${withdrawMethod} submitted!`);
+        setWithdrawAmount("");
+        showNotice(`Pengajuan penarikan dana Rp ${amountNum.toLocaleString("id-ID")} via ${withdrawMethod} berhasil dikirim!`);
+      } else {
+        showNotice(data?.error || "Gagal mengajukan penarikan.");
       }
+    } catch (err: any) {
+      showNotice(err?.message || "Gagal menghubungi server.");
     } finally {
       setSubmittingWithdraw(false);
     }
@@ -1173,7 +1205,7 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Royalty pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending.toLocaleString()}
+                      Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
                     </p>
                   </div>
 
@@ -1669,7 +1701,7 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Royalty</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending.toLocaleString()}
+                      Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
                     </p>
                   </div>
                   <div>
@@ -1721,7 +1753,7 @@ export default function UserDashboardPage() {
                         }}
                         className="absolute -top-1 bg-[#312042] border border-[#c8f560]/60 text-[#c8f560] px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm transition-all duration-300 animate-tooltip-float z-20 tabular-nums"
                       >
-                        {Math.round(activeAnalyticsPoint.val * animProgress)}$
+                        Rp {Math.round(activeAnalyticsPoint.val * animProgress).toLocaleString("id-ID")}
                       </div>
                       <svg viewBox="0 0 260 100" className="w-full h-28 overflow-visible">
                         {hasStreamData ? (
@@ -2851,7 +2883,7 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Royalty pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending.toLocaleString()}
+                      Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
                     </p>
                   </div>
                   <button
@@ -3057,13 +3089,13 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Total Royalti</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyBalance.toLocaleString()}
+                      Rp {animatedRoyaltyBalance.toLocaleString("id-ID")}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-white/80">Royalti Pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending.toLocaleString()}
+                      Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
                     </p>
                   </div>
                   <button
@@ -3080,7 +3112,7 @@ export default function UserDashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <VisaMetricCard
                   title="Royalty Balance"
-                  value={`$${Math.round((user?.royaltyBalance || 0) * animProgress).toLocaleString()}`}
+                  value={`Rp ${Math.round((user?.royaltyBalance || 0) * animProgress).toLocaleString("id-ID")}`}
                   subtitle="Available for withdrawal"
                   dotColor="bg-[#c8f560]"
                   valueColor="text-[#c8f560]"
@@ -3094,7 +3126,7 @@ export default function UserDashboardPage() {
 
                 <VisaMetricCard
                   title="Total Withdrawn"
-                  value={`$${Math.round((user?.totalWithdrawn || 0) * animProgress).toLocaleString()}`}
+                  value={`Rp ${Math.round((user?.totalWithdrawn || 0) * animProgress).toLocaleString("id-ID")}`}
                   subtitle="Completed payouts"
                   dotColor="bg-[#c4c3f0]"
                   valueColor="text-white"
@@ -3108,7 +3140,7 @@ export default function UserDashboardPage() {
 
                 <VisaMetricCard
                   title="Pending Withdrawal"
-                  value={`$${Math.round((user?.pendingWithdraw || 0) * animProgress).toLocaleString()}`}
+                  value={`Rp ${Math.round((user?.pendingWithdraw || 0) * animProgress).toLocaleString("id-ID")}`}
                   subtitle="Processing"
                   dotColor="bg-[#f59e0b]"
                   valueColor="text-[#fde08d]"
@@ -3159,7 +3191,7 @@ export default function UserDashboardPage() {
                           >
                             <div className="col-span-3 font-medium text-white/90">{w.date}</div>
                             <div className="col-span-3 text-center font-bold text-[#c8f560]">
-                              ${w.amount.toLocaleString()}
+                              Rp {w.amount.toLocaleString("id-ID")}
                             </div>
                             <div className="col-span-3 flex items-center justify-center gap-1.5 font-medium text-white">
                               {w.method.includes("E-Wallet") ? (
@@ -3247,19 +3279,24 @@ export default function UserDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-white/75 mb-1">Amount</label>
-                      <div className="px-3.5 py-2 rounded-xl bg-white/15 border border-white/25">
+                      <label className="block text-white/75 mb-1">Jumlah Penarikan (Amount)</label>
+                      <div className="px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
                         <div className="flex items-center font-semibold text-white">
-                          <span className="text-[#c8f560] mr-1">$</span>
+                          <span className="text-[#c8f560] mr-2 text-sm font-bold">Rp</span>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
                             value={withdrawAmount}
-                            onChange={(e) => setWithdrawAmount(e.target.value)}
-                            className="w-full bg-transparent text-white focus:outline-none"
+                            onChange={(e) => {
+                              const formatted = formatNumberWithDots(e.target.value);
+                              setWithdrawAmount(formatted);
+                            }}
+                            className="w-full bg-transparent text-white focus:outline-none placeholder-white/40"
                           />
                         </div>
-                        <p className="text-[10px] text-white/65">
-                          ${(user?.royaltyBalance ?? 12450).toLocaleString()} available
+                        <p className="text-[10px] text-white/65 mt-1">
+                          Tersedia: Rp {(user?.royaltyBalance || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>
@@ -3747,7 +3784,7 @@ export default function UserDashboardPage() {
                         },
                         {
                           title: "Auto-Withdraw Royalti Bulanan",
-                          desc: "Tarik otomatis ke rekening utama saat saldo di atas $500",
+                          desc: "Tarik otomatis ke rekening utama saat saldo di atas Rp 500.000",
                           val: autoPayout,
                           toggle: () => setAutoPayout(!autoPayout),
                         },
@@ -3801,8 +3838,8 @@ export default function UserDashboardPage() {
                     </div>
                     <div className="p-4 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#312042] text-[#c8f560] flex items-center justify-center font-bold">
-                          $
+                        <div className="w-9 h-9 rounded-xl bg-[#312042] text-[#c8f560] flex items-center justify-center font-bold text-xs">
+                          Rp
                         </div>
                         <div>
                           <p className="font-bold text-white">{withdrawMethod}</p>
