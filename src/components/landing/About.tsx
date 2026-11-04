@@ -11,25 +11,50 @@ export default function About() {
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
     const ctx = gsap.context(() => {
-      // Zentry Pin & Expand ScrollTrigger Animation
-      const clipAnimation = gsap.timeline({
-        scrollTrigger: {
-          trigger: "#about-clip",
-          start: "center center",
-          end: "+=800 center",
-          scrub: 0.6,
-          pin: true,
-          pinSpacing: true,
-        },
-      });
+      if (!isMobile) {
+        gsap.set(".mask-clip-path2", {
+          clipPath: "polygon(14% 0, 82% 16%, 80% 92%, 6% 89%)",
+        });
+      }
 
-      clipAnimation.to(".about-mask-clip", {
-        width: "100vw",
-        height: "100vh",
-        borderRadius: "0px",
-        ease: "power2.inOut",
-      });
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: "#clip",
+            start: "51% center",
+            end: "+=800 center",
+            scrub: 0.5,
+            pin: true,
+            pinSpacing: true,
+            onLeaveBack: () => {
+              if (!isMobile) {
+                gsap.to(".mask-clip-path2", {
+                  clipPath: "polygon(14% 0, 82% 16%, 80% 92%, 6% 89%)",
+                });
+              }
+            },
+            onUpdate: (self) => {
+              if (isMobile) return;
+              const progress = self.progress;
+              const clipPathValue = `
+                polygon(
+                  ${gsap.utils.interpolate(14, 0, progress)}% 0%, 
+                  ${gsap.utils.interpolate(82, 100, progress)}% 0%, 
+                  ${gsap.utils.interpolate(80, 100, progress)}% 100%, 
+                  ${gsap.utils.interpolate(6, 0, progress)}% 100%
+                )
+              `;
+              gsap.to(".mask-clip-path2", { clipPath: clipPathValue });
+            },
+          },
+        })
+        .to(".mask-clip-path2", {
+          width: "100vw",
+          height: "100vh",
+          borderRadius: 0,
+        });
     });
 
     return () => ctx.revert();
@@ -61,16 +86,16 @@ export default function About() {
         </div>
       </div>
 
-      {/* Zentry Scrollytelling Pinned Mask Container */}
-      <div id="about-clip" className="h-dvh w-screen relative flex items-center justify-center overflow-hidden">
-        <div className="about-mask-clip relative w-[75vw] h-[55vh] md:w-[45vw] md:h-[65vh] overflow-hidden rounded-[2.5rem] border border-white/20 shadow-2xl shadow-orange-500/20 transition-all duration-300">
+      {/* Zentry Scrollytelling Pinned Mask Container with /img/about.webp */}
+      <div id="clip" className="h-dvh w-screen relative flex items-center justify-center overflow-hidden">
+        <div className="mask-clip-path2 absolute left-1/2 top-0 z-20 h-96 w-[75vw] md:w-[32vw] origin-center -translate-x-1/2 overflow-hidden rounded-3xl border border-white/20 shadow-2xl shadow-orange-500/20">
           <img
-            src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1600&auto=format&fit=crop"
-            alt="Studio Mixing & Mastering Console"
-            className="absolute left-0 top-0 size-full object-cover filter brightness-[0.6] saturate-[1.2]"
+            src="/img/about.webp"
+            alt="About BREAKOUT ID Soundstage"
+            className="absolute inset-0 size-full object-cover filter brightness-[0.7] saturate-[1.25]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/20 via-transparent to-purple-600/30" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/30 via-transparent to-purple-600/40" />
 
           {/* Floating Telemetry within the expanding image */}
           <div className="absolute bottom-10 left-6 right-6 md:left-12 md:right-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
@@ -93,6 +118,16 @@ export default function About() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Ambient Subtext under the image */}
+        <div className="about-subtext pointer-events-none z-10">
+          <p className="font-bold text-lg uppercase tracking-wider text-white">
+            The Digital Music Revolution Begins Here
+          </p>
+          <p className="text-sm text-white/60 mt-1">
+            Releasing your sound to every corner of the planet with zero barriers.
+          </p>
         </div>
       </div>
 
@@ -125,4 +160,3 @@ export default function About() {
     </section>
   );
 }
-

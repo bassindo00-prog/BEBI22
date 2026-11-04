@@ -20,67 +20,16 @@ export default function Navbar() {
   const [isNavVisible, setIsNavVisible] = useState(true);
 
   const navContainerRef = useRef<HTMLDivElement>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const oscillatorRef = useRef<OscillatorNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-
-  // Web Audio Synthesizer for ambient music landscape
-  const startAmbientAudio = () => {
-    try {
-      if (!audioContextRef.current) {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        audioContextRef.current = new AudioCtx();
-      }
-
-      if (audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume();
-      }
-
-      const ctx = audioContextRef.current;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(220, ctx.currentTime); // A3 ambient root
-      gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.04, ctx.currentTime + 1.2);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-
-      oscillatorRef.current = osc;
-      gainNodeRef.current = gain;
-    } catch (e) {
-      console.warn("Audio Context init fallback:", e);
-    }
-  };
-
-  const stopAmbientAudio = () => {
-    try {
-      if (gainNodeRef.current && audioContextRef.current) {
-        gainNodeRef.current.gain.exponentialRampToValueAtTime(
-          0.0001,
-          audioContextRef.current.currentTime + 0.5
-        );
-        setTimeout(() => {
-          oscillatorRef.current?.stop();
-          oscillatorRef.current?.disconnect();
-          oscillatorRef.current = null;
-        }, 550);
-      }
-    } catch (e) {
-      console.warn("Audio stop error:", e);
-    }
-  };
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   const toggleAudio = () => {
+    if (!audioElementRef.current) return;
     if (isAudioPlaying) {
-      stopAmbientAudio();
+      audioElementRef.current.pause();
       setIsAudioPlaying(false);
       setIsIndicatorActive(false);
     } else {
-      startAmbientAudio();
+      audioElementRef.current.play().catch(() => {});
       setIsAudioPlaying(true);
       setIsIndicatorActive(true);
     }
@@ -179,6 +128,7 @@ export default function Navbar() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white text-[11px] font-medium transition-all"
             title={isAudioPlaying ? "Mute Ambient Soundscape" : "Play Ambient Soundscape"}
           >
+            <audio ref={audioElementRef} src="/audio/loop.mp3" loop preload="auto" className="hidden" />
             <div className="flex items-center gap-0.5 h-4">
               {[1, 2, 3, 4].map((bar) => (
                 <div

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import AnimatedTitle from "./AnimatedTitle";
-import { ArrowUpRight, Sparkles, Disc, Radio } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 export default function ContactCTA() {
   return (
@@ -13,22 +13,30 @@ export default function ContactCTA() {
         <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-orange-500/20 blur-[120px]" />
         <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-purple-600/25 blur-[120px]" />
 
-        {/* Decorative Geometric Clip Path Images (Zentry Signature Contact Styling) */}
-        <div className="absolute -left-16 top-0 hidden h-full w-72 overflow-hidden sm:block lg:left-12 lg:w-96 opacity-40 hover:opacity-75 transition-opacity">
+        {/* Decorative Geometric Clip Path Images (Zentry Signature Contact Styling with contact-1 & contact-2) */}
+        <div className="absolute -left-16 top-0 hidden h-full w-72 overflow-hidden sm:block lg:left-12 lg:w-96 opacity-60 hover:opacity-90 transition-opacity">
           <div className="contact-clip-path-1 size-full">
             <img
-              src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=800&auto=format&fit=crop"
-              alt="Music Production Studio"
+              src="/img/contact-1.webp"
+              alt="BREAKOUT ID Studio visual 1"
+              className="size-full object-cover filter brightness-[0.7] saturate-[1.3]"
+            />
+          </div>
+          <div className="contact-clip-path-2 size-full -translate-y-20">
+            <img
+              src="/img/contact-2.webp"
+              alt="BREAKOUT ID Studio visual 2"
               className="size-full object-cover filter brightness-[0.7] saturate-[1.3]"
             />
           </div>
         </div>
 
-        <div className="absolute -right-16 top-0 hidden h-full w-72 overflow-hidden sm:block lg:right-12 lg:w-96 opacity-40 hover:opacity-75 transition-opacity">
-          <div className="contact-clip-path-2 size-full">
+        {/* Right Corner Swordman Floating Visual Asset */}
+        <div className="absolute -right-16 top-0 hidden h-full w-72 overflow-hidden sm:block lg:right-12 lg:w-96 opacity-60 hover:opacity-90 transition-opacity">
+          <div className="sword-man-clip-path size-full">
             <img
-              src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop"
-              alt="Microphone & Recording"
+              src="/img/swordman.webp"
+              alt="BREAKOUT ID Artist Icon"
               className="size-full object-cover filter brightness-[0.7] saturate-[1.3]"
             />
           </div>
@@ -87,4 +95,3 @@ export default function ContactCTA() {
     </section>
   );
 }
-
