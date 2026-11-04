@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BREAKOUT.ID — Agregator & Distribusi Musik Independen</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Syne, Plus Jakarta Sans, JetBrains Mono, Instrument Serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Syne', 'sans-serif'],
+                        serif: ['Instrument Serif', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        ink: '#0A0A09',
+                        surface: '#121210',
+                        paper: '#F4F1EA',
+                        muted: '#8E8D8A',
+                        line: '#262623',
+                        signal: '#FF4D1C', // International Studio Orange
+                        acid: '#D4FF33'
+                    },
+                    animation: {
+                        'ticker-left': 'tickerLeft 38s linear infinite',
+                        'ticker-right': 'tickerRight 38s linear infinite',
+                        'spin-slow': 'spin 14s linear infinite',
+                    },
+                    keyframes: {
+                        tickerLeft: {
+                            '0%': { transform: 'translateX(0%)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        tickerRight: {
+                            '0%': { transform: 'translateX(-50%)' },
+                            '100%': { transform: 'translateX(0%)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0A0A09;
+            color: #F4F1EA;
+            overflow-x: hidden;
+        }
+
+        /* Subtle Analog Film Grain Overlay */
+        .bg-noise {
+            background-image: radial-gradient(rgba(244, 241, 234, 0.06) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Pause ticker on hover */
+        .ticker-wrap:hover .ticker-move {
+            animation-play-state: paused;
+        }
+
+        /* Custom Industrial Range Input */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #262623;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 22px;
+            width: 14px;
+            background: #FF4D1C;
+            cursor: ew-resize;
+            margin-top: -9px;
+            border: 2px solid #F4F1EA;
+        }
+
+        /* Brutalist Hard Shadow */
+        .hard-shadow {
+            box-shadow: 6px 6px 0px #262623;
+        }
+        .hard-shadow-orange {
+            box-shadow: 5px 5px 0px #FF4D1C;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-signal selection:text-paper bg-noise">
+
+    <!-- Navigation -->
+    <header class="sticky top-0 z-50 bg-ink/95 backdrop-blur-md border-b border-line">
+        <div class="w-full px-4 sm:px-8 lg:px-12 h-20 flex items-center justify-between">
+            <!-- Raw Typographic Brand Logo -->
+            <a href="#" class="flex items-center gap-3 group">
+                <div class="w-9 h-9 bg-signal text-ink flex items-center justify-center font-mono font-bold text-lg tracking-tighter group-hover:bg-paper transition-colors">
+                    B//
+                </div>
+                <div class="leading-none">
+                    <span class="font-display font-extrabold text-xl tracking-tight text-paper block">BREAKOUT.ID</span>
+                    <span class="font-mono text-[10px] text-muted tracking-widest">INDEPENDENT AUDIO DISTRO</span>
+                </div>
+            </a>
+
+            <!-- Center Links -->
+            <nav class="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-wider text-muted">
+                <a href="#dsp-ticker" class="hover:text-paper transition-colors">01. Jaringan DSP</a>
+                <a href="#katalog" class="hover:text-paper transition-colors">02. Rilisan Lokal</a>
+                <a href="#fitur" class="hover:text-paper transition-colors">03. Sistem</a>
+                <a href="#kalkulator" class="hover:text-paper transition-colors">04. Hitung Royalti</a>
+                <a href="#testimoni" class="hover:text-paper transition-colors">05. Kata Musisi</a>
+            </nav>
+
+            <!-- Right Actions -->
+            <div class="hidden md:flex items-center gap-3">
+                <a href="/login" class="px-4 py-2.5 font-mono text-xs uppercase text-paper hover:text-signal transition-colors">
+                    [Log Masuk]
+                </a>
+                <a href="/register" class="px-5 py-2.5 bg-paper text-ink font-mono font-bold text-xs uppercase tracking-wider hover:bg-signal hover:text-paper transition-colors">
+                    Upload Master →
+                </a>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuBtn" class="md:hidden p-2 border border-line text-paper">
+                <i class="ph ph-list text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-surface border-b border-line px-4 py-6 space-y-4 font-mono text-xs uppercase">
+            <a href="#dsp-ticker" class="block py-1 text-muted hover:text-paper">01. Jaringan DSP</a>
+            <a href="#katalog" class="block py-1 text-muted hover:text-paper">02. Rilisan Lokal</a>
+            <a href="#fitur" class="block py-1 text-muted hover:text-paper">03. Sistem</a>
+            <a href="#kalkulator" class="block py-1 text-muted hover:text-paper">04. Hitung Royalti</a>
+            <a href="#testimoni" class="block py-1 text-muted hover:text-paper">05. Kata Musisi</a>
+            <div class="pt-4 border-t border-line flex flex-col gap-2">
+                <a href="/login" class="w-full py-3 border border-line text-paper text-center">Log Masuk Artis</a>
+                <a href="/register" class="w-full py-3 bg-signal text-paper font-bold text-center">Upload Master →</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION: Full-Screen Edge-to-Edge Studio Layout -->
+    <section class="w-full border-b border-line">
+        <div class="grid lg:grid-cols-12 min-h-[calc(100vh-7.25rem)] items-stretch">
+            
+            <!-- Left 7 Cols: Bold Editorial Statement -->
+            <div class="lg:col-span-7 p-6 sm:p-10 lg:p-16 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-line">
+                <div class="space-y-8 my-auto py-4">
+                    <div class="inline-flex items-center gap-3 px-3 py-1.5 border border-line bg-surface font-mono text-xs text-muted">
+                        <span class="text-signal font-bold">● REC</span>
+                        <span>DISTRIBUTOR MUSIK TANPA POTONGAN HAK CIPTA</span>
+                    </div>
+
+                    <h1 class="font-display font-extrabold text-4xl sm:text-6xl xl:text-[76px] leading-[0.94] tracking-tight text-paper">
+                        BIKIN LAGU DI KAMAR.<br>
+                        <span class="font-serif italic font-normal text-signal">Tayangin</span> KE SELURUH DUNIA.
+                    </h1>
+
+                    <p class="text-muted text-base sm:text-lg max-w-2xl leading-relaxed font-normal min-h-[5.5rem] sm:min-h-[4.5rem]">
+                        <span id="typewriterText"></span><span class="inline-block w-2.5 h-5 bg-signal align-middle ml-1 animate-pulse"></span>
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
+                        <button onclick="openModal('register')" class="px-8 py-4 bg-signal text-paper font-mono font-bold text-sm uppercase tracking-wider hover:bg-paper hover:text-ink transition-colors hard-shadow flex items-center justify-center gap-3">
+                            <span>Mulai Rilis Sekarang</span>
+                            <i class="ph-bold ph-arrow-up-right text-lg"></i>
+                        </button>
+                        <a href="#kalkulator" class="px-6 py-4 bg-surface border border-line text-paper font-mono text-xs uppercase tracking-wider hover:border-paper transition-colors flex items-center justify-center gap-2">
+                            <span>Cek Simulasi Royalti</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Raw Footnote Stats -->
+                <div class="pt-8 mt-8 border-t border-line grid grid-cols-3 gap-6 font-mono">
+                    <div>
+                        <span class="text-xs text-muted block">KATALOG AKTIF</span>
+                        <span class="text-2xl sm:text-4xl font-bold text-paper">18.400+</span>
+                        <span class="text-[11px] text-acid block mt-0.5">Track Independen</span>
+                    </div>
+                    <div class="border-l border-line pl-6">
+                        <span class="text-xs text-muted block">ROYALTI ARTIS</span>
+                        <span class="text-2xl sm:text-4xl font-bold text-paper">100%</span>
+                        <span class="text-[11px] text-muted block mt-0.5">Tanpa Komisi Gelap</span>
+                    </div>
+                    <div class="border-l border-line pl-6">
+                        <span class="text-xs text-muted block">MINIMUM WD</span>
+                        <span class="text-2xl sm:text-4xl font-bold text-signal">Rp 50rb</span>
+                        <span class="text-[11px] text-muted block mt-0.5">Tarik Kapan Aja</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right 5 Cols: Full-Height Master Inspection Console Card -->
+            <div class="lg:col-span-5 bg-surface p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
+                <!-- Top Tape Header -->
+                <div class="flex items-center justify-between border-b border-line pb-4 mb-6 font-mono text-xs">
+                    <div>
+                        <span class="text-muted block text-[10px]">MASTER AUDIO INSPECTOR // FULL RACK</span>
+                        <span class="text-paper font-bold text-sm">CAT# BRK-2026-089</span>
+                    </div>
+                    <span class="px-2.5 py-1 bg-acid/15 text-acid border border-acid/40 text-[10px] font-bold">
+                        DELIVERED TO 154 DSPs
+                    </span>
+                </div>
+
+                <!-- Vinyl + Track Artwork Preview -->
+                <div class="flex items-center gap-5 bg-ink border border-line p-5 mb-6">
+                    <div class="relative w-24 h-24 shrink-0">
+                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&q=80" 
+                             onerror="this.src='https://placehold.co/300x300/121210/FF4D1C?text=WAV'"
+                             alt="Artwork" class="w-full h-full object-cover grayscale contrast-125 border border-line relative z-10">
+                        <!-- Spinning Vinyl Peeking Out -->
+                        <div id="vinylDisc" class="w-20 h-20 rounded-full bg-zinc-900 border-4 border-zinc-800 absolute -right-5 top-2 flex items-center justify-center animate-spin-slow">
+                            <div class="w-6 h-6 rounded-full bg-signal border-2 border-ink"></div>
+                        </div>
+                    </div>
+                    <div class="pl-4 min-w-0 flex-1">
+                        <span class="font-mono text-[10px] text-signal uppercase tracking-widest">PREVIEW RILISAN</span>
+                        <h3 class="font-display font-bold text-xl text-paper truncate">Perjalanan Pulang</h3>
+                        <p class="font-mono text-xs text-muted truncate">Kamar Belakang • WAV 24-Bit / 48kHz</p>
+                    </div>
+                    <button onclick="toggleDeckPlay()" id="deckPlayBtn" class="w-12 h-12 bg-signal text-paper flex items-center justify-center shrink-0 hover:bg-paper hover:text-ink transition-colors" title="Putar Sample">
+                        <i id="deckPlayIcon" class="ph-fill ph-pause text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Raw Level Meter / Equalizer -->
+                <div class="mb-6">
+                    <div class="flex justify-between font-mono text-[10px] text-muted mb-2">
+                        <span id="deckStatus">STATUS: STREAMING MASTER PREVIEW</span>
+                        <span>PEAK: -0.8 dB // TRUE PEAK PASS</span>
+                    </div>
+                    <div id="vuMeter" class="h-16 bg-ink border border-line p-2.5 flex items-end justify-between gap-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Payout Ledger Log -->
+                <div class="border-t border-line pt-5 space-y-2.5 font-mono text-xs">
+                    <div class="flex justify-between items-center text-[11px] text-muted mb-1">
+                        <span>LOG TRANSAKSI ROYALTI TERBARU</span>
+                        <span>REAL-TIME SETTLEMENT</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 px-4 bg-ink border border-line">
+                        <span class="flex items-center gap-2.5 text-paper">
+                            <i class="ph-fill ph-spotify-logo text-[#1DB954] text-base"></i> Spotify ID & SG
+                        </span>
+                        <span class="text-acid font-bold">+ Rp 4.820.000</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 px-4 bg-ink border border-line">
+                        <span class="flex items-center gap-2.5 text-paper">
+                            <i class="ph-fill ph-tiktok-logo text-paper text-base"></i> TikTok Sound Usage
+                        </span>
+                        <span class="text-acid font-bold">+ Rp 1.945.000</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 px-4 bg-ink border border-line">
+                        <span class="flex items-center gap-2.5 text-paper">
+                            <i class="ph-fill ph-youtube-logo text-[#FF0000] text-base"></i> YouTube Content ID
+                        </span>
+                        <span class="text-acid font-bold">+ Rp 2.310.000</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ANIMASI PLATFORM BERJALAN (INDUSTRIAL DSP TICKER TAPE) -->
+    <section id="dsp-ticker" class="border-b border-line bg-surface relative overflow-hidden">
+        <!-- Section Label Bar -->
+        <div class="w-full px-4 sm:px-8 lg:px-12 py-4 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="flex items-center gap-2 font-mono text-xs">
+                <span class="px-2 py-0.5 bg-signal text-paper font-bold">LIVE FEED</span>
+                <span class="text-paper uppercase">KONEKSI LANGSUNG KE 150+ DIGITAL SERVICE PROVIDERS (DSP)</span>
+            </div>
+            <span class="font-mono text-[11px] text-muted">ARAHKAN KURSOR UNTUK BERHENTI</span>
+        </div>
+
+        <!-- ROW 1: Moving Left -->
+        <div class="ticker-wrap flex overflow-hidden border-b border-line select-none bg-ink">
+            <div class="ticker-move flex animate-ticker-left min-w-max">
+                <!-- Set 1 -->
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-spotify-logo text-2xl text-[#1DB954]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">SPOTIFY</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-acid">VERIFIED</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Audio + Canvas + Musixmatch Lyrics</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-apple-logo text-2xl text-paper"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">APPLE MUSIC & iTUNES</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-paper">24-BIT</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Lossless ALAC & Dolby Atmos Ready</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-tiktok-logo text-2xl text-[#00F2FE]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">TIKTOK & CAPCUT</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-signal">VIRAL SOUND</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Monetisasi Pemakaian Video Kreator</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-youtube-logo text-2xl text-[#FF0000]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">YOUTUBE MUSIC</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-acid">CONTENT ID</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">OAC (Official Artist Channel) & Shorts</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-instagram-logo text-2xl text-[#E1306C]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">INSTAGRAM & FACEBOOK</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-paper">META</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Stiker Musik Story & Audio Reels</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-soundcloud-logo text-2xl text-[#FF5500]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">SOUNDCLOUD GO+</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Fan-Powered Royalties</p>
+                    </div>
+                </div>
+
+                <!-- Set 2 (Duplicate for Seamless Loop) -->
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-spotify-logo text-2xl text-[#1DB954]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">SPOTIFY</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-acid">VERIFIED</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Audio + Canvas + Musixmatch Lyrics</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-apple-logo text-2xl text-paper"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">APPLE MUSIC & iTUNES</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-paper">24-BIT</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Lossless ALAC & Dolby Atmos Ready</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-tiktok-logo text-2xl text-[#00F2FE]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">TIKTOK & CAPCUT</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-signal">VIRAL SOUND</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Monetisasi Pemakaian Video Kreator</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-youtube-logo text-2xl text-[#FF0000]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">YOUTUBE MUSIC</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-acid">CONTENT ID</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">OAC (Official Artist Channel) & Shorts</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-instagram-logo text-2xl text-[#E1306C]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">INSTAGRAM & FACEBOOK</span>
+                            <span class="font-mono text-[10px] px-1.5 py-0.2 bg-line text-paper">META</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Stiker Musik Story & Audio Reels</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-soundcloud-logo text-2xl text-[#FF5500]"></i>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-display font-bold text-paper text-sm">SOUNDCLOUD GO+</span>
+                        </div>
+                        <p class="font-mono text-[11px] text-muted">Fan-Powered Royalties</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 2: Moving Right -->
+        <div class="ticker-wrap flex overflow-hidden select-none bg-ink">
+            <div class="ticker-move flex animate-ticker-right min-w-max">
+                <!-- Set 1 -->
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-radio text-2xl text-signal"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">LANGITMUSIK & TREBEL</span>
+                        <p class="font-mono text-[11px] text-muted">Jaringan Streaming Lokal Indonesia</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-diamond text-2xl text-[#00FFFF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">TIDAL HI-FI</span>
+                        <p class="font-mono text-[11px] text-muted">Master Studio Quality Stream</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-equalizer text-2xl text-[#A238FF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">DEEZER</span>
+                        <p class="font-mono text-[11px] text-muted">FLAC High Fidelity Global</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-disc text-2xl text-acid"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">BEATPORT & TRAXSOURCE</span>
+                        <p class="font-mono text-[11px] text-muted">Khusus Rilisan Elektronik / Club / DJ</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-amazon-logo text-2xl text-[#00A8E1]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">AMAZON MUSIC</span>
+                        <p class="font-mono text-[11px] text-muted">HD Streaming & Alexa Voice</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-waveform text-2xl text-[#0088FF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">SHAZAM & SIRI</span>
+                        <p class="font-mono text-[11px] text-muted">Audio Fingerprinting Otomatis</p>
+                    </div>
+                </div>
+
+                <!-- Set 2 (Duplicate) -->
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-radio text-2xl text-signal"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">LANGITMUSIK & TREBEL</span>
+                        <p class="font-mono text-[11px] text-muted">Jaringan Streaming Lokal Indonesia</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-diamond text-2xl text-[#00FFFF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">TIDAL HI-FI</span>
+                        <p class="font-mono text-[11px] text-muted">Master Studio Quality Stream</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-equalizer text-2xl text-[#A238FF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">DEEZER</span>
+                        <p class="font-mono text-[11px] text-muted">FLAC High Fidelity Global</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-disc text-2xl text-acid"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">BEATPORT & TRAXSOURCE</span>
+                        <p class="font-mono text-[11px] text-muted">Khusus Rilisan Elektronik / Club / DJ</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-amazon-logo text-2xl text-[#00A8E1]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">AMAZON MUSIC</span>
+                        <p class="font-mono text-[11px] text-muted">HD Streaming & Alexa Voice</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 px-8 py-5 border-r border-line hover:bg-surface transition-colors">
+                    <i class="ph-fill ph-waveform text-2xl text-[#0088FF]"></i>
+                    <div>
+                        <span class="font-display font-bold text-paper text-sm block">SHAZAM & SIRI</span>
+                        <p class="font-mono text-[11px] text-muted">Audio Fingerprinting Otomatis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROSTER / RILISAN LOKAL SECTION (Full-Screen Bleed Grid Cards) -->
+    <section id="katalog" class="w-full border-b border-line">
+        <div class="px-4 sm:px-8 lg:px-12 py-12 border-b border-line flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <span class="font-mono text-xs text-signal uppercase tracking-widest">// ARSIP RILISAN TERBARU</span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-paper mt-2">
+                    DARI GIGS KECIL SAMPAI <span class="font-serif italic font-normal">Chart Viral.</span>
+                </h2>
+            </div>
+            <p class="font-mono text-xs text-muted max-w-sm">
+                Dari unit shoegaze Bandung, hip-hop kolektif Surabaya, sampai bedroom pop Jakarta Selatan.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
+            <!-- Release 1 -->
+            <div class="bg-surface p-6 sm:p-8 lg:p-10 group hover:bg-ink transition-colors">
+                <div class="aspect-square overflow-hidden bg-ink mb-6 relative border border-line">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=80" 
+                         onerror="this.src='https://placehold.co/700x700/121210/F4F1EA?text=RELEASE+01'"
+                         alt="Cover" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
+                    <span class="absolute top-3 left-3 bg-ink/90 border border-line px-2.5 py-1 font-mono text-[10px] text-paper">
+                        LP • 10 TRACKS
+                    </span>
+                </div>
+                <div class="font-mono text-xs text-signal">BANDUNG // POST-PUNK</div>
+                <h3 class="font-display font-bold text-2xl text-paper mt-1">Distorsi Jam Tiga Pagi</h3>
+                <p class="text-sm text-muted mt-0.5">The Monochrome Youth</p>
+            </div>
+
+            <!-- Release 2 -->
+            <div class="bg-surface p-6 sm:p-8 lg:p-10 group hover:bg-ink transition-colors">
+                <div class="aspect-square overflow-hidden bg-ink mb-6 relative border border-line">
+                    <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=700&q=80" 
+                         onerror="this.src='https://placehold.co/700x700/121210/F4F1EA?text=RELEASE+02'"
+                         alt="Cover" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
+                    <span class="absolute top-3 left-3 bg-ink/90 border border-line px-2.5 py-1 font-mono text-[10px] text-acid">
+                        SINGLE
+                    </span>
+                </div>
+                <div class="font-mono text-xs text-signal">JAKARTA // R&B ALTERNATIVE</div>
+                <h3 class="font-display font-bold text-2xl text-paper mt-1">Parkiran Blok M</h3>
+                <p class="text-sm text-muted mt-0.5">Nadira & Soren</p>
+            </div>
+
+            <!-- Release 3 -->
+            <div class="bg-surface p-6 sm:p-8 lg:p-10 group hover:bg-ink transition-colors">
+                <div class="aspect-square overflow-hidden bg-ink mb-6 relative border border-line">
+                    <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=700&q=80" 
+                         onerror="this.src='https://placehold.co/700x700/121210/F4F1EA?text=RELEASE+03'"
+                         alt="Cover" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
+                    <span class="absolute top-3 left-3 bg-ink/90 border border-line px-2.5 py-1 font-mono text-[10px] text-paper">
+                        EP • 5 TRACKS
+                    </span>
+                </div>
+                <div class="font-mono text-xs text-signal">MALANG // INDIE ROCK</div>
+                <h3 class="font-display font-bold text-2xl text-paper mt-1">Kabut Arjuno</h3>
+                <p class="text-sm text-muted mt-0.5">Pagi Terakhir</p>
+            </div>
+
+            <!-- Release 4 -->
+            <div class="bg-surface p-6 sm:p-8 lg:p-10 group hover:bg-ink transition-colors">
+                <div class="aspect-square overflow-hidden bg-ink mb-6 relative border border-line">
+                    <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=700&q=80" 
+                         onerror="this.src='https://placehold.co/700x700/121210/F4F1EA?text=RELEASE+04'"
+                         alt="Cover" class="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500">
+                    <span class="absolute top-3 left-3 bg-ink/90 border border-line px-2.5 py-1 font-mono text-[10px] text-acid">
+                        SINGLE
+                    </span>
+                </div>
+                <div class="font-mono text-xs text-signal">DENPASAR // ELECTRONIC</div>
+                <h3 class="font-display font-bold text-2xl text-paper mt-1">Ombak Tengah Malam</h3>
+                <p class="text-sm text-muted mt-0.5">Kuta Modular Club</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- INFRASTRUKTUR / KENAPA KAMI (Full-Width 1px Exposed Table Grid) -->
+    <section id="fitur" class="w-full border-b border-line">
+        <div class="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line">
+            
+            <div class="p-8 sm:p-12 lg:p-16 space-y-5 bg-ink hover:bg-surface transition-colors">
+                <div class="flex items-center justify-between font-mono text-xs text-muted">
+                    <span>[FITUR // 01]</span>
+                    <i class="ph-bold ph-bank text-2xl text-signal"></i>
+                </div>
+                <h3 class="font-display font-bold text-2xl sm:text-3xl text-paper">Cair ke Rekening Lokal Tanpa Potongan Kurs</h3>
+                <p class="text-muted text-sm sm:text-base leading-relaxed">
+                    Kalau pakai agregator luar, lo kena biaya PayPal atau potongan wire transfer ratusan ribu. Di sini saldo royalti langsung cair ke BCA, Mandiri, BNI, BRI, atau GoPay dalam Rupiah.
+                </p>
+            </div>
+
+            <div class="p-8 sm:p-12 lg:p-16 space-y-5 bg-ink hover:bg-surface transition-colors">
+                <div class="flex items-center justify-between font-mono text-xs text-muted">
+                    <span>[FITUR // 02]</span>
+                    <i class="ph-bold ph-users-four text-2xl text-acid"></i>
+                </div>
+                <h3 class="font-display font-bold text-2xl sm:text-3xl text-paper">Bagi Hasil Band & Produser Otomatis</h3>
+                <p class="text-muted text-sm sm:text-base leading-relaxed">
+                    Nggak perlu repot ngitung manual tiap bulan di grup WhatsApp band. Atur persentase royalti tiap personel atau *featuring artist*, uang langsung kebagi otomatis ke akun masing-masing.
+                </p>
+            </div>
+
+            <div class="p-8 sm:p-12 lg:p-16 space-y-5 bg-ink hover:bg-surface transition-colors">
+                <div class="flex items-center justify-between font-mono text-xs text-muted">
+                    <span>[FITUR // 03]</span>
+                    <i class="ph-bold ph-lightning text-2xl text-signal"></i>
+                </div>
+                <h3 class="font-display font-bold text-2xl sm:text-3xl text-paper">Tim Kurator Manusia, Bukan Bot</h3>
+                <p class="text-muted text-sm sm:text-base leading-relaxed">
+                    Rilisan ketahan gara-gara salah ukuran cover atau penulisan judul? Tim A&R kita di Jakarta bakal bantu benerin via WhatsApp sampai lagu lo berhasil tayang.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- KALKULATOR ROYALTI (Full-Width Split Console) -->
+    <section id="kalkulator" class="w-full border-b border-line bg-surface/40">
+        <div class="grid lg:grid-cols-12 items-stretch">
+            
+            <div class="lg:col-span-5 p-6 sm:p-10 lg:p-16 flex flex-col justify-center space-y-5 border-b lg:border-b-0 lg:border-r border-line">
+                <span class="font-mono text-xs text-signal uppercase tracking-widest">// SIMULASI PENDAPATAN</span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-paper leading-tight">
+                    BERAPA RUPIAH DARI STREAMING LO?
+                </h2>
+                <p class="text-muted text-sm sm:text-base leading-relaxed">
+                    Angka di samping adalah hitungan rata-rata tarif *Pay-Per-Stream* bersih untuk pendengar region Indonesia & Asia Tenggara. Pilih platform dan geser jumlah *streams*.
+                </p>
+                <div class="pt-2 font-mono text-xs text-muted space-y-1.5">
+                    <p>• Paket Pro & Label: Artis terima <strong class="text-paper">100% penuh</strong></p>
+                    <p>• Sudah termasuk kode ISRC & UPC resmi</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-ink p-6 sm:p-10 lg:p-16 flex flex-col justify-center">
+                <!-- Platform Tabs -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10 font-mono text-xs" id="calcButtons">
+                    <button onclick="setCalcRate('spotify', 42)" data-plat="spotify" class="plat-btn py-4 px-4 border border-signal bg-signal text-paper font-bold uppercase text-left">
+                        01. Spotify
+                    </button>
+                    <button onclick="setCalcRate('apple', 78)" data-plat="apple" class="plat-btn py-4 px-4 border border-line bg-surface text-muted hover:text-paper uppercase text-left">
+                        02. Apple
+                    </button>
+                    <button onclick="setCalcRate('youtube', 28)" data-plat="youtube" class="plat-btn py-4 px-4 border border-line bg-surface text-muted hover:text-paper uppercase text-left">
+                        03. YouTube
+                    </button>
+                    <button onclick="setCalcRate('tiktok', 35)" data-plat="tiktok" class="plat-btn py-4 px-4 border border-line bg-surface text-muted hover:text-paper uppercase text-left">
+                        04. TikTok
+                    </button>
+                </div>
+
+                <!-- Slider Control -->
+                <div class="space-y-4 mb-10">
+                    <div class="flex justify-between items-baseline font-mono">
+                        <span class="text-xs text-muted">JUMLAH PLAYS / STREAMS:</span>
+                        <span id="streamVal" class="text-2xl sm:text-3xl font-bold text-paper">250.000 PLAYS</span>
+                    </div>
+                    <input id="streamSlider" type="range" min="10000" max="5000000" step="10000" value="250000" class="w-full" oninput="recalcRoyalty()">
+                    <div class="flex justify-between font-mono text-[10px] text-muted">
+                        <span>10.000</span>
+                        <span>1.000.000</span>
+                        <span>2.500.000</span>
+                        <span>5.000.000</span>
+                    </div>
+                </div>
+
+                <!-- Readout Display -->
+                <div class="bg-surface border border-line p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="font-mono text-[11px] text-muted block">ESTIMASI ROYALTI BERSIH (100%):</span>
+                        <span id="idrOutput" class="font-mono font-bold text-3xl sm:text-5xl text-acid block mt-1">
+                            Rp 10.500.000
+                        </span>
+                    </div>
+                    <button onclick="openModal('register')" class="px-6 py-4 bg-paper text-ink font-mono font-bold text-xs uppercase hover:bg-signal hover:text-paper transition-colors shrink-0">
+                        Upload Lagu →
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- TESTIMONI MUSISI (FULL-BLEED STUDIO LOG CARDS) -->
+    <section id="testimoni" class="w-full border-b border-line">
+        <div class="px-4 sm:px-8 lg:px-12 py-12 border-b border-line flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <span class="font-mono text-xs text-signal uppercase tracking-widest">// SUARA DARI BACKSTAGE</span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-paper mt-2">
+                    KATA MEREKA YANG UDAH <span class="font-serif italic font-normal text-acid">Pindah Ke Sini.</span>
+                </h2>
+            </div>
+            <p class="font-mono text-xs text-muted max-w-sm">
+                Catatan jujur dari band independen, produser kamar, sampai kolektif label yang rilis lewat BREAKOUT.ID.
+            </p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-line items-stretch">
+            
+            <!-- Testimoni 1 -->
+            <div class="bg-surface p-8 sm:p-12 lg:p-14 flex flex-col justify-between hover:bg-ink transition-colors">
+                <div>
+                    <div class="flex justify-between items-center font-mono text-xs text-muted pb-4 border-b border-line">
+                        <span>LOG // BANDUNG</span>
+                        <span class="text-acid">[VERIFIED ARTIST]</span>
+                    </div>
+                    <p class="font-sans text-lg sm:text-xl text-paper leading-relaxed mt-8">
+                        "Dulu pakai agregator luar tiap mau narik duit royalti kepotong biaya PayPal lumayan berasa. Pas pindah ke BREAKOUT.ID, cairin uang buat sewa studio latihan tinggal tarik ke BCA, sorenya langsung masuk utuh."
+                    </p>
+                </div>
+                <div class="mt-10 pt-6 border-t border-line flex items-center justify-between">
+                    <div>
+                        <h4 class="font-display font-bold text-lg text-paper">Raka & Personel</h4>
+                        <span class="font-mono text-xs text-signal block">The Monochrome Youth (Post-Punk)</span>
+                    </div>
+                    <span class="font-mono text-[11px] px-2.5 py-1 bg-ink border border-line text-muted">14 RILISAN</span>
+                </div>
+            </div>
+
+            <!-- Testimoni 2 -->
+            <div class="bg-ink p-8 sm:p-12 lg:p-14 flex flex-col justify-between relative">
+                <div>
+                    <div class="flex justify-between items-center font-mono text-xs text-signal pb-4 border-b border-line">
+                        <span>LOG // JAKARTA SELATAN</span>
+                        <span class="text-paper">[SOLOIST / PRODUSER]</span>
+                    </div>
+                    <p class="font-sans text-lg sm:text-xl text-paper leading-relaxed mt-8">
+                        "Yang paling ngebantu itu fitur bagi hasil otomatisnya. Gue sering kolaborasi sama beatmaker dan vokalis tamu, sekarang nggak perlu pusing rekap Excel tiap bulan. Semuanya langsung kebagi rapi dari dashboard."
+                    </p>
+                </div>
+                <div class="mt-10 pt-6 border-t border-line flex items-center justify-between">
+                    <div>
+                        <h4 class="font-display font-bold text-lg text-paper">Nadira Soren</h4>
+                        <span class="font-mono text-xs text-acid block">Bedroom R&B / Produser</span>
+                    </div>
+                    <span class="font-mono text-[11px] px-2.5 py-1 bg-surface border border-line text-muted">1.2M+ STREAMS</span>
+                </div>
+            </div>
+
+            <!-- Testimoni 3 -->
+            <div class="bg-surface p-8 sm:p-12 lg:p-14 flex flex-col justify-between hover:bg-ink transition-colors">
+                <div>
+                    <div class="flex justify-between items-center font-mono text-xs text-muted pb-4 border-b border-line">
+                        <span>LOG // MALANG & SURABAYA</span>
+                        <span class="text-acid">[MICRO RECORD LABEL]</span>
+                    </div>
+                    <p class="font-sans text-lg sm:text-xl text-paper leading-relaxed mt-8">
+                        "Pernah salah upload master audio H-2 sebelum rilis tunggal. Kalau di tempat lain udah pasrah nunggu tiket email berhari-hari, di sini tinggal chat tim A&R-nya langsung dibantu *swap* file hari itu juga."
+                    </p>
+                </div>
+                <div class="mt-10 pt-6 border-t border-line flex items-center justify-between">
+                    <div>
+                        <h4 class="font-display font-bold text-lg text-paper">Dimas Prasetyo</h4>
+                        <span class="font-mono text-xs text-signal block">Founder — Garasi Timur Records</span>
+                    </div>
+                    <span class="font-mono text-[11px] px-2.5 py-1 bg-ink border border-line text-muted">9 BAND ROSTER</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="w-full border-b border-line">
+        <div class="grid lg:grid-cols-12">
+            <div class="lg:col-span-4 p-6 sm:p-10 lg:p-16 border-b lg:border-b-0 lg:border-r border-line">
+                <span class="font-mono text-xs text-signal uppercase">// TANYA JAWAB</span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-paper mt-2">YANG SERING DITANYAIN MUSISI.</h2>
+                <p class="text-muted text-xs font-mono mt-3">Masih bingung? Chat langsung tim A&R kita di jam kerja.</p>
+            </div>
+            <div class="lg:col-span-8 divide-y divide-line">
+                <div class="p-6 sm:p-10">
+                    <button onclick="toggleFaq(0)" class="w-full flex items-center justify-between text-left font-display font-bold text-lg sm:text-xl text-paper">
+                        <span>Kalau tahun depan gue lupa perpanjang paket tahunan, lagu gue kehapus nggak?</span>
+                        <span id="faq-sym-0" class="font-mono text-signal text-xl">−</span>
+                    </button>
+                    <p id="faq-ans-0" class="mt-3 text-sm sm:text-base text-muted leading-relaxed">
+                        Nggak bakal langsung kita *takedown*. Kalau masa langganan habis dan belum diperpanjang, lagu lo tetap tayang dan cuma dialihkan otomatis ke skema bagi hasil 90/10 dari royalti yang masuk.
+                    </p>
+                </div>
+
+                <div class="p-6 sm:p-10">
+                    <button onclick="toggleFaq(1)" class="w-full flex items-center justify-between text-left font-display font-bold text-lg sm:text-xl text-paper">
+                        <span>Bisa sekalian urus centang biru Spotify for Artists & Official Artist Channel YouTube?</span>
+                        <span id="faq-sym-1" class="font-mono text-signal text-xl">+</span>
+                    </button>
+                    <p id="faq-ans-1" class="hidden mt-3 text-sm sm:text-base text-muted leading-relaxed">
+                        Bisa banget. Begitu rilisan pertama lo terdeliver ke Spotify dan YouTube, tombol klaim instan langsung kebuka di dashboard BREAKOUT.ID tanpa perlu syarat minimal jumlah followers.
+                    </p>
+                </div>
+
+                <div class="p-6 sm:p-10">
+                    <button onclick="toggleFaq(2)" class="w-full flex items-center justify-between text-left font-display font-bold text-lg sm:text-xl text-paper">
+                        <span>Spek file audio dan artwork yang wajib disiapin apa aja?</span>
+                        <span id="faq-sym-2" class="font-mono text-signal text-xl">+</span>
+                    </button>
+                    <p id="faq-ans-2" class="hidden mt-3 text-sm sm:text-base text-muted leading-relaxed">
+                        File master audio wajib format WAV (minimal 16-bit / 44.1 kHz Stereo, jangan MP3 hasil convert). Buat cover art ukurannya persegi 3000 x 3000 pixel format JPG/PNG.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="w-full px-4 sm:px-8 lg:px-12 py-12 font-mono text-xs text-muted">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-10 border-b border-line">
+            <div>
+                <span class="font-display font-extrabold text-2xl text-paper block">BREAKOUT.ID</span>
+                <span>PT BREAKOUT DISTRIBUSI MUSIK INDONESIA — JAKARTA SELATAN</span>
+            </div>
+            <div class="flex flex-wrap gap-6 text-paper">
+                <a href="#dsp-ticker" class="hover:text-signal">DSP LIST</a>
+                <a href="#katalog" class="hover:text-signal">KATALOG</a>
+                <a href="#kalkulator" class="hover:text-signal">ROYALTI</a>
+                <a href="#testimoni" class="hover:text-signal">TESTIMONI</a>
+            </div>
+        </div>
+        <div class="pt-6 flex flex-col sm:flex-row justify-between gap-2 text-[11px]">
+            <span>© 2026 BREAKOUT.ID — HAK CIPTA MILIK MASING-MASING MUSISI.</span>
+            <span>PEMBAYARAN DIDUKUNG OLEH QRIS / VIRTUAL ACCOUNT INDONESIA</span>
+        </div>
+    </footer>
+
+    <!-- MODAL PENDAFTARAN / LOGIN -->
+    <div id="authModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-ink/90 backdrop-blur-sm">
+        <div class="bg-surface border-2 border-paper max-w-md w-full p-6 sm:p-8 relative hard-shadow">
+            <button onclick="closeModal()" class="absolute top-4 right-4 px-2 py-1 border border-line font-mono text-xs text-muted hover:text-paper">
+                [ESC / X]
+            </button>
+
+            <span class="font-mono text-[11px] text-signal uppercase">// PORTAL BACKSTAGE ARTIS</span>
+            <h3 id="modalTitle" class="font-display font-bold text-2xl text-paper mt-1">Bikin Akun Distribusi</h3>
+            <p id="modalSub" class="text-xs text-muted mt-1 mb-6">Gratis bikin akun. Bayar cuma pas lo udah siap upload lagu.</p>
+
+            <form onsubmit="submitAuth(event)" class="space-y-4 font-mono text-xs">
+                <div id="bandField">
+                    <label class="block text-paper mb-1.5 uppercase">Nama Band / Solo / Kolektif</label>
+                    <input type="text" required placeholder="Contoh: Perunggu / Bernadya" class="w-full px-3.5 py-3 bg-ink border border-line text-paper focus:outline-none focus:border-signal">
+                </div>
+                <div>
+                    <label class="block text-paper mb-1.5 uppercase">Email Aktif</label>
+                    <input type="email" required placeholder="bandkamu@email.com" class="w-full px-3.5 py-3 bg-ink border border-line text-paper focus:outline-none focus:border-signal">
+                </div>
+                <div>
+                    <label class="block text-paper mb-1.5 uppercase">Password</label>
+                    <input type="password" required placeholder="••••••••" class="w-full px-3.5 py-3 bg-ink border border-line text-paper focus:outline-none focus:border-signal">
+                </div>
+                <button type="submit" id="modalBtn" class="w-full py-4 bg-signal text-paper font-bold uppercase tracking-wider hover:bg-paper hover:text-ink transition-colors mt-2">
+                    Masuk ke Studio →
+                </button>
+            </form>
+
+            <div id="modalFeedback" class="hidden mt-4 p-3 bg-ink border border-acid text-acid font-mono text-xs">
+                [OK] Data diterima. Link aktivasi backstage udah dikirim ke email lo.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Typewriter Effect for Hero Paragraph
+        const heroCopy = "Nggak perlu gabung major label buat masuk Spotify, Apple Music, atau TikTok. Di BREAKOUT.ID, master lagu tetap 100% punya lo, proses rilis nggak pakai drama, dan royalti cair langsung ke rekening BCA, Mandiri, atau GoPay.";
+        const typewriterEl = document.getElementById('typewriterText');
+        let charIndex = 0;
+
+        function runTypewriter() {
+            if (charIndex <= heroCopy.length) {
+                const currentSlice = heroCopy.slice(0, charIndex);
+                typewriterEl.innerHTML = currentSlice.replace(
+                    'BREAKOUT.ID',
+                    '<strong class="text-paper font-semibold">BREAKOUT.ID</strong>'
+                );
+                charIndex++;
+                setTimeout(runTypewriter, 28);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', runTypewriter);
+
+        // Mobile Menu
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        });
+
+        // Generate Studio VU Meter Bars
+        const vuMeter = document.getElementById('vuMeter');
+        const vuBars = [];
+        for (let i = 0; i < 32; i++) {
+            const bar = document.createElement('div');
+            const isPeak = i > 26;
+            bar.className = `flex-1 transition-all duration-150 ${isPeak ? 'bg-signal' : 'bg-acid'}`;
+            bar.style.height = `${Math.floor(20 + Math.random() * 75)}%`;
+            vuMeter.appendChild(bar);
+            vuBars.push(bar);
+        }
+
+        let deckPlaying = true;
+        setInterval(() => {
+            if (!deckPlaying) return;
+            vuBars.forEach(bar => {
+                bar.style.height = `${Math.floor(15 + Math.random() * 85)}%`;
+            });
+        }, 160);
+
+        function toggleDeckPlay() {
+            deckPlaying = !deckPlaying;
+            const icon = document.getElementById('deckPlayIcon');
+            const vinyl = document.getElementById('vinylDisc');
+            const status = document.getElementById('deckStatus');
+
+            if (deckPlaying) {
+                icon.className = 'ph-fill ph-pause text-lg';
+                vinyl.style.animationPlayState = 'running';
+                status.textContent = 'STATUS: STREAMING MASTER PREVIEW';
+            } else {
+                icon.className = 'ph-fill ph-play text-lg';
+                vinyl.style.animationPlayState = 'paused';
+                status.textContent = 'STATUS: DECK PAUSED';
+                vuBars.forEach(bar => bar.style.height = '12%');
+            }
+        }
+
+        // Royalty Calculator
+        let rateIDR = 42;
+        function setCalcRate(plat, rate) {
+            rateIDR = rate;
+            document.querySelectorAll('.plat-btn').forEach(btn => {
+                if (btn.dataset.plat === plat) {
+                    btn.className = 'plat-btn py-3 px-3 border border-signal bg-signal text-paper font-bold uppercase text-left';
+                } else {
+                    btn.className = 'plat-btn py-3 px-3 border border-line bg-surface text-muted hover:text-paper uppercase text-left';
+                }
+            });
+            recalcRoyalty();
+        }
+
+        function recalcRoyalty() {
+            const streams = parseInt(document.getElementById('streamSlider').value, 10);
+            const total = streams * rateIDR;
+            document.getElementById('streamVal').textContent = streams.toLocaleString('id-ID') + ' PLAYS';
+            document.getElementById('idrOutput').textContent = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        // FAQ Accordion
+        function toggleFaq(idx) {
+            const ans = document.getElementById(`faq-ans-${idx}`);
+            const sym = document.getElementById(`faq-sym-${idx}`);
+            const isHidden = ans.classList.contains('hidden');
+            ans.classList.toggle('hidden');
+            sym.textContent = isHidden ? '−' : '+';
+        }
+
+        // Modal
+        function openModal(type, plan = '') {
+            const modal = document.getElementById('authModal');
+            const title = document.getElementById('modalTitle');
+            const bandField = document.getElementById('bandField');
+            const feedback = document.getElementById('modalFeedback');
+
+            feedback.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            if (type === 'login') {
+                title.textContent = 'Log Masuk Artis';
+                bandField.classList.add('hidden');
+            } else {
+                title.textContent = plan ? `Paket: ${plan}` : 'Bikin Akun Distribusi';
+                bandField.classList.remove('hidden');
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('authModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitAuth(e) {
+            e.preventDefault();
+            document.getElementById('modalFeedback').classList.remove('hidden');
+            setTimeout(closeModal, 2000);
+        }
+    </script>
+</body>
+</html>
