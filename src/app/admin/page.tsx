@@ -46,7 +46,7 @@ import AdminLandingCMS from "@/components/AdminLandingCMS";
 import { THEMES, type ThemeId } from "@/lib/theme";
 
 const ROYALTY_CARD =
-  "theme-card bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg transition-colors duration-300";
+  "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
 
 const formatNumberWithDots = (val: string | number) => {
   if (val === undefined || val === null || val === "") return "";
@@ -543,7 +543,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div
-      className={`h-screen w-full overflow-hidden flex transition-colors duration-300 theme-${theme} ${currentTheme.bgGradient}`}
+      className={`h-screen w-full overflow-hidden flex transition-colors duration-300 ${currentTheme.bgGradient}`}
     >
       {/* Toast Notice */}
       {toast && (
@@ -848,7 +848,7 @@ export default function AdminDashboardPage() {
               onClick={() => setMobileMenuOpen(false)}
             />
 
-            <aside className="relative w-72 max-w-[82vw] h-full theme-sidebar border-r border-white/20 z-50 flex flex-col justify-between p-5 text-white shadow-2xl overflow-y-auto">
+            <aside className="relative w-72 max-w-[82vw] h-full bg-[#46385f] border-r border-white/20 z-50 flex flex-col justify-between p-5 text-white shadow-2xl overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
                   <div className="flex items-center gap-3">
@@ -929,7 +929,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
-        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 theme-sidebar backdrop-blur-md">
+        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
           <div className="flex flex-col items-center gap-10">
             <button
               type="button"
