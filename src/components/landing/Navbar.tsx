@@ -1,79 +1,51 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import Button from "./Button";
+import { TiLocationArrow } from "react-icons/ti";
 import gsap from "gsap";
-import { ArrowUpRight, Music, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
 
-const NAV_LINKS = [
-  { label: "Home", href: "#hero" },
-  { label: "Distribution", href: "#distribution" },
-  { label: "Platform", href: "#platform" },
-  { label: "Artists", href: "#artists" },
-  { label: "About", href: "#about" },
-];
+const navItems = ["Nexus", "Vault", "Prologue", "About", "Contact"];
 
-export default function Navbar() {
+const NavBar = () => {
+  const navContainerRef = useRef<HTMLDivElement | null>(null);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isNavVisible, setIsNavVisible] = useState(true);
 
-  const navContainerRef = useRef<HTMLDivElement>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   const toggleAudio = () => {
-    if (!audioElementRef.current) return;
-    if (isAudioPlaying) {
-      audioElementRef.current.pause();
-      setIsAudioPlaying(false);
-      setIsIndicatorActive(false);
-    } else {
-      audioElementRef.current.play().catch(() => {});
-      setIsAudioPlaying(true);
-      setIsIndicatorActive(true);
-    }
+    setIsAudioPlaying((p) => !p);
+    setIsIndicatorActive((i) => !i);
   };
 
-  // Scroll visibility management with GSAP
+  useEffect(() => {
+    if (!audioElementRef.current) return;
+    if (isAudioPlaying) {
+      audioElementRef.current.play().catch(() => {});
+    } else {
+      audioElementRef.current.pause();
+    }
+  }, [isAudioPlaying]);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      if (!navContainerRef.current) return;
 
-      if (currentScrollY === 0) {
+      if (currentScrollY <= 10) {
         setIsNavVisible(true);
-        if (navContainerRef.current) {
-          gsap.to(navContainerRef.current, {
-            y: 0,
-            backgroundColor: "rgba(10, 10, 16, 0.4)",
-            backdropFilter: "blur(12px)",
-            duration: 0.3,
-          });
-        }
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down -> hide navbar
+        navContainerRef.current.classList.remove("floating-nav");
+      } else if (currentScrollY > lastScrollY) {
         setIsNavVisible(false);
-        if (navContainerRef.current) {
-          gsap.to(navContainerRef.current, {
-            y: -110,
-            duration: 0.35,
-            ease: "power2.inOut",
-          });
-        }
+        navContainerRef.current.classList.remove("floating-nav");
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up -> show navbar
         setIsNavVisible(true);
-        if (navContainerRef.current) {
-          gsap.to(navContainerRef.current, {
-            y: 0,
-            backgroundColor: "rgba(10, 10, 16, 0.85)",
-            backdropFilter: "blur(16px)",
-            duration: 0.35,
-            ease: "power2.out",
-          });
-        }
+        navContainerRef.current.classList.add("floating-nav");
       }
-
       setLastScrollY(currentScrollY);
     };
 
@@ -81,89 +53,69 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  useEffect(() => {
+    gsap.to(navContainerRef.current, {
+      y: isNavVisible ? 0 : -100,
+      opacity: isNavVisible ? 1 : 0,
+      duration: 0.2,
+    });
+  }, [isNavVisible]);
+
   return (
-    <header className="fixed inset-x-0 top-4 z-50 flex justify-center px-4 sm:px-6 pointer-events-none">
-      <div
-        ref={navContainerRef}
-        className="pointer-events-auto w-full max-w-6xl rounded-full border border-white/15 bg-[#0a0a10]/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 transition-shadow duration-300 shadow-2xl flex items-center justify-between gap-4"
-      >
-        {/* Brand Logo: BREAKOUT ID */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff5e00] via-[#ff7a1a] to-[#a855f7] p-[1.5px] transition-transform group-hover:scale-105">
-            <div className="w-full h-full rounded-full bg-[#0b0a12] flex items-center justify-center">
-              <span className="font-zentry text-xs font-black text-white tracking-tighter">B</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff5e00] ml-0.5" />
-            </div>
+    <div
+      ref={navContainerRef}
+      className="fixed inset-x-0 top-4 z-50 h-16 border-none transition-all duration-700 sm:inset-x-6"
+    >
+      <header className="absolute top-1/2 w-full -translate-y-1/2">
+        <nav className="flex size-full items-center justify-between p-4">
+          <div className="flex items-center gap-7">
+            <Link href="/">
+              <img src="/img/logo.png" alt="BREAKOUT ID" className="w-10" />
+            </Link>
+            <Link href="/register">
+              <Button
+                id="product-btn"
+                title="GET STARTED"
+                rightIcon={<TiLocationArrow />}
+                containerClass="bg-blue-50 hidden md:flex items-center justify-center gap-1"
+              />
+            </Link>
           </div>
-          <div className="flex flex-col">
-            <span className="font-zentry font-black text-sm tracking-widest text-white uppercase group-hover:text-[#ff5e00] transition-colors">
-              BREAKOUT <span className="text-[#a855f7]">ID</span>
-            </span>
-            <span className="text-[9px] text-white/50 tracking-widest uppercase -mt-0.5">
-              Music Distribution
-            </span>
-          </div>
-        </Link>
-
-        {/* Center Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs font-medium uppercase tracking-wider text-white/80">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="relative py-1 hover:text-[#ff5e00] transition-colors group"
-            >
-              <span>{link.label}</span>
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-[#ff5e00] to-[#a855f7] transition-all duration-300 group-hover:w-full" />
-            </a>
-          ))}
-        </nav>
-
-        {/* Right Action Controls: Audio Indicator, LOGIN, GET STARTED */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Audio Equalizer Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleAudio}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white text-[11px] font-medium transition-all"
-            title={isAudioPlaying ? "Mute Ambient Soundscape" : "Play Ambient Soundscape"}
-          >
-            <audio ref={audioElementRef} src="/audio/loop.mp3" loop preload="auto" className="hidden" />
-            <div className="flex items-center gap-0.5 h-4">
-              {[1, 2, 3, 4].map((bar) => (
-                <div
-                  key={bar}
-                  className={`indicator-line ${isIndicatorActive ? "active" : ""}`}
-                  style={{
-                    animationDelay: `${bar * 0.12}s`,
-                  }}
-                />
+          <div className="flex h-full items-center">
+            <div className="hidden md:block">
+              {navItems.map((item, index) => (
+                <a
+                  key={index}
+                  href={`#${item.toLowerCase()}`}
+                  className="nav-hover-btn"
+                >
+                  {item}
+                </a>
               ))}
             </div>
-            <span className="hidden sm:inline text-[10px] uppercase font-semibold text-white/70">
-              {isAudioPlaying ? "Live" : "Audio"}
-            </span>
-          </button>
 
-          {/* Login Button -> Existing Auth Route */}
-          <Link
-            href="/login"
-            className="text-xs uppercase font-bold tracking-wider text-white/90 hover:text-white px-3 py-1.5 transition-colors"
-          >
-            Login
-          </Link>
+            <Link
+              href="/login"
+              className="nav-hover-btn font-bold text-yellow-300"
+            >
+              LOGIN
+            </Link>
 
-          {/* Get Started Button -> Existing Register Route */}
-          <Link
-            href="/register"
-            className="relative group overflow-hidden px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-[#ff5e00] to-[#a855f7] text-white text-xs font-black uppercase tracking-wider shadow-lg hover:shadow-[#ff5e00]/25 transition-all hover:scale-105 flex items-center gap-1.5"
-          >
-            <span>Get Started</span>
-            <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
-        </div>
-      </div>
-    </header>
+            <button onClick={toggleAudio} className="ml-10 p-1 flex items-center space-x-0.5">
+              <audio ref={audioElementRef} src="/audio/loop.mp3" loop className="hidden" />
+              {[1, 2, 3, 4].map((index) => (
+                <div
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  key={index}
+                  className={`${isIndicatorActive ? "active" : ""} indicator-line`}
+                />
+              ))}
+            </button>
+          </div>
+        </nav>
+      </header>
+    </div>
   );
-}
+};
 
+export default NavBar;

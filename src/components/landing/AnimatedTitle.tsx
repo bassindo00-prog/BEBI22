@@ -1,30 +1,32 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ScrollTrigger from "gsap/ScrollTrigger";
+import { useEffect, useRef } from "react";
 
-type AnimatedTitleProps = {
-  title: string;
-  containerClass?: string;
-  wordClass?: string;
-};
+gsap.registerPlugin(ScrollTrigger);
 
-export default function AnimatedTitle({
+const AnimatedTitle = ({
   title,
-  containerClass = "",
-  wordClass = "",
-}: AnimatedTitleProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  className,
+  noAnimation = false,
+  sectionId,
+}: {
+  title: string;
+  className?: string;
+  noAnimation?: boolean;
+  sectionId?: string;
+}) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    gsap.registerPlugin(ScrollTrigger);
+    if (noAnimation || !containerRef.current) return;
 
     const ctx = gsap.context(() => {
       const titleAnimation = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
+          scroller: ".main-container",
           start: "100 bottom",
           end: "center bottom",
           toggleActions: "play none none reverse",
@@ -32,37 +34,31 @@ export default function AnimatedTitle({
       });
 
       titleAnimation.to(
-        ".animated-word",
+        Array.from(containerRef.current?.querySelectorAll("span") || []),
         {
           opacity: 1,
-          transform: "translate3d(0, 0, 0) rotateY(0deg) rotateX(0deg)",
+          transform: `translate3d(0,0,0) rotateY(0deg) rotateX(0deg)`,
           ease: "power2.inOut",
-          stagger: 0.025,
-        },
-        0
+          stagger: 0.05,
+        }
       );
-    }, containerRef);
-
+    });
     return () => ctx.revert();
-  }, []);
+  }, [noAnimation]);
 
   return (
-    <div ref={containerRef} className={`animated-title ${containerClass}`}>
-      {title.split("<br />").map((line, index) => (
-        <div
-          key={index}
-          className="flex-center max-w-full flex-wrap gap-2 px-4 md:gap-3"
-        >
-          {line.split(" ").map((word, idx) => (
-            <span
-              key={idx}
-              className={`animated-word font-zentry font-black uppercase transition-all will-change-transform ${wordClass}`}
-              dangerouslySetInnerHTML={{ __html: word }}
-            />
-          ))}
-        </div>
-      ))}
+    <div id={sectionId || ""} ref={containerRef}>
+      <h2 className={`animated-title ${className || ""}`}>
+        {title.split("<br/>").map((line, index) => (
+          <div key={index} className="flex-center max-w-full flex-wrap gap-2 px-10 md:gap-3">
+            {line.split(" ").map((word, i) => (
+              <span className="animated-word" dangerouslySetInnerHTML={{ __html: word }} key={i} />
+            ))}
+          </div>
+        ))}
+      </h2>
     </div>
   );
-}
+};
 
+export default AnimatedTitle;
