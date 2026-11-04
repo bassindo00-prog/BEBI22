@@ -6,6 +6,8 @@ import {
   verifyUploadedObject,
   getPresignedDownloadUrl,
   uploadBufferToR2,
+  uploadChunkPartToR2,
+  assembleChunksInR2,
 } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
       const body = await req.json().catch(() => ({}));
 
       // Sub-action: Verification of uploaded object
-      if (body.action === "verify" || body.key && !body.uploadUrl) {
+      if (body.action === "verify" || (body.key && !body.uploadUrl && !body.action)) {
         if (!body.key || typeof body.key !== "string") {
           return NextResponse.json(
             { ok: false, error: "Key objek penyimpanan diperlukan untuk verifikasi." },
@@ -84,6 +86,32 @@ export async function POST(req: NextRequest) {
           ok: true,
           verified: true,
           ...verification,
+        });
+      }
+
+      // Sub-action: Assemble Chunked Parts into Final Master Audio (Vercel 413 Bypass)
+      if (body.action === "assemble_chunks") {
+        const { uploadId, totalParts, fileName, contentType, fileType } = body;
+        if (!uploadId || typeof totalParts !== "number" || !fileName) {
+          return NextResponse.json(
+            { ok: false, error: "Parameter assemble_chunks tidak lengkap." },
+            { status: 400 }
+          );
+        }
+
+        const assembled = await assembleChunksInR2({
+          uploadId,
+          totalParts,
+          fileName,
+          contentType: contentType || (fileType === "cover" ? "image/jpeg" : "audio/mpeg"),
+          userId: user.id,
+          fileType,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          method: "assembled-chunked",
+          ...assembled,
         });
       }
 
@@ -126,6 +154,8 @@ export async function POST(req: NextRequest) {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       const fileType = (formData.get("fileType") as "audio" | "cover" | "general") || "audio";
+      const uploadId = formData.get("uploadId") as string | null;
+      const partIndexRaw = formData.get("partIndex");
 
       if (!file) {
         return NextResponse.json(
@@ -134,6 +164,22 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Handle Chunk Part (chunked stream strictly under Vercel 4.5MB payload limit)
+      if (uploadId && partIndexRaw !== null) {
+        const partIndex = Number(partIndexRaw);
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const chunkResult = await uploadChunkPartToR2({
+          uploadId,
+          partIndex,
+          buffer,
+        });
+
+        return NextResponse.json(chunkResult);
+      }
+
+      // Handle Standard Single-Part Upload (for small files like Cover Artwork < 3.5MB)
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 

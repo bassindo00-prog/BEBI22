@@ -252,81 +252,97 @@ export default function UserDashboardPage() {
     showNotice(`✓ Cover Artwork "${file.name}" dipilih.`);
   };
 
-  // Robust Dual-Mode Uploader to Cloudflare R2
+  // Robust Chunked Uploader to Cloudflare R2 (Bypasses Vercel 4.5MB 413 error and R2 CORS)
   const uploadFileWithFallback = async (
     file: File,
     fileType: "audio" | "cover",
     onProgress?: (msg: string) => void
   ) => {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    const CHUNK_SIZE = 3 * 1024 * 1024; // 3 MB per slice (strictly < 4.5MB Vercel limit)
 
-    // Method 1: Direct presigned PUT to Cloudflare R2
-    try {
-      onProgress?.(`Menyiapkan presigned upload URL (${file.name})...`);
-      const presignRes = await fetch("/api/upload", {
+    // Strategy A: If file is larger than 3.5 MB, slice into 3MB chunks
+    // Every chunk is only 3MB, so Vercel NEVER throws FUNCTION_PAYLOAD_TOO_LARGE!
+    if (file.size > 3.5 * 1024 * 1024) {
+      const uploadId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const totalParts = Math.ceil(file.size / CHUNK_SIZE);
+
+      for (let i = 0; i < totalParts; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(file.size, start + CHUNK_SIZE);
+        const chunkBlob = file.slice(start, end);
+        const percent = Math.round(((i + 1) / totalParts) * 100);
+
+        onProgress?.(
+          `Mengunggah ${fileType === "audio" ? "Master Audio" : "File"} Part ${i + 1}/${totalParts} (${percent}%)...`
+        );
+
+        const formData = new FormData();
+        formData.append("file", chunkBlob, file.name);
+        formData.append("uploadId", uploadId);
+        formData.append("partIndex", String(i));
+        formData.append("fileType", fileType);
+
+        const chunkRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const chunkData = await safeParseJson(chunkRes);
+        if (!chunkRes.ok || !chunkData.ok) {
+          throw new Error(
+            chunkData.error || `Gagal mengunggah part ${i + 1} (${chunkRes.status})`
+          );
+        }
+      }
+
+      onProgress?.("Menggabungkan file dan memvalidasi di Cloudflare R2...");
+      const assembleRes = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "assemble_chunks",
+          uploadId,
+          totalParts,
           fileName: file.name,
           contentType: file.type || (fileType === "audio" ? "audio/mpeg" : "image/jpeg"),
-          fileSize: file.size,
           fileType,
         }),
       });
 
-      const presignData = await safeParseJson(presignRes);
-      if (presignRes.ok && presignData.ok && presignData.uploadUrl) {
-        onProgress?.(`Mengunggah langsung ke Cloudflare R2 (${sizeMB})...`);
-        const uploadRes = await fetch(presignData.uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": file.type || (fileType === "audio" ? "audio/mpeg" : "image/jpeg"),
-          },
-          body: file,
-        });
-
-        if (uploadRes.ok) {
-          onProgress?.(`Memverifikasi objek di Cloudflare R2...`);
-          const verifyRes = await fetch("/api/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "verify", key: presignData.key }),
-          });
-          const verifyData = await safeParseJson(verifyRes);
-          if (verifyRes.ok && verifyData.ok && verifyData.verified) {
-            return {
-              key: presignData.key,
-              publicUrl: `/api/storage/${presignData.key}`,
-            };
-          }
-        }
+      const assembleData = await safeParseJson(assembleRes);
+      if (!assembleRes.ok || !assembleData.ok || !assembleData.key) {
+        throw new Error(assembleData.error || "Gagal menggabungkan chunk audio di R2.");
       }
-    } catch (err: any) {
-      console.warn("Direct R2 presigned PUT failed (likely CORS preflight), using server stream fallback...", err);
+
+      return {
+        key: assembleData.key,
+        publicUrl: `/api/storage/${assembleData.key}`,
+      };
     }
 
-    // Method 2: Secure Server Stream to Cloudflare R2 (Bypasses browser CORS completely)
-    onProgress?.(`Mengunggah via secure backend stream ke Cloudflare R2 (${sizeMB})...`);
+    // Strategy B: For small files (<= 3.5 MB, e.g. Cover Art), upload in single request
+    onProgress?.(`Mengunggah ${file.name} (${sizeMB})...`);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileType", fileType);
 
-    const serverRes = await fetch("/api/upload", {
+    const singleRes = await fetch("/api/upload", {
       method: "POST",
       body: formData,
     });
 
-    const serverData = await safeParseJson(serverRes);
-    if (!serverRes.ok || !serverData.ok || !serverData.key) {
-      const errMsg = serverData.error || `Server upload error (HTTP ${serverRes.status}): ${serverRes.statusText}`;
+    const singleData = await safeParseJson(singleRes);
+    if (!singleRes.ok || !singleData.ok || !singleData.key) {
+      const errMsg = singleData.error || `Server upload error (HTTP ${singleRes.status}): ${singleRes.statusText}`;
       throw new Error(
         `Upload gagal (${fileType === "audio" ? "Master Audio" : "Cover Artwork"}): ${errMsg}`
       );
     }
 
     return {
-      key: serverData.key,
-      publicUrl: `/api/storage/${serverData.key}`,
+      key: singleData.key,
+      publicUrl: `/api/storage/${singleData.key}`,
     };
   };
 

@@ -198,6 +198,98 @@ export async function uploadBufferToR2({
   };
 }
 
+async function streamToBuffer(stream: any): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+/**
+ * Upload an individual chunk part (max 3MB, well within Vercel's 4.5MB limit) to temporary R2 storage
+ */
+export async function uploadChunkPartToR2({
+  uploadId,
+  partIndex,
+  buffer,
+}: {
+  uploadId: string;
+  partIndex: number;
+  buffer: Buffer;
+}) {
+  const safeUploadId = uploadId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const partKey = `tmp_chunks/${safeUploadId}/${partIndex}.part`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: partKey,
+      Body: buffer,
+      ContentType: "application/octet-stream",
+    })
+  );
+
+  return { ok: true, partIndex, partKey, size: buffer.length };
+}
+
+/**
+ * Assemble all chunk parts into a single final release object in Cloudflare R2
+ */
+export async function assembleChunksInR2({
+  uploadId,
+  totalParts,
+  fileName,
+  contentType,
+  userId,
+  fileType,
+}: {
+  uploadId: string;
+  totalParts: number;
+  fileName: string;
+  contentType: string;
+  userId?: string;
+  fileType?: "audio" | "cover" | "general";
+}) {
+  const safeUploadId = uploadId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const buffers: Buffer[] = [];
+
+  for (let i = 0; i < totalParts; i++) {
+    const partKey = `tmp_chunks/${safeUploadId}/${i}.part`;
+    const res = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: partKey,
+      })
+    );
+    const buf = await streamToBuffer(res.Body);
+    buffers.push(buf);
+  }
+
+  const combinedBuffer = Buffer.concat(buffers);
+
+  // Upload final assembled object
+  const uploadResult = await uploadBufferToR2({
+    buffer: combinedBuffer,
+    fileName,
+    contentType,
+    userId,
+    fileType,
+  });
+
+  // Asynchronously clean up temp chunk parts
+  (async () => {
+    for (let i = 0; i < totalParts; i++) {
+      const partKey = `tmp_chunks/${safeUploadId}/${i}.part`;
+      s3Client
+        .send(new DeleteObjectCommand({ Bucket: bucket, Key: partKey }))
+        .catch(() => {});
+    }
+  })();
+
+  return uploadResult;
+}
+
 /**
  * Verify that an object exists in R2 and retrieve its size and metadata
  */
