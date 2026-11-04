@@ -49,6 +49,7 @@ import {
   X,
   Loader2,
   AlertCircle,
+  XCircle,
   RefreshCw,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
@@ -149,7 +150,18 @@ const parseFormattedNumber = (val: string | number) => {
 export default function UserDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "analytics" | "catalog" | "releases" | "wallet" | "upload" | "inbox" | "settings" | "generator" | "artists"
+    | "overview"
+    | "analytics"
+    | "catalog"
+    | "releases"
+    | "in-review"
+    | "rejected"
+    | "wallet"
+    | "upload"
+    | "inbox"
+    | "settings"
+    | "generator"
+    | "artists"
   >("overview");
   const [period, setPeriod] = useState<"Daily" | "Weekly" | "Monthly">("Daily");
   const [themeMode, setThemeMode] = useState<"Light" | "Dark">("Light");
@@ -783,8 +795,19 @@ export default function UserDashboardPage() {
 
   const releases = user?.releases || [];
   const withdrawals = user?.withdrawals || [];
-  const approvedCount = releases.filter((r) => r.status === "Approved").length;
-  const pendingCount = releases.filter((r) => r.status === "Pending").length;
+
+  // Pemisahan Rilis: ACC (Approved), Sedang Di-Review, dan Ditolak (Rejected)
+  const approvedUserReleases = releases.filter((r) => r.status === "Approved");
+  const reviewUserReleases = releases.filter(
+    (r) => r.status !== "Approved" && r.status !== "Rejected"
+  );
+  const rejectedUserReleases = releases.filter((r) => r.status === "Rejected");
+  // Overview: Rilisan yang ditolak (Rejected) tidak boleh masuk ke Overview
+  const overviewUserReleases = releases.filter((r) => r.status !== "Rejected");
+
+  const approvedCount = approvedUserReleases.length;
+  const pendingCount = reviewUserReleases.length;
+  const rejectedCount = rejectedUserReleases.length;
   const totalReleasesCount = releases.length;
 
   const userStreams = user?.totalStreams || 0;
@@ -906,7 +929,9 @@ export default function UserDashboardPage() {
                     { id: "generator", label: "Studio AI Cover Art", icon: Sparkles },
                     { id: "upload", label: "Submit Track Rilis Baru", icon: UploadCloud },
                     { id: "artists", label: `Profil Artis & Creator (${userArtists.length})`, icon: Mic2 },
-                    { id: "releases", label: "My Releases & UPC/ISRC", icon: FolderOpen },
+                    { id: "releases", label: `My Releases — ACC (${approvedUserReleases.length})`, icon: CheckCircle2 },
+                    { id: "in-review", label: `Lagu Di-Review (${reviewUserReleases.length})`, icon: Clock },
+                    { id: "rejected", label: `Lagu Di-Reject (${rejectedUserReleases.length})`, icon: XCircle },
                     { id: "wallet", label: "Royalty & Withdraw", icon: Building2 },
                     { id: "inbox", label: `Inbox Pesan (${messages.length})`, icon: Inbox },
                     { id: "settings", label: "Pengaturan Akun", icon: Settings },
@@ -1056,16 +1081,58 @@ export default function UserDashboardPage() {
                 )}
               </button>
 
+              {/* Releases - ACC (Approved) */}
               <button
                 onClick={() => setActiveTab("releases")}
-                title="My Releases & Calendar"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                title="My Releases — ACC (Rilis Resmi)"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
                   activeTab === "releases"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
+                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
                     : "bg-white/20 text-white hover:bg-white/30"
                 }`}
               >
-                <Calendar className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4" />
+                {approvedUserReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#c8f560] text-[#312042] text-[9px] font-bold flex items-center justify-center shadow">
+                    {approvedUserReleases.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Releases - In Review (Sedang Ditinjau) */}
+              <button
+                onClick={() => setActiveTab("in-review")}
+                title="Lagu Sedang Di-Review Tim Kurator"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                  activeTab === "in-review"
+                    ? "bg-[#312042] text-[#fde08d] shadow-md scale-110 ring-2 ring-[#fde08d]/40"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                {reviewUserReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#fde08d] text-[#312042] text-[9px] font-bold flex items-center justify-center shadow">
+                    {reviewUserReleases.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Releases - Rejected (Ditolak) */}
+              <button
+                onClick={() => setActiveTab("rejected")}
+                title="Lagu Ditolak (Perlu Perbaikan)"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                  activeTab === "rejected"
+                    ? "bg-[#312042] text-red-300 shadow-md scale-110 ring-2 ring-red-400/40"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                <XCircle className="w-4 h-4" />
+                {rejectedUserReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shadow">
+                    {rejectedUserReleases.length}
+                  </span>
+                )}
               </button>
 
               <button
@@ -1190,7 +1257,9 @@ export default function UserDashboardPage() {
                     { id: "generator", label: "AI Art" },
                     { id: "upload", label: "+ Submit Track" },
                     { id: "artists", label: `Artis (${userArtists.length})` },
-                    { id: "releases", label: "My Releases" },
+                    { id: "releases", label: `My Releases (${approvedUserReleases.length})` },
+                    { id: "in-review", label: `Review (${reviewUserReleases.length})` },
+                    { id: "rejected", label: `Reject (${rejectedUserReleases.length})` },
                     { id: "wallet", label: "Royalty & Withdraw" },
                     { id: "inbox", label: `Inbox (${messages.length})` },
                     { id: "settings", label: "⚙ Pengaturan" },
@@ -1650,9 +1719,9 @@ export default function UserDashboardPage() {
                     </button>
                   </div>
 
-                  {/* Mobile Overview Releases Card List (< md) */}
+                  {/* Mobile Overview Releases Card List (< md) — Menampilkan rilisan aktif (Lagu ditolak tidak masuk overview) */}
                   <div className="md:hidden space-y-3 pt-3">
-                    {releases.length === 0 ? (
+                    {overviewUserReleases.length === 0 ? (
                       <div className="py-8 text-center text-white/70">
                         <Music className="w-8 h-8 mx-auto text-white/25 mb-2" />
                         <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
@@ -1664,7 +1733,7 @@ export default function UserDashboardPage() {
                         </button>
                       </div>
                     ) : (
-                      releases.slice(0, 3).map((item) => (
+                      overviewUserReleases.slice(0, 3).map((item) => (
                         <div
                           key={item.id}
                           className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2"
@@ -1682,12 +1751,10 @@ export default function UserDashboardPage() {
                                   className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                                     item.status === "Approved"
                                       ? "bg-[#c8f560] text-[#312042]"
-                                      : item.status === "Rejected"
-                                      ? "bg-red-500/25 text-red-200"
                                       : "bg-[#fde08d] text-[#312042]"
                                   }`}
                                 >
-                                  {item.status}
+                                  {item.status === "Approved" ? "✓ Approved" : `⏳ ${item.status}`}
                                 </span>
                               </div>
                               <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
@@ -1712,7 +1779,7 @@ export default function UserDashboardPage() {
                     )}
                   </div>
 
-                  {/* Desktop Overview Releases Table (md:block) */}
+                  {/* Desktop Overview Releases Table (md:block) — Lagu Ditolak Tidak Ditampilkan di Sini */}
                   <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
                     <div className="min-w-[480px]">
                       <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
@@ -1722,7 +1789,7 @@ export default function UserDashboardPage() {
                         <div className="col-span-3 text-right font-semibold">ISRC Code</div>
                       </div>
 
-                      {releases.length === 0 ? (
+                      {overviewUserReleases.length === 0 ? (
                         <div className="py-10 text-center text-white/70">
                           <Music className="w-10 h-10 mx-auto text-white/25 mb-2" />
                           <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
@@ -1738,7 +1805,7 @@ export default function UserDashboardPage() {
                         </div>
                       ) : (
                         <div className="divide-y divide-white/15">
-                          {releases.slice(0, 3).map((item) => (
+                          {overviewUserReleases.slice(0, 3).map((item) => (
                             <div
                               key={item.id}
                               className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/10 rounded-xl px-2 transition-colors"
@@ -3146,17 +3213,25 @@ export default function UserDashboardPage() {
           )}
 
           {/* =========================================================
-              VIEW 4: MY RELEASES — ALL CARDS MATCH ROYALTY GROWTH
+              VIEW 4: RELEASES MANAGEMENT (MISAH: ACC, REVIEW, REJECT)
              ========================================================= */}
-          {activeTab === "releases" && (
-            <div key={`releases-${animKey}`} className="space-y-6">
+          {(activeTab === "releases" || activeTab === "in-review" || activeTab === "rejected") && (
+            <div key={`releases-${activeTab}-${animKey}`} className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4 animate-card-enter">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-semibold text-white">
-                    Welcome Back, {user?.name || "Abdul"}!
+                    {activeTab === "releases"
+                      ? "My Releases — Rilis Resmi & ACC"
+                      : activeTab === "in-review"
+                      ? "Lagu Sedang Di-Review Tim Kurator"
+                      : "Lagu Ditolak (Perlu Perbaikan Metadata/Audio)"}
                   </h1>
                   <p className="text-xs text-white/80 mt-1">
-                    information designed to accurate insights
+                    {activeTab === "releases"
+                      ? "Katalog musik Anda yang telah disetujui dan aktif streaming di Spotify, Apple Music & TikTok."
+                      : activeTab === "in-review"
+                      ? "Rilisan dalam proses pengecekan kualitas audio master, artwork, dan ISRC/UPC oleh kurator."
+                      : "Daftar lagu yang ditolak karena pelanggaran hak cipta atau format. Silakan periksa atau submit ulang."}
                   </p>
                 </div>
 
@@ -3178,243 +3253,330 @@ export default function UserDashboardPage() {
                     className="px-5 py-3 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium flex items-center gap-2 shadow-md"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add Release</span>
+                    <span>Submit Track Baru</span>
                   </button>
                 </div>
               </div>
 
-              {/* 3 Big Stat Cards — Styled as Luxury VISA Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <VisaMetricCard
-                  title="Total Releases"
-                  value={Math.round(totalReleasesCount * animProgress)}
-                  subtitle="All releases"
-                  dotColor="bg-[#c4c3f0]"
-                  valueColor="text-white"
-                  cardNumber="4532 •••• •••• 1024"
-                  holderName={`${user?.name || "ARTIST"} • CATALOG`}
-                  expiry="08/29"
-                  tier="PLATINUM"
-                  variant="lavender"
-                  delayMs={60}
-                />
-
-                <VisaMetricCard
-                  title="Approved"
-                  value={Math.round(approvedCount * animProgress)}
-                  subtitle="Published to platforms"
-                  dotColor="bg-[#c8f560]"
-                  valueColor="text-[#c8f560]"
-                  cardNumber="4532 •••• •••• 7718"
-                  holderName={`${user?.name || "ARTIST"} • VERIFIED`}
-                  expiry="12/29"
-                  tier="SIGNATURE"
-                  variant="lime-tint"
-                  delayMs={130}
-                />
-
-                <VisaMetricCard
-                  title="Pending"
-                  value={Math.round(pendingCount * animProgress)}
-                  subtitle="Awaiting review"
-                  dotColor="bg-[#fbbf24]"
-                  valueColor="text-[#fde08d]"
-                  cardNumber="4532 •••• •••• 3304"
-                  holderName={`${user?.name || "ARTIST"} • QUEUE`}
-                  expiry="05/28"
-                  tier="INFINITE"
-                  variant="plum"
-                  delayMs={200}
-                />
+              {/* 3-Pills Category Switcher Bar: ACC / Review / Reject */}
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white/10 border border-white/20 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("releases")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === "releases"
+                      ? "bg-[#c8f560] text-[#312042] shadow-md scale-105"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>My Releases — ACC ({approvedUserReleases.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("in-review")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === "in-review"
+                      ? "bg-[#fde08d] text-[#312042] shadow-md scale-105"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Sedang Di-Review ({reviewUserReleases.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("rejected")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === "rejected"
+                      ? "bg-red-500 text-white shadow-md scale-105"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  <span>Ditolak / Reject ({rejectedUserReleases.length})</span>
+                </button>
               </div>
 
-              {/* Bottom Row: My Releases Table + Release Calendar */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                <div
-                  className={`lg:col-span-8 ${ROYALTY_CARD} flex flex-col animate-card-enter`}
-                  style={{ animationDelay: "260ms" }}
-                >
-                  <div className="pb-3 flex items-center justify-between border-b border-white/15">
-                    <h3 className="text-sm font-medium text-white">My Releases</h3>
-                    <span className="text-xs text-[#c8f560] underline cursor-pointer">
-                      Total: {releases.length} Track
-                    </span>
-                  </div>
+              {/* 3 Big Stat Cards — Styled as Luxury VISA Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div onClick={() => setActiveTab("releases")} className="cursor-pointer">
+                  <VisaMetricCard
+                    title="Total Releases"
+                    value={Math.round(totalReleasesCount * animProgress)}
+                    subtitle="All releases"
+                    dotColor="bg-[#c4c3f0]"
+                    valueColor="text-white"
+                    cardNumber="4532 •••• •••• 1024"
+                    holderName={`${user?.name || "ARTIST"} • CATALOG`}
+                    expiry="08/29"
+                    tier="PLATINUM"
+                    variant="lavender"
+                    delayMs={60}
+                  />
+                </div>
 
-                  {/* Mobile My Releases Card List (< md) */}
-                  <div className="md:hidden space-y-3 pt-3">
-                    {releases.length === 0 ? (
-                      <div className="py-10 text-center text-white/70">
-                        <FolderOpen className="w-10 h-10 mx-auto text-white/25 mb-2" />
-                        <p className="font-semibold text-sm text-white">Belum Ada Rilisan Lagu</p>
-                        <button
-                          onClick={() => setActiveTab("upload")}
-                          className="mt-3 px-4 py-1.5 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold"
-                        >
-                          + Submit Lagu Baru
-                        </button>
+                <div onClick={() => setActiveTab("releases")} className="cursor-pointer">
+                  <VisaMetricCard
+                    title="Approved (ACC)"
+                    value={Math.round(approvedCount * animProgress)}
+                    subtitle="Published to platforms"
+                    dotColor="bg-[#c8f560]"
+                    valueColor="text-[#c8f560]"
+                    cardNumber="4532 •••• •••• 7718"
+                    holderName={`${user?.name || "ARTIST"} • VERIFIED`}
+                    expiry="12/29"
+                    tier="SIGNATURE"
+                    variant="lime-tint"
+                    delayMs={130}
+                  />
+                </div>
+
+                <div onClick={() => setActiveTab("in-review")} className="cursor-pointer">
+                  <VisaMetricCard
+                    title="In Review"
+                    value={Math.round(pendingCount * animProgress)}
+                    subtitle="Awaiting review"
+                    dotColor="bg-[#fbbf24]"
+                    valueColor="text-[#fde08d]"
+                    cardNumber="4532 •••• •••• 3304"
+                    holderName={`${user?.name || "ARTIST"} • QUEUE`}
+                    expiry="05/28"
+                    tier="INFINITE"
+                    variant="plum"
+                    delayMs={200}
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Row: Separated Releases Table + Release Calendar */}
+              {(() => {
+                const displayedReleases =
+                  activeTab === "releases"
+                    ? approvedUserReleases
+                    : activeTab === "in-review"
+                    ? reviewUserReleases
+                    : rejectedUserReleases;
+
+                const sectionHeading =
+                  activeTab === "releases"
+                    ? "My Releases — ACC"
+                    : activeTab === "in-review"
+                    ? "Lagu Sedang Di-Review"
+                    : "Lagu Di-Reject (Ditolak)";
+
+                const emptyTitle =
+                  activeTab === "releases"
+                    ? "Belum Ada Lagu yang Di-ACC"
+                    : activeTab === "in-review"
+                    ? "Tidak Ada Lagu yang Sedang Ditinjau"
+                    : "Bagus! Tidak Ada Lagu yang Ditolak";
+
+                const emptyDesc =
+                  activeTab === "releases"
+                    ? "Lagu Anda yang telah lolos moderasi dan disetujui kurator akan tampil di sini."
+                    : activeTab === "in-review"
+                    ? "Semua lagu yang Anda ajukan telah selesai diverifikasi oleh kurator."
+                    : "Semua pengajuan musik Anda berjalan lancar tanpa ada yang ditolak.";
+
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <div
+                      className={`lg:col-span-8 ${ROYALTY_CARD} flex flex-col animate-card-enter`}
+                      style={{ animationDelay: "260ms" }}
+                    >
+                      <div className="pb-3 flex items-center justify-between border-b border-white/15">
+                        <h3 className="text-sm font-medium text-white">{sectionHeading}</h3>
+                        <span className="text-xs text-[#c8f560] font-mono">
+                          Total: {displayedReleases.length} Track
+                        </span>
                       </div>
-                    ) : (
-                      releases.map((item) => (
-                        <div
-                          key={item.id}
-                          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5"
-                        >
-                          <div className="flex items-start gap-3">
-                            <img
-                              src={item.coverUrl}
-                              alt={item.title}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-1">
-                                <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
-                                {item.status === "Approved" ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px] shrink-0">
-                                    ✓ Approved
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px] shrink-0">
-                                    ⏳ {item.status}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/10 text-[10px]">
-                            <div>
-                              <span className="text-white/50 block">Rilis</span>
-                              <span className="text-white font-medium truncate block">{item.releaseDate}</span>
-                            </div>
-                            <div>
-                              <span className="text-white/50 block">UPC</span>
-                              <span className="text-white/90 font-mono truncate block">{item.upc || "899214578101"}</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-white/50 block">ISRC</span>
-                              <span className="text-[#c8f560] font-mono font-bold truncate block">{item.isrc || "ID-HRM-24-00101"}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
 
-                  {/* Desktop My Releases Table (md:block) */}
-                  <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
-                    <div className="min-w-[580px]">
-                      <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
-                        <div className="col-span-4 font-semibold">Title</div>
-                        <div className="col-span-2 text-center font-semibold">Release Date</div>
-                        <div className="col-span-2 text-center font-semibold">UPC Barcode</div>
-                        <div className="col-span-2 text-center font-semibold">ISRC Code</div>
-                        <div className="col-span-2 text-right font-semibold">Status</div>
-                      </div>
-
-                      {releases.length === 0 ? (
-                        <div className="py-12 text-center text-white/70">
-                          <FolderOpen className="w-12 h-12 mx-auto text-white/25 mb-2" />
-                          <p className="font-semibold text-base text-white">Belum Ada Rilisan Lagu</p>
-                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                            Anda belum memiliki lagu yang dirilis. Klik tombol Submit Track untuk mengajukan lagu baru ke DSP.
-                          </p>
-                          <button
-                            onClick={() => setActiveTab("upload")}
-                            className="mt-4 px-5 py-2 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold hover:scale-105 transition-all shadow-md"
-                          >
-                            + Submit Lagu Baru
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-white/15">
-                          {releases.map((item) => (
+                      {/* Mobile Card List (< md) */}
+                      <div className="md:hidden space-y-3 pt-3">
+                        {displayedReleases.length === 0 ? (
+                          <div className="py-10 text-center text-white/70 space-y-2">
+                            <FolderOpen className="w-10 h-10 mx-auto text-white/25 mb-1" />
+                            <p className="font-semibold text-sm text-white">{emptyTitle}</p>
+                            <p className="text-xs text-white/60 max-w-xs mx-auto">{emptyDesc}</p>
+                            {activeTab === "releases" && (
+                              <button
+                                onClick={() => setActiveTab("upload")}
+                                className="mt-2 px-4 py-1.5 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold"
+                              >
+                                + Submit Lagu Baru
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          displayedReleases.map((item) => (
                             <div
                               key={item.id}
-                              className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/5 rounded-xl px-2 transition-colors"
+                              className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5"
                             >
-                              <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
+                              <div className="flex items-start gap-3">
                                 <img
                                   src={item.coverUrl}
                                   alt={item.title}
-                                  className="w-11 h-11 rounded-xl object-cover border border-white/25 shrink-0"
+                                  className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
                                 />
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-white truncate">{item.title}</p>
-                                  <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-1">
+                                    <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
+                                    {item.status === "Approved" ? (
+                                      <span className="px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px] shrink-0">
+                                        ✓ Approved
+                                      </span>
+                                    ) : item.status === "Rejected" ? (
+                                      <span className="px-2 py-0.5 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[10px] shrink-0">
+                                        ✕ Rejected
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px] shrink-0">
+                                        ⏳ Review
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
                                 </div>
                               </div>
-                              <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
-                                {item.releaseDate}
-                              </div>
-                              <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-[11px] whitespace-nowrap">
-                                {item.upc || "899214578101"}
-                              </div>
-                              <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
-                                {item.isrc || "ID-HRM-24-00101"}
-                              </div>
-                              <div className="col-span-2 flex justify-end">
-                                {item.status === "Approved" ? (
-                                  <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
-                                    <Check className="w-3 h-3" /> Approved
-                                  </span>
-                                ) : (
-                                  <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
-                                    <Clock className="w-3 h-3" /> {item.status}
-                                  </span>
-                                )}
+                              <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/10 text-[10px]">
+                                <div>
+                                  <span className="text-white/50 block">Rilis</span>
+                                  <span className="text-white font-medium truncate block">{item.releaseDate}</span>
+                                </div>
+                                <div>
+                                  <span className="text-white/50 block">UPC</span>
+                                  <span className="text-white/90 font-mono truncate block">{item.upc || "899214578101"}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-white/50 block">ISRC</span>
+                                  <span className="text-[#c8f560] font-mono font-bold truncate block">{item.isrc || "ID-HRM-24-00101"}</span>
+                                </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Release Calendar — Translucent Lavender */}
-                <div
-                  className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
-                  style={{ animationDelay: "320ms" }}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-white">Release Calendar</h3>
-                      <span className="text-xs text-white/75">Schedule ▾</span>
-                    </div>
-                    <p className="text-xs font-semibold text-white/85 mb-3">Quick Stats</p>
-
-                    {releases.length === 0 ? (
-                      <div className="py-8 text-center text-white/70">
-                        <Calendar className="w-8 h-8 mx-auto text-white/25 mb-2" />
-                        <p className="font-medium text-xs text-white">Tidak ada jadwal rilis aktif</p>
-                        <p className="text-[11px] text-white/55 mt-1">Ajukan rilisan untuk melihat kalender distribusi.</p>
+                          ))
+                        )}
                       </div>
-                    ) : (
-                      <div className="space-y-3 text-xs">
-                        {releases.slice(0, 3).map((item, idx) => (
-                          <div key={item.id} className="flex items-center gap-3">
-                            <div className="w-8 shrink-0">
-                              <p className="font-bold text-white text-xs">{item.releaseDate.split("-")[0] || "01"}</p>
-                              <p className="text-[10px] text-white/70">DSP</p>
-                            </div>
-                            <div className={`flex-1 px-3.5 py-2 rounded-full ${idx === 0 ? "bg-[#c8f560] text-[#312042]" : "bg-[#312042] text-white"} font-semibold text-[11px] truncate`}>
-                              {item.title} • {item.status}
-                            </div>
+
+                      {/* Desktop Table (md:block) */}
+                      <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
+                        <div className="min-w-[580px]">
+                          <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
+                            <div className="col-span-4 font-semibold">Title</div>
+                            <div className="col-span-2 text-center font-semibold">Release Date</div>
+                            <div className="col-span-2 text-center font-semibold">UPC Barcode</div>
+                            <div className="col-span-2 text-center font-semibold">ISRC Code</div>
+                            <div className="col-span-2 text-right font-semibold">Status</div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="mt-5 p-3.5 rounded-2xl bg-white/15 border border-white/15 text-xs">
-                    <p className="font-semibold text-white">Status Distribusi</p>
-                    <p className="text-white/75 text-[11px] mt-0.5">
-                      {releases.length > 0 ? `${releases.length} rilis terdata dalam sistem` : "Belum ada rilisan aktif"}
-                    </p>
+                          {displayedReleases.length === 0 ? (
+                            <div className="py-12 text-center text-white/70 space-y-2">
+                              <FolderOpen className="w-12 h-12 mx-auto text-white/25 mb-1" />
+                              <p className="font-semibold text-base text-white">{emptyTitle}</p>
+                              <p className="text-xs text-white/60 max-w-sm mx-auto">{emptyDesc}</p>
+                              {activeTab === "releases" && (
+                                <button
+                                  onClick={() => setActiveTab("upload")}
+                                  className="mt-3 px-5 py-2 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold hover:scale-105 transition-all shadow-md"
+                                >
+                                  + Submit Lagu Baru
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-white/15">
+                              {displayedReleases.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/5 rounded-xl px-2 transition-colors"
+                                >
+                                  <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
+                                    <img
+                                      src={item.coverUrl}
+                                      alt={item.title}
+                                      className="w-11 h-11 rounded-xl object-cover border border-white/25 shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-white truncate">{item.title}</p>
+                                      <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
+                                    {item.releaseDate}
+                                  </div>
+                                  <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-[11px] whitespace-nowrap">
+                                    {item.upc || "899214578101"}
+                                  </div>
+                                  <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
+                                    {item.isrc || "ID-HRM-24-00101"}
+                                  </div>
+                                  <div className="col-span-2 flex justify-end">
+                                    {item.status === "Approved" ? (
+                                      <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
+                                        <Check className="w-3 h-3" /> Approved
+                                      </span>
+                                    ) : item.status === "Rejected" ? (
+                                      <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
+                                        ✕ Rejected
+                                      </span>
+                                    ) : (
+                                      <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
+                                        <Clock className="w-3 h-3" /> Review
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Release Calendar — Translucent Lavender */}
+                    <div
+                      className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
+                      style={{ animationDelay: "320ms" }}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-medium text-white">Release Calendar</h3>
+                          <span className="text-xs text-white/75">Schedule ▾</span>
+                        </div>
+                        <p className="text-xs text-white/70">
+                          Jadwal rilis live multi-DSP (Spotify, Apple Music, YouTube Music, Deezer)
+                        </p>
+                      </div>
+
+                      <div className="mt-4 p-4 rounded-2xl bg-white/10 border border-white/10 space-y-2.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-white/70">Status Moderasi</span>
+                          <span className="font-bold text-[#c8f560]">24 - 48 Jam</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-white/70">Jangkauan DSP</span>
+                          <span className="font-bold text-white">150+ Negara</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-white/70">Split Royalti</span>
+                          <span className="font-bold text-[#c8f560]">100% Artist Share</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 mt-4 border-t border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("upload")}
+                          className="w-full py-2.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#b5e050] transition-colors shadow"
+                        >
+                          + Submit Release Baru
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           )}
 

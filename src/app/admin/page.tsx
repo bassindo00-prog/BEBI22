@@ -1521,26 +1521,55 @@ export default function AdminDashboardPage() {
                 style={{ animationDelay: "250ms" }}
               >
                 <div className="pb-3 flex items-center justify-between border-b border-white/15">
-                  <h3 className="text-sm font-medium text-white">
-                    Artist Release Submissions (Klik untuk Detail & Unduh)
-                  </h3>
-                  <button
-                    onClick={() => setActiveTab("releases")}
-                    className="text-xs text-[#c8f560] underline"
-                  >
-                    Manage All
-                  </button>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      Active Catalog Releases (Live & ACC)
+                    </h3>
+                    <p className="text-[11px] text-white/70">
+                      Rilisan yang telah disetujui ({approvedReleases.length} Lagu)
+                    </p>
+                  </div>
+                  {pendingReleases.length > 0 ? (
+                    <button
+                      onClick={() => setActiveTab("releases")}
+                      className="px-2.5 py-1 rounded-lg bg-[#fde08d] text-[#312042] text-xs font-bold hover:bg-[#fff2a8] transition-colors flex items-center gap-1 shadow"
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>{pendingReleases.length} Perlu Review</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab("my-releases")}
+                      className="text-xs text-[#c8f560] underline"
+                    >
+                      Lihat Semua ACC
+                    </button>
+                  )}
                 </div>
 
-                {/* Overview Mobile Releases List (< md) */}
+                {/* Overview Mobile Releases List (< md) — Hanya menampilkan Approved Releases */}
                 <div className="md:hidden space-y-3 pt-3">
-                  {releases.length === 0 ? (
-                    <div className="py-8 text-center text-white/70">
+                  {approvedReleases.length === 0 ? (
+                    <div className="py-8 text-center text-white/70 space-y-1">
                       <Disc3 className="w-8 h-8 mx-auto text-white/25 mb-1" />
-                      <p className="font-semibold text-xs text-white">Belum Ada Rilisan Masuk</p>
+                      <p className="font-semibold text-xs text-white">Belum Ada Rilisan yang Di-ACC</p>
+                      <p className="text-[11px] text-white/60">
+                        {pendingReleases.length > 0
+                          ? `Ada ${pendingReleases.length} lagu yang menunggu moderasi di menu Review Submissions.`
+                          : "Lagu yang disetujui akan tampil di sini."}
+                      </p>
+                      {pendingReleases.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("releases")}
+                          className="mt-2 px-3 py-1 bg-[#c8f560] text-[#312042] rounded-lg text-xs font-bold"
+                        >
+                          Buka Review ({pendingReleases.length})
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    releases.map((item) => (
+                    approvedReleases.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedRelease(item)}
@@ -1555,16 +1584,8 @@ export default function AdminDashboardPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
                               <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                                  item.status === "Approved"
-                                    ? "bg-[#c8f560] text-[#312042]"
-                                    : item.status === "Rejected"
-                                    ? "bg-red-500/25 text-red-200"
-                                    : "bg-[#fde08d] text-[#312042]"
-                                }`}
-                              >
-                                {item.status}
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 bg-[#c8f560] text-[#312042]">
+                                ✓ Approved
                               </span>
                             </div>
                             <p className="text-[11px] text-white/70 truncate mt-0.5">
@@ -1585,31 +1606,20 @@ export default function AdminDashboardPage() {
                             <Download className="w-3 h-3 text-[#c8f560]" />
                             <span>Detail & MP3</span>
                           </button>
-                          {item.status !== "Approved" && (
-                            <button
-                              type="button"
-                              onClick={() => handleReleaseStatus(item.id, "Approved")}
-                              className="py-1 px-3 rounded-lg bg-[#c8f560] text-[#312042] text-[11px] font-bold"
-                            >
-                              ACC
-                            </button>
-                          )}
-                          {item.status !== "Rejected" && (
-                            <button
-                              type="button"
-                              onClick={() => handleReleaseStatus(item.id, "Rejected")}
-                              className="py-1 px-2.5 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium"
-                            >
-                              Reject
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleReleaseStatus(item.id, "Rejected")}
+                            className="py-1 px-2.5 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium"
+                          >
+                            Reject
+                          </button>
                         </div>
                       </div>
                     ))
                   )}
                 </div>
 
-                {/* Overview Desktop Table (md:block) */}
+                {/* Overview Desktop Table (md:block) — Hanya Approved Releases */}
                 <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
                   <div className="min-w-[540px]">
                     <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
@@ -1620,14 +1630,27 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="divide-y divide-white/15">
-                      {releases.length === 0 ? (
-                        <div className="py-10 text-center text-white/70">
+                      {approvedReleases.length === 0 ? (
+                        <div className="py-10 text-center text-white/70 space-y-1">
                           <Disc3 className="w-9 h-9 mx-auto text-white/25 mb-2" />
-                          <p className="font-semibold text-xs text-white">Belum Ada Rilisan Masuk</p>
-                          <p className="text-[11px] text-white/55 mt-0.5">Rilisan yang diajukan artis akan tampil di sini.</p>
+                          <p className="font-semibold text-xs text-white">Belum Ada Rilisan yang Di-ACC</p>
+                          <p className="text-[11px] text-white/55 mt-0.5">
+                            {pendingReleases.length > 0
+                              ? `Ada ${pendingReleases.length} lagu yang sedang dalam proses review.`
+                              : "Rilisan yang disetujui (ACC) akan tampil di sini."}
+                          </p>
+                          {pendingReleases.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab("releases")}
+                              className="mt-2 px-3.5 py-1.5 bg-[#c8f560] text-[#312042] rounded-xl text-xs font-bold shadow"
+                            >
+                              Buka Review Submissions ({pendingReleases.length})
+                            </button>
+                          )}
                         </div>
                       ) : (
-                        releases.map((item) => (
+                        approvedReleases.map((item) => (
                           <div
                             key={item.id}
                             className="grid grid-cols-12 items-center py-3.5 text-xs gap-2 hover:bg-white/5 rounded-xl px-2 transition-colors cursor-pointer"
@@ -1655,19 +1678,9 @@ export default function AdminDashboardPage() {
                             </div>
 
                             <div className="col-span-2 flex justify-center">
-                              {item.status === "Approved" ? (
-                                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
-                                  <Check className="w-3 h-3" /> Approved
-                                </span>
-                              ) : item.status === "Rejected" ? (
-                                <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
-                                  ✕ Rejected
-                                </span>
-                              ) : (
-                                <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
-                                  <Clock className="w-3 h-3" /> {item.status}
-                                </span>
-                              )}
+                              <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
+                                <Check className="w-3 h-3" /> Approved
+                              </span>
                             </div>
 
                             <div
@@ -1682,26 +1695,14 @@ export default function AdminDashboardPage() {
                               >
                                 <Download className="w-3.5 h-3.5 text-[#c8f560]" />
                               </button>
-                              {item.status !== "Approved" && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleReleaseStatus(item.id, "Approved")}
-                                  title="Approve Release"
-                                  className="px-2.5 py-1 rounded-lg bg-[#312042] text-[#c8f560] text-[11px] font-medium hover:bg-[#422c58]"
-                                >
-                                  Approve
-                                </button>
-                              )}
-                              {item.status !== "Rejected" && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleReleaseStatus(item.id, "Rejected")}
-                                  title="Reject Release"
-                                  className="px-2.5 py-1 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium hover:bg-red-500/40"
-                                >
-                                  Reject
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseStatus(item.id, "Rejected")}
+                                title="Reject Release"
+                                className="px-2.5 py-1 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium hover:bg-red-500/40"
+                              >
+                                Reject
+                              </button>
                             </div>
                           </div>
                         ))
