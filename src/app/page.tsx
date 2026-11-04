@@ -325,7 +325,7 @@ export default function App() {
       `}</style>
 
       {/* HERO SECTION */}
-      <header className="relative w-full h-screen min-h-[820px] flex flex-col overflow-hidden">
+      <header className="relative w-full min-h-screen md:h-screen md:min-h-[850px] flex flex-col justify-between overflow-hidden">
         {/* Background Image (Editable dari Web CMS) */}
         <div className="absolute inset-0 z-0">
           <img
@@ -339,7 +339,7 @@ export default function App() {
 
         {/* Navigation - Transparan Tanpa Blur, Background Navbar Atas Gambar Upload CMS */}
         <nav
-          className="fixed top-0 left-0 w-full z-50 px-6 md:px-16 py-4 md:py-5 flex justify-between items-center glass-nav transition-all duration-300 border-b border-white/10"
+          className="fixed top-0 left-0 w-full z-50 px-4 sm:px-8 md:px-16 py-3.5 md:py-5 flex justify-between items-center glass-nav transition-all duration-300 border-b border-white/10"
           style={{
             backgroundImage: `linear-gradient(to right, rgba(15, 17, 26, 0.75) 0%, rgba(15, 17, 26, 0.45) 50%, rgba(15, 17, 26, 0.75) 100%), url('${
               dbData.navBgImage || "/header-bg.jpg"
@@ -351,10 +351,10 @@ export default function App() {
           }}
         >
           <Link href="/" className="flex items-center space-x-1 group">
-            <span className="text-3xl font-syncopate font-bold tracking-tighter text-white group-hover:text-brand-green transition-colors">
+            <span className="text-2xl sm:text-3xl font-syncopate font-bold tracking-tighter text-white group-hover:text-brand-green transition-colors">
               1
             </span>
-            <div className="w-6 h-6 border-2 border-white rounded-full flex items-center justify-center -ml-1"></div>
+            <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white rounded-full flex items-center justify-center -ml-1"></div>
           </Link>
 
           <div className="hidden md:flex space-x-10 text-xs font-semibold tracking-widest uppercase">
@@ -375,16 +375,16 @@ export default function App() {
             </a>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <Link
               href="/login"
-              className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full border border-white/30 hover:bg-white/15 hover:text-brand-green transition-all"
+              className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/30 hover:bg-white/15 hover:text-brand-green transition-all"
             >
               Log Masuk
             </Link>
             <Link
               href="/register"
-              className="text-xs font-bold uppercase tracking-widest px-5 py-2 rounded-full bg-brand-green text-black hover:bg-[#a6ff2e] transition-all shadow-[0_0_15px_rgba(143,255,0,0.4)]"
+              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-brand-green text-black hover:bg-[#a6ff2e] transition-all shadow-[0_0_15px_rgba(143,255,0,0.4)]"
             >
               Upload Master →
             </Link>
@@ -392,10 +392,10 @@ export default function App() {
         </nav>
 
         {/* Main Hero Content */}
-        <main className="relative z-10 flex-grow flex flex-col justify-center px-8 md:px-16 w-full max-w-7xl mx-auto pt-16">
-          <div className="max-w-2xl mt-[-10vh]">
+        <main className="relative z-10 flex-grow flex flex-col justify-center px-5 sm:px-8 md:px-16 w-full max-w-7xl mx-auto pt-24 sm:pt-28 md:pt-16 pb-4 md:pb-0">
+          <div className="max-w-2xl mt-0 md:mt-[-10vh]">
             {/* Subtitle */}
-            <p className="text-xs md:text-sm font-semibold tracking-widest uppercase mb-4 text-gray-300 h-5">
+            <p className="text-xs sm:text-sm font-semibold tracking-wider sm:tracking-widest uppercase mb-3 md:mb-4 text-gray-300 min-h-[1.25rem]">
               <TypewriterText
                 text={dbData.heroSubtitle}
                 start={animStep >= 1}
@@ -405,7 +405,7 @@ export default function App() {
             </p>
 
             {/* Big Title */}
-            <div className="flex items-center text-3xl sm:text-4xl md:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold uppercase tracking-widest text-white font-syncopate leading-none mb-8 min-h-[3rem] md:min-h-[5rem]">
+            <div className="flex flex-wrap md:flex-nowrap items-center text-3xl sm:text-5xl md:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold uppercase tracking-tight sm:tracking-widest text-white font-syncopate leading-tight md:leading-none mb-6 md:mb-8 min-h-[3rem] md:min-h-[5rem]">
               <TypewriterText
                 text={dbData.heroTitle1}
                 start={animStep >= 2}
@@ -418,7 +418,7 @@ export default function App() {
 
               {/* Dot - Animates in at Step 3 */}
               <div
-                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-brand-green flex items-center justify-center mx-2 md:mx-4 text-black text-2xl md:text-5xl font-bold shadow-[0_0_30px_rgba(143,255,0,0.4)] pb-2 md:pb-5 transition-all duration-500 ease-out ${
+                className={`w-7 h-7 sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-brand-green flex items-center justify-center mx-1.5 sm:mx-3 md:mx-4 text-black text-xl sm:text-2xl md:text-5xl font-bold shadow-[0_0_30px_rgba(143,255,0,0.4)] pb-1.5 sm:pb-3 md:pb-5 transition-all duration-500 ease-out ${
                   animStep >= 3 ? "opacity-100 scale-100" : "opacity-0 scale-50"
                 }`}
               >
@@ -434,26 +434,26 @@ export default function App() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-2 md:mt-0">
               <Link
                 href="/register"
-                className="flex items-center space-x-4 border border-white/40 rounded-full px-2 py-2 hover:bg-white/10 transition-colors group"
+                className="flex items-center space-x-3 sm:space-x-4 border border-white/40 rounded-full px-2 py-1.5 sm:py-2 hover:bg-white/10 transition-colors group"
               >
-                <span className="pl-4 text-sm font-semibold tracking-wider">
+                <span className="pl-3 sm:pl-4 text-xs sm:text-sm font-semibold tracking-wider">
                   Discover
                 </span>
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-black group-hover:bg-brand-green transition-colors">
-                  <i className="fas fa-arrow-right text-sm"></i>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-black group-hover:bg-brand-green transition-colors">
+                  <i className="fas fa-arrow-right text-xs sm:text-sm"></i>
                 </div>
               </Link>
               <Link
                 href="/login"
-                className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+                className="flex items-center space-x-2.5 sm:space-x-3 hover:opacity-80 transition-opacity"
               >
-                <div className="w-8 h-8 bg-brand-green rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(143,255,0,0.5)]">
-                  <span className="text-xs font-bold font-syncopate">10</span>
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-brand-green rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(143,255,0,0.5)]">
+                  <span className="text-[10px] sm:text-xs font-bold font-syncopate">10</span>
                 </div>
-                <span className="text-sm font-semibold tracking-wider">Connect</span>
+                <span className="text-xs sm:text-sm font-semibold tracking-wider">Connect</span>
               </Link>
             </div>
           </div>
@@ -468,13 +468,13 @@ export default function App() {
           <div className="pagination-dot"></div>
         </div>
 
-        {/* Bottom Glass Cards (3 Columns) — Transparan Tanpa Blur, Editable dari CMS */}
-        <div className="absolute bottom-8 left-0 w-full z-20 px-4 md:px-16">
+        {/* Bottom Glass Cards (3 Columns) — Relative on Mobile (No Overlap), Absolute on Desktop */}
+        <div className="relative md:absolute md:bottom-8 left-0 w-full z-20 px-4 sm:px-8 md:px-16 mt-8 md:mt-0 pb-10 md:pb-0">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {/* Card 1 (Green) */}
-            <div className="glass-card rounded-3xl p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
-              <div className="w-1/2 pr-4">
-                <p className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[4rem]">
+            <div className="glass-card rounded-3xl p-4 sm:p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
+              <div className="w-3/5 sm:w-1/2 pr-3 sm:pr-4">
+                <p className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[3.5rem] sm:min-h-[4rem]">
                   <TypewriterText
                     text={dbData.card1Text}
                     start={animStep >= 5}
@@ -482,7 +482,7 @@ export default function App() {
                   />
                 </p>
               </div>
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-green flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-green flex-shrink-0">
                 <img
                   src={dbData.card1Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 1"
@@ -495,9 +495,9 @@ export default function App() {
             </div>
 
             {/* Card 2 (Orange) */}
-            <div className="glass-card rounded-3xl p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
-              <div className="w-1/2 pr-4 flex flex-col justify-start">
-                <div className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[4rem]">
+            <div className="glass-card rounded-3xl p-4 sm:p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
+              <div className="w-3/5 sm:w-1/2 pr-3 sm:pr-4 flex flex-col justify-start">
+                <div className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[3.5rem] sm:min-h-[4rem]">
                   <strong className="text-white font-semibold">
                     <TypewriterText
                       text={dbData.card2Title}
@@ -514,7 +514,7 @@ export default function App() {
                   />
                 </div>
               </div>
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-orange flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-orange flex-shrink-0">
                 <img
                   src={dbData.card2Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 2"
@@ -527,9 +527,9 @@ export default function App() {
             </div>
 
             {/* Card 3 (Blue) */}
-            <div className="glass-card rounded-3xl p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
-              <div className="w-1/2 pr-4 flex flex-col justify-start">
-                <div className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[4rem]">
+            <div className="glass-card rounded-3xl p-4 sm:p-5 flex items-center justify-between relative group hover:bg-white/10 transition-all cursor-pointer">
+              <div className="w-3/5 sm:w-1/2 pr-3 sm:pr-4 flex flex-col justify-start">
+                <div className="text-[10px] md:text-xs text-gray-300 leading-relaxed font-medium min-h-[3.5rem] sm:min-h-[4rem]">
                   <strong className="text-white font-semibold">
                     <TypewriterText
                       text={dbData.card3Title}
@@ -546,7 +546,7 @@ export default function App() {
                   />
                 </div>
               </div>
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-blue flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full overflow-hidden glow-blue flex-shrink-0">
                 <img
                   src={dbData.card3Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 3"

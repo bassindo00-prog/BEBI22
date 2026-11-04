@@ -1592,41 +1592,53 @@ export default function AdminDashboardPage() {
                       withdrawals.map((w) => (
                         <div
                           key={w.id}
-                          className="p-3.5 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs"
+                          onClick={() => setSelectedWithdrawalForVisaModal(w)}
+                          className="p-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between gap-3 text-xs cursor-pointer transition-colors"
                         >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-[#c8f560]">
-                                Rp {w.amount.toLocaleString("id-ID")}
-                              </span>
-                              <span className="text-white/90 font-medium">• {w.method}</span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-[#312042] border border-[#c8f560]/40 flex items-center justify-center font-bold text-xs text-[#c8f560] shrink-0 overflow-hidden">
+                              {w.user?.avatar ? (
+                                <img
+                                  src={w.user.avatar}
+                                  alt={w.user.name || "Artist"}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span>{(w.user?.name || "A").slice(0, 2).toUpperCase()}</span>
+                              )}
                             </div>
-                            <p className="text-[11px] text-white/70 mt-0.5">
-                              {w.user?.name || "Artist"} • Acc: {w.accountNumber}
-                            </p>
+                            <div className="min-w-0">
+                              <p className="font-bold text-white truncate text-xs">
+                                {w.user?.name || "Artist Account"}
+                              </p>
+                              <p className="text-[11px] text-[#c8f560] font-semibold">
+                                Rp {w.amount.toLocaleString("id-ID")} • {w.method}
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
-                            {w.status === "Pending" ? (
-                              <>
-                                <button
-                                  onClick={() => handleWithdrawalStatus(w.id, "Approved")}
-                                  className="px-3 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-semibold text-[11px] hover:opacity-90"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleWithdrawalStatus(w.id, "Rejected")}
-                                  className="px-2.5 py-1.5 rounded-xl bg-red-500/30 border border-red-300/40 text-white font-medium text-[11px] hover:bg-red-500/45"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            ) : (
-                              <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px]">
-                                {w.status}
-                              </span>
-                            )}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                w.status === "Approved"
+                                  ? "bg-[#c8f560] text-[#312042]"
+                                  : w.status === "Rejected"
+                                  ? "bg-red-500/30 text-red-200"
+                                  : "bg-[#fde08d] text-[#312042]"
+                              }`}
+                            >
+                              {w.status}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedWithdrawalForVisaModal(w);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-[10px] transition-colors"
+                            >
+                              Detail
+                            </button>
                           </div>
                         </div>
                       ))
@@ -2314,69 +2326,71 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   withdrawals.map((w) => (
-                  <div
-                    key={w.id}
-                    className="py-4 flex flex-wrap items-center justify-between gap-4 hover:bg-white/5 rounded-2xl px-3 transition-colors"
-                  >
                     <div
+                      key={w.id}
                       onClick={() => setSelectedWithdrawalForVisaModal(w)}
-                      className="cursor-pointer group"
+                      className="py-3.5 px-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 bg-white/5 border border-white/10 rounded-2xl transition-all cursor-pointer group"
                     >
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-[#c8f560] group-hover:underline">
-                          Rp {w.amount.toLocaleString("id-ID")} — {w.method}
-                        </p>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 text-white/90">
-                          Klik untuk Detail Rekening
-                        </span>
+                      {/* Left: User Profile Avatar Logo + Name + Amount */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#312042] to-[#483363] border border-[#c8f560]/40 flex items-center justify-center font-bold text-sm text-[#c8f560] shadow-sm shrink-0 overflow-hidden">
+                          {w.user?.avatar ? (
+                            <img
+                              src={w.user.avatar}
+                              alt={w.user.name || "Artist"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{(w.user?.name || "A").slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate">
+                              {w.user?.name || "Artist Account"}
+                            </h4>
+                            <span className="text-[10px] text-white/50">{w.date}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="font-bold text-sm text-[#c8f560]">
+                              Rp {w.amount.toLocaleString("id-ID")}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/15 text-white/90 font-medium">
+                              {w.method}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-white/75 mt-0.5 font-mono">
-                        No. Rek: <span className="font-bold text-white">{w.accountNumber}</span> • Requested on {w.date} by{" "}
-                        <span className="font-semibold text-white">
-                          {w.user?.name || "Artist"} ({w.user?.email})
+
+                      {/* Right: Status Badge & Detail Button */}
+                      <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[11px] font-bold ${
+                            w.status === "Approved"
+                              ? "bg-[#c8f560] text-[#312042]"
+                              : w.status === "Rejected"
+                              ? "bg-red-500/30 text-red-200 border border-red-500/40"
+                              : "bg-[#fde08d] text-[#312042]"
+                          }`}
+                        >
+                          {w.status}
                         </span>
-                      </p>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedWithdrawalForVisaModal(w);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#312042] via-[#483363] to-[#312042] border border-[#c8f560]/50 text-[#c8f560] hover:text-white hover:border-[#c8f560] font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
+                        >
+                          <span>💳 Detail & ACC</span>
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`px-3.5 py-1 rounded-full font-semibold ${
-                          w.status === "Approved"
-                            ? "bg-[#c8f560] text-[#312042]"
-                            : "bg-[#fde08d] text-[#312042]"
-                        }`}
-                      >
-                        {w.status}
-                      </span>
-
-                      {/* Prominent VISA Card ACC button */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedWithdrawalForVisaModal(w)}
-                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#312042] via-[#483363] to-[#312042] border border-[#c8f560]/50 text-[#c8f560] font-bold text-xs flex items-center gap-1.5 shadow-md hover:scale-105 transition-all"
-                      >
-                        <span>💳 Buka Kartu VISA & ACC</span>
-                      </button>
-
-                      {w.status === "Pending" && (
-                        <>
-                          <button
-                            onClick={() => handleWithdrawalStatus(w.id, "Approved")}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-medium hover:bg-[#422c58]"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleWithdrawalStatus(w.id, "Rejected")}
-                            className="px-3 py-1.5 rounded-xl bg-red-500/30 text-white font-medium hover:bg-red-500/45"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )))}
+                  ))
+                )}
               </div>
             </div>
           )}
