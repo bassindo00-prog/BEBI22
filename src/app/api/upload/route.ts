@@ -5,6 +5,7 @@ import {
   generatePresignedUploadUrl,
   verifyUploadedObject,
   getPresignedDownloadUrl,
+  uploadBufferToR2,
 } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
@@ -120,12 +121,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Reject raw multipart uploads that would fail on Vercel with 413
+    // Action 2: Server-side multipart upload to Cloudflare R2 (Bypasses browser CORS completely)
+    if (contentTypeHeader.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      const fileType = (formData.get("fileType") as "audio" | "cover" | "general") || "audio";
+
+      if (!file) {
+        return NextResponse.json(
+          { ok: false, error: "File tidak ditemukan dalam form data." },
+          { status: 400 }
+        );
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const result = await uploadBufferToR2({
+        buffer,
+        fileName: file.name,
+        contentType: file.type || "application/octet-stream",
+        userId: user.id,
+        fileType,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        method: "server-r2-direct",
+        ...result,
+      });
+    }
+
     return NextResponse.json(
       {
         ok: false,
-        error:
-          "Unggahan multipart langsung tidak didukung untuk mencegah error Vercel 413. Gunakan presigned URL.",
+        error: "Content-Type tidak didukung. Gunakan application/json atau multipart/form-data.",
       },
       { status: 400 }
     );

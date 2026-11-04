@@ -45,6 +45,8 @@ import {
   Menu,
   X,
   Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -204,6 +206,16 @@ export default function UserDashboardPage() {
   ]);
   const [submittingTrack, setSubmittingTrack] = useState(false);
 
+  // New states for deferred upload on Review & Submit
+  const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null);
+  const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
+  const [localAudioPreviewUrl, setLocalAudioPreviewUrl] = useState<string>("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewStatusStep, setReviewStatusStep] = useState<string>("");
+  const [reviewError, setReviewError] = useState<string>("");
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+
   // Safe JSON response parser to prevent crashing on plain text or HTML errors
   const safeParseJson = async (res: Response) => {
     const text = await res.text();
@@ -214,146 +226,205 @@ export default function UserDashboardPage() {
     }
   };
 
-  // Direct S3/R2 presigned audio upload (bypasses Vercel 4.5MB limit completely)
-  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Safe Selection of Audio File (Stored locally until Review & Submit)
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingAudio(true);
+    setSelectedAudioFile(file);
     setAudioFileName(file.name);
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
     setAudioFileSize(sizeMB);
-
-    try {
-      showNotice(`Menyiapkan presigned upload URL untuk ${file.name} (${sizeMB})...`);
-
-      // 1. Request presigned upload URL from server
-      const presignRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type || "audio/mpeg",
-          fileSize: file.size,
-          fileType: "audio",
-        }),
-      });
-
-      const presignData = await safeParseJson(presignRes);
-      if (!presignRes.ok || !presignData.ok || !presignData.uploadUrl) {
-        throw new Error(presignData.error || "Gagal mendapatkan presigned upload URL");
-      }
-
-      // 2. Upload file binary directly to Cloudflare R2 via presigned PUT URL
-      showNotice(`Mengunggah ${file.name} (${sizeMB}) langsung ke Cloudflare R2...`);
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type || "audio/mpeg",
-        },
-        body: file,
-      });
-
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text().catch(() => "");
-        throw new Error(
-          `Gagal mengunggah file langsung ke R2 (${uploadRes.status}): ${
-            errText || uploadRes.statusText
-          }`
-        );
-      }
-
-      // 3. Backend verifies the object in R2 and records it
-      const verifyRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "verify",
-          key: presignData.key,
-        }),
-      });
-
-      const verifyData = await safeParseJson(verifyRes);
-      if (!verifyRes.ok || !verifyData.ok || !verifyData.verified) {
-        throw new Error(verifyData.error || "Verifikasi file audio di R2 gagal.");
-      }
-
-      setAudioFileKey(presignData.key);
-      const streamUrl = `/api/storage/${presignData.key}`;
-      setAudioFileUrl(streamUrl);
-      showNotice(`✓ Master Audio berhasil disimpan di Cloudflare R2 (${sizeMB})!`);
-    } catch (err: any) {
-      console.error("Audio upload error:", err);
-      showNotice(`Upload audio gagal: ${err.message}`);
-    } finally {
-      setUploadingAudio(false);
-    }
+    const localUrl = URL.createObjectURL(file);
+    setLocalAudioPreviewUrl(localUrl);
+    setAudioFileUrl(localUrl);
+    showNotice(`✓ File audio "${file.name}" (${sizeMB}) dipilih. Proses upload akan berjalan saat klik Review & Submit.`);
   };
 
-  // Direct S3/R2 presigned cover artwork upload
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Safe Selection of Cover Artwork (Stored locally until Review & Submit)
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingCover(true);
-    try {
-      showNotice("Menyiapkan presigned upload URL untuk cover artwork...");
+    setSelectedCoverFile(file);
+    const localUrl = URL.createObjectURL(file);
+    setUploadCoverUrl(localUrl);
+    showNotice(`✓ Cover Artwork "${file.name}" dipilih.`);
+  };
 
-      // 1. Request presigned upload URL
+  // Robust Dual-Mode Uploader to Cloudflare R2
+  const uploadFileWithFallback = async (
+    file: File,
+    fileType: "audio" | "cover",
+    onProgress?: (msg: string) => void
+  ) => {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+
+    // Method 1: Direct presigned PUT to Cloudflare R2
+    try {
+      onProgress?.(`Menyiapkan presigned upload URL (${file.name})...`);
       const presignRes = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileName: file.name,
-          contentType: file.type || "image/jpeg",
+          contentType: file.type || (fileType === "audio" ? "audio/mpeg" : "image/jpeg"),
           fileSize: file.size,
-          fileType: "cover",
+          fileType,
         }),
       });
 
       const presignData = await safeParseJson(presignRes);
-      if (!presignRes.ok || !presignData.ok || !presignData.uploadUrl) {
-        throw new Error(presignData.error || "Gagal mendapatkan upload URL cover art");
+      if (presignRes.ok && presignData.ok && presignData.uploadUrl) {
+        onProgress?.(`Mengunggah langsung ke Cloudflare R2 (${sizeMB})...`);
+        const uploadRes = await fetch(presignData.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || (fileType === "audio" ? "audio/mpeg" : "image/jpeg"),
+          },
+          body: file,
+        });
+
+        if (uploadRes.ok) {
+          onProgress?.(`Memverifikasi objek di Cloudflare R2...`);
+          const verifyRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "verify", key: presignData.key }),
+          });
+          const verifyData = await safeParseJson(verifyRes);
+          if (verifyRes.ok && verifyData.ok && verifyData.verified) {
+            return {
+              key: presignData.key,
+              publicUrl: `/api/storage/${presignData.key}`,
+            };
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn("Direct R2 presigned PUT failed (likely CORS preflight), using server stream fallback...", err);
+    }
+
+    // Method 2: Secure Server Stream to Cloudflare R2 (Bypasses browser CORS completely)
+    onProgress?.(`Mengunggah via secure backend stream ke Cloudflare R2 (${sizeMB})...`);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("fileType", fileType);
+
+    const serverRes = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const serverData = await safeParseJson(serverRes);
+    if (!serverRes.ok || !serverData.ok || !serverData.key) {
+      const errMsg = serverData.error || `Server upload error (HTTP ${serverRes.status}): ${serverRes.statusText}`;
+      throw new Error(
+        `Upload gagal (${fileType === "audio" ? "Master Audio" : "Cover Artwork"}): ${errMsg}`
+      );
+    }
+
+    return {
+      key: serverData.key,
+      publicUrl: `/api/storage/${serverData.key}`,
+    };
+  };
+
+  // Open Review & Submit Modal
+  const handleOpenReviewModal = () => {
+    if (!trackTitle.trim()) {
+      showNotice("Silakan isi Judul Track (Title) terlebih dahulu!");
+      return;
+    }
+    if (!selectedAudioFile && !audioFileKey) {
+      showNotice("Silakan pilih file Audio (.wav, .mp3, .flac) terlebih dahulu!");
+      return;
+    }
+    setReviewError("");
+    setReviewSuccess(false);
+    setReviewStatusStep("");
+    setReviewSubmitting(false);
+    setShowReviewModal(true);
+  };
+
+  // Execute Upload and Submit Release inside Review Modal
+  const executeUploadAndSubmitRelease = async () => {
+    setReviewSubmitting(true);
+    setReviewError("");
+    setReviewSuccess(false);
+
+    try {
+      let finalAudioKey = audioFileKey;
+      let finalAudioUrl = audioFileUrl;
+      let finalCoverKey = uploadCoverKey;
+      let finalCoverUrl = uploadCoverUrl;
+
+      // 1. Upload Master Audio if selected
+      if (selectedAudioFile) {
+        setReviewStatusStep(`Mengunggah Master Audio: ${selectedAudioFile.name} (${audioFileSize})...`);
+        const audioUploadResult = await uploadFileWithFallback(selectedAudioFile, "audio", (msg) => {
+          setReviewStatusStep(msg);
+        });
+        finalAudioKey = audioUploadResult.key;
+        finalAudioUrl = audioUploadResult.publicUrl;
+        setAudioFileKey(finalAudioKey);
+        setAudioFileUrl(finalAudioUrl);
+      } else if (!finalAudioKey) {
+        throw new Error("File master audio belum dipilih atau diunggah.");
       }
 
-      // 2. Upload file directly to R2
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type || "image/jpeg",
-        },
-        body: file,
-      });
-
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text().catch(() => "");
-        throw new Error(`Upload cover ke R2 gagal (${uploadRes.status}): ${errText}`);
+      // 2. Upload Cover Artwork if selected
+      if (selectedCoverFile) {
+        setReviewStatusStep(`Mengunggah Cover Artwork: ${selectedCoverFile.name}...`);
+        const coverUploadResult = await uploadFileWithFallback(selectedCoverFile, "cover", (msg) => {
+          setReviewStatusStep(msg);
+        });
+        finalCoverKey = coverUploadResult.key;
+        finalCoverUrl = coverUploadResult.publicUrl;
+        setUploadCoverKey(finalCoverKey);
+        setUploadCoverUrl(finalCoverUrl);
       }
 
-      // 3. Verify object in R2
-      const verifyRes = await fetch("/api/upload", {
+      // 3. Submit Release Metadata to Database
+      setReviewStatusStep("Mendaftarkan rilisan ke database...");
+      const res = await fetch("/api/releases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "verify",
-          key: presignData.key,
+          title: trackTitle,
+          artist: trackFeaturedArtistLabel(),
+          featuring: trackFeaturing,
+          composer: trackComposer,
+          producer: trackProducer,
+          tiktokClip: formattedTiktokClip,
+          genre: trackGenre,
+          releaseDate: formattedReleaseDate,
+          upc: trackUpc,
+          isrc: trackIsrc,
+          coverUrl: finalCoverUrl,
+          coverKey: finalCoverKey,
+          audioFile: finalAudioUrl || audioFileName,
+          audioKey: finalAudioKey,
+          platforms: selectedPlatforms.join(","),
+          status: "Pending",
         }),
       });
 
-      const verifyData = await safeParseJson(verifyRes);
-      if (!verifyRes.ok || !verifyData.ok || !verifyData.verified) {
-        throw new Error(verifyData.error || "Verifikasi cover artwork di R2 gagal.");
+      const data = await safeParseJson(res);
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.error || "Gagal mendaftarkan rilis ke sistem.");
       }
 
-      setUploadCoverKey(presignData.key);
-      const streamUrl = `/api/storage/${presignData.key}`;
-      setUploadCoverUrl(streamUrl);
-      showNotice("✓ Cover Artwork berhasil disimpan di Cloudflare R2!");
+      // 4. Success! Refresh user data
+      await fetchUserData();
+      setReviewSuccess(true);
+      setReviewStatusStep("✓ Rilisan berhasil dikirim!");
+      showNotice("Selamat! Rilisan Anda berhasil dikirim.");
     } catch (err: any) {
-      console.error("Cover upload error:", err);
-      showNotice(`Upload cover gagal: ${err.message}`);
+      console.error("Submit release error:", err);
+      setReviewError(err.message || "Terjadi kesalahan saat memproses upload audio/cover.");
     } finally {
-      setUploadingCover(false);
+      setReviewSubmitting(false);
     }
   };
 
@@ -2014,16 +2085,11 @@ export default function UserDashboardPage() {
                     </div>
 
                     <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium cursor-pointer transition-colors shadow">
-                      {uploadingAudio ? (
-                        <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
-                      ) : (
-                        <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
-                      )}
-                      <span>{uploadingAudio ? "Mengunggah langsung ke R2..." : "Select Audio File (.wav, .mp3, .flac)"}</span>
+                      <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
+                      <span>{selectedAudioFile ? "Ganti File Audio" : "Select Audio File (.wav, .mp3, .flac)"}</span>
                       <input
                         type="file"
                         accept="audio/*,.wav,.mp3,.flac,.m4a,.aac,.ogg"
-                        disabled={uploadingAudio}
                         className="hidden"
                         onChange={handleAudioUpload}
                       />
@@ -2039,10 +2105,10 @@ export default function UserDashboardPage() {
                           {audioFileName} {audioFileSize ? `• ${audioFileSize}` : ""}
                         </span>
                       </div>
-                      {uploadingAudio ? (
+                      {selectedAudioFile ? (
                         <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Mengupload ke R2 (Direct)...
+                          <Check className="w-3.5 h-3.5" />
+                          File siap (upload saat Review & Submit)
                         </span>
                       ) : audioFileUrl ? (
                         <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
@@ -2051,21 +2117,21 @@ export default function UserDashboardPage() {
                         </span>
                       ) : (
                         <span className="text-white/60 font-medium shrink-0">
-                          Siap diunggah ke R2
+                          Pilih file audio
                         </span>
                       )}
                     </div>
 
                     {/* Live Audio Preview Player */}
-                    {audioFileUrl && (
+                    {(localAudioPreviewUrl || audioFileUrl) && (
                       <div className="pt-2 border-t border-white/10 flex flex-col gap-1.5">
                         <span className="text-[11px] text-[#c8f560] font-medium flex items-center gap-1">
                           <Volume2 className="w-3 h-3" />
-                          <span>Preview Master Audio (Cloudflare R2 Direct Stream):</span>
+                          <span>Preview Master Audio:</span>
                         </span>
                         <audio
                           controls
-                          src={audioFileUrl}
+                          src={localAudioPreviewUrl || audioFileUrl}
                           className="w-full h-8 rounded-lg bg-black/30 border border-white/10"
                         />
                       </div>
@@ -2378,7 +2444,9 @@ export default function UserDashboardPage() {
                     </div>
 
                     <p className="text-xs font-medium text-white/90">
-                      {uploadingCover ? "Mengunggah cover ke Cloudflare R2..." : "3000 × 3000 px • JPG / PNG / WEBP"}
+                      {selectedCoverFile
+                        ? `✓ File: ${selectedCoverFile.name} (siap diunggah saat Review)`
+                        : "3000 × 3000 px • JPG / PNG / WEBP"}
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
                       <button
@@ -2391,16 +2459,11 @@ export default function UserDashboardPage() {
                       </button>
 
                       <label className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-medium text-white hover:bg-white/25 cursor-pointer flex items-center gap-1.5 transition-colors">
-                        {uploadingCover ? (
-                          <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
-                        ) : (
-                          <FolderOpen className="w-3.5 h-3.5 text-[#c8f560]" />
-                        )}
-                        <span>{uploadingCover ? "Mengunggah..." : "+ Upload Manual"}</span>
+                        <FolderOpen className="w-3.5 h-3.5 text-[#c8f560]" />
+                        <span>{selectedCoverFile ? "Ganti Cover" : "+ Upload Manual"}</span>
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          disabled={uploadingCover}
                           className="hidden"
                           onChange={handleCoverUpload}
                         />
@@ -2490,15 +2553,260 @@ export default function UserDashboardPage() {
                 <button
                   type="button"
                   disabled={submittingTrack}
-                  onClick={() => handleCreateRelease("Pending")}
+                  onClick={handleOpenReviewModal}
                   className="sm:col-span-8 py-3.5 rounded-full bg-[#312042] hover:bg-[#422c58] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg transition-all"
                 >
-                  <span>
-                    {submittingTrack ? "Submitting Track..." : "Review and Submit"}
-                  </span>
+                  <span>Review & Submit</span>
                   <ArrowRight className="w-4 h-4 text-[#c8f560]" />
                 </button>
               </div>
+
+              {/* REVIEW & SUBMIT MODAL */}
+              {showReviewModal && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-[#1a1429] border border-white/20 rounded-3xl max-w-2xl w-full p-6 sm:p-8 text-white shadow-2xl relative my-8 animate-card-enter">
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                      <div className="flex items-center gap-2.5">
+                        <span className="p-2 rounded-xl bg-[#c8f560] text-[#312042]">
+                          <Shield className="w-5 h-5" />
+                        </span>
+                        <div>
+                          <h3 className="text-lg sm:text-xl font-bold">
+                            {reviewSuccess ? "Rilisan Berhasil Terkirim" : "Review & Submit Rilisan"}
+                          </h3>
+                          <p className="text-xs text-white/65">
+                            {reviewSuccess
+                              ? "Langkah terakhir selesai"
+                              : "Periksa kembali detail lagu sebelum dikirim ke peninjauan"}
+                          </p>
+                        </div>
+                      </div>
+                      {!reviewSubmitting && (
+                        <button
+                          type="button"
+                          onClick={() => setShowReviewModal(false)}
+                          className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Content: SUCCESS STATE */}
+                    {reviewSuccess ? (
+                      <div className="text-center py-6 space-y-5">
+                        <div className="w-20 h-20 rounded-full bg-[#c8f560]/20 text-[#c8f560] border-2 border-[#c8f560]/50 mx-auto flex items-center justify-center shadow-lg">
+                          <CheckCircle2 className="w-12 h-12 text-[#c8f560]" />
+                        </div>
+                        <div>
+                          <h4 className="text-2xl font-bold text-white">
+                            Selamat! Rilisan Anda Telah Terkirim
+                          </h4>
+                          <p className="text-sm text-white/80 mt-2 max-w-md mx-auto leading-relaxed">
+                            Rilisan Anda telah berhasil dikirim dan akan ditinjau dalam{" "}
+                            <span className="text-[#c8f560] font-semibold">10 - 15 hari</span>.
+                          </p>
+                        </div>
+
+                        {/* Release Info Card */}
+                        <div className="p-4 rounded-2xl bg-white/10 border border-white/15 text-xs text-left max-w-md mx-auto space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/60">Judul Lagu:</span>
+                            <span className="text-white font-semibold truncate max-w-[200px]">{trackTitle}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/60">Artis:</span>
+                            <span className="text-white font-semibold">{trackFeaturedArtistLabel()}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/60">Status Rilisan:</span>
+                            <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-bold border border-yellow-500/30">
+                              Pending Review (10-15 Hari)
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/60">Target Platform:</span>
+                            <span className="text-white/90 font-medium">{selectedPlatforms.join(", ")}</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons: Lihat Rilisan & Klik Dashboard */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowReviewModal(false);
+                              setActiveTab("releases");
+                            }}
+                            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#c8f560] hover:bg-[#b5e050] text-[#312042] font-bold text-xs flex items-center justify-center gap-2 shadow-xl transition-all"
+                          >
+                            <ListMusic className="w-4 h-4" />
+                            <span>Lihat Rilisan</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowReviewModal(false);
+                              setActiveTab("overview");
+                            }}
+                            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Home className="w-4 h-4 text-[#c8f560]" />
+                            <span>Klik Dashboard</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Content: REVIEW & SUBMISSION FORM */
+                      <div className="py-5 space-y-5">
+                        {/* Summary Details Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 text-xs">
+                          {/* Cover Thumbnail */}
+                          <div className="sm:col-span-4 flex flex-col items-center justify-center">
+                            <div className="w-28 h-28 rounded-xl overflow-hidden shadow-lg border border-white/20">
+                              <img src={uploadCoverUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[11px] text-white/60 mt-1.5 truncate max-w-[120px]">
+                              {selectedCoverFile ? selectedCoverFile.name : "Cover Artwork"}
+                            </span>
+                          </div>
+
+                          {/* Track Metadata */}
+                          <div className="sm:col-span-8 space-y-2 flex flex-col justify-center">
+                            <div>
+                              <span className="text-[11px] text-[#c8f560] font-bold uppercase tracking-wider">
+                                {trackGenre || "Pop"}
+                              </span>
+                              <h4 className="text-base sm:text-lg font-bold text-white truncate">
+                                {trackTitle}
+                              </h4>
+                              <p className="text-white/80 font-medium">
+                                {trackFeaturedArtistLabel()}
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10 text-[11px]">
+                              <div>
+                                <span className="text-white/50 block">Rencana Rilis:</span>
+                                <span className="text-white/90 font-medium">{formattedReleaseDate}</span>
+                              </div>
+                              <div>
+                                <span className="text-white/50 block">TikTok Clip:</span>
+                                <span className="text-white/90 font-medium">{formattedTiktokClip}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Audio Details & Player */}
+                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-white font-medium truncate">
+                              <Music className="w-4 h-4 text-[#c8f560] shrink-0" />
+                              <span className="truncate">{audioFileName}</span>
+                              {audioFileSize && <span className="text-white/60">• {audioFileSize}</span>}
+                            </div>
+                            <span className="text-[11px] text-[#c8f560] shrink-0 font-medium">
+                              {selectedAudioFile ? "Siap Diunggah" : "Tersimpan"}
+                            </span>
+                          </div>
+                          {(localAudioPreviewUrl || audioFileUrl) && (
+                            <audio
+                              controls
+                              src={localAudioPreviewUrl || audioFileUrl}
+                              className="w-full h-8 rounded-lg outline-none"
+                            />
+                          )}
+                        </div>
+
+                        {/* Selected Platforms */}
+                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-xs flex flex-wrap items-center gap-2">
+                          <span className="text-white/60 mr-1 flex items-center gap-1">
+                            <Globe className="w-3.5 h-3.5 text-[#c8f560]" />
+                            <span>Distribusi:</span>
+                          </span>
+                          {selectedPlatforms.map((plat) => (
+                            <span
+                              key={plat}
+                              className="px-2.5 py-1 rounded-full bg-white/10 text-white font-medium border border-white/15"
+                            >
+                              {plat}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Real-time Progress Bar & Status */}
+                        {reviewSubmitting && (
+                          <div className="p-4 rounded-2xl bg-[#312042]/90 border border-[#c8f560]/40 text-xs space-y-2">
+                            <div className="flex items-center gap-2 text-[#c8f560] font-semibold">
+                              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                              <span>{reviewStatusStep || "Sedang memproses upload dan validasi..."}</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-[#c8f560] h-full w-full animate-pulse" />
+                            </div>
+                            <p className="text-[11px] text-white/65">
+                              Jangan tutup browser saat proses pengunggahan master audio sedang berjalan.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Error Alert Box */}
+                        {reviewError && (
+                          <div className="p-4 rounded-2xl bg-red-950/60 border border-red-500/40 text-xs space-y-2 text-red-200">
+                            <div className="flex items-center gap-2 font-bold text-red-400">
+                              <AlertCircle className="w-4 h-4 shrink-0" />
+                              <span>Proses Upload Mengalami Kendala</span>
+                            </div>
+                            <p className="text-[11px] text-red-300 leading-relaxed font-mono">
+                              {reviewError}
+                            </p>
+                            <p className="text-[11px] text-white/70">
+                              Tips: Pastikan file audio berformat WAV / MP3 / FLAC dan koneksi internet stabil. Anda dapat langsung mengklik tombol "Coba Lagi".
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Modal Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-white/10">
+                          <button
+                            type="button"
+                            disabled={reviewSubmitting}
+                            onClick={() => setShowReviewModal(false)}
+                            className="w-full sm:w-auto px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all disabled:opacity-50"
+                          >
+                            Batal / Periksa Kembali
+                          </button>
+                          <button
+                            type="button"
+                            disabled={reviewSubmitting}
+                            onClick={executeUploadAndSubmitRelease}
+                            className="w-full sm:w-auto px-7 py-3 rounded-full bg-[#c8f560] hover:bg-[#b5e050] text-[#312042] text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-60"
+                          >
+                            {reviewSubmitting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Mengunggah...</span>
+                              </>
+                            ) : reviewError ? (
+                              <>
+                                <RefreshCw className="w-4 h-4" />
+                                <span>Coba Lagi Upload & Submit</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Kirim Rilisan Sekarang</span>
+                                <ArrowRight className="w-4 h-4" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -143,6 +143,62 @@ export async function generatePresignedUploadUrl({
 }
 
 /**
+ * Upload Buffer directly from server to Cloudflare R2 (Node backend bypasses browser CORS)
+ */
+export async function uploadBufferToR2({
+  buffer,
+  fileName,
+  contentType,
+  userId,
+  fileType,
+}: {
+  buffer: Buffer;
+  fileName: string;
+  contentType: string;
+  userId?: string;
+  fileType?: "audio" | "cover" | "general";
+}) {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  const cleanBase = fileName
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .substring(0, 60);
+
+  const isAudio =
+    fileType === "audio" ||
+    ["mp3", "wav", "flac", "aac", "m4a", "ogg", "aif", "aiff"].includes(ext) ||
+    contentType.startsWith("audio/");
+
+  const isCover =
+    fileType === "cover" ||
+    ["jpg", "jpeg", "png", "webp"].includes(ext) ||
+    contentType.startsWith("image/");
+
+  const subFolder = isAudio ? "audio" : isCover ? "covers" : "media";
+  const userSegment = userId ? userId.replace(/[^a-zA-Z0-9_-]/g, "") : "anonymous";
+  const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const key = `releases/${userSegment}/${subFolder}/${uniqueId}-${cleanBase}.${ext}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType || (isAudio ? "audio/mpeg" : isCover ? "image/jpeg" : "application/octet-stream"),
+    })
+  );
+
+  const objectPublicUrl = `${publicUrl.replace(/\/$/, "")}/${key}`;
+  return {
+    key,
+    publicUrl: objectPublicUrl,
+    fileName: `${cleanBase}.${ext}`,
+    contentType,
+    size: buffer.length,
+  };
+}
+
+/**
  * Verify that an object exists in R2 and retrieve its size and metadata
  */
 export async function verifyUploadedObject(key: string) {
