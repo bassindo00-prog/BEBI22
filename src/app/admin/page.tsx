@@ -809,9 +809,16 @@ export default function AdminDashboardPage() {
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("overview");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                    >
                       <div className="w-3.5 h-6 rounded-full border-2 border-white" />
-                    </div>
+                    </button>
                     <div>
                       <span className="font-bold text-sm tracking-tight text-white block">BREAKOUT ADMIN</span>
                       <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Command Center</span>
@@ -881,13 +888,14 @@ export default function AdminDashboardPage() {
         {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
         <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
           <div className="flex flex-col items-center gap-10">
-            <Link
-              href="/"
-              title="Back to Landing Page"
-              className="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform"
+            <button
+              type="button"
+              onClick={() => setActiveTab("overview")}
+              title="Admin Command Overview"
+              className="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
             >
               <div className="w-4 h-7 rounded-full border-2 border-white" />
-            </Link>
+            </button>
 
             <nav className="flex flex-col items-center gap-3.5 mt-2">
               <button
@@ -1756,7 +1764,10 @@ export default function AdminDashboardPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-white truncate text-xs">
-                                {w.user?.name || "Artist Account"}
+                                {w.accountHolder || w.user?.name || "Artist Account"}
+                              </p>
+                              <p className="text-[10px] text-white/70 truncate">
+                                Artis: {w.user?.name || "-"}
                               </p>
                               <p className="text-[11px] text-[#c8f560] font-semibold">
                                 Rp {w.amount.toLocaleString("id-ID")} • {w.method}
@@ -2646,10 +2657,13 @@ export default function AdminDashboardPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate">
-                              {w.user?.name || "Artist Account"}
+                              {w.accountHolder || w.user?.name || "Artist Account"}
                             </h4>
                             <span className="text-[10px] text-white/50">{w.date}</span>
                           </div>
+                          <p className="text-[11px] text-white/70 truncate">
+                            Artis: {w.user?.name || "-"}
+                          </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="font-bold text-sm text-[#c8f560]">
                               Rp {w.amount.toLocaleString("id-ID")}

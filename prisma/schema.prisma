@@ -82,6 +82,7 @@ model Withdrawal {
   amount        Float
   method        String   // e.g. "Bank • BCA", "E-Wallet • OVO", "Bank • Mandiri"
   accountNumber String
+  accountHolder String   @default("")
   status        String   @default("Pending") // "Approved" | "Pending" | "Rejected"
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)

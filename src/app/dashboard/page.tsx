@@ -82,6 +82,7 @@ type WithdrawalItem = {
   amount: number;
   method: string;
   accountNumber: string;
+  accountHolder?: string;
   status: string;
 };
 
@@ -506,6 +507,7 @@ export default function UserDashboardPage() {
   // Withdrawal Form State
   const [withdrawMethod, setWithdrawMethod] = useState("Bank • BCA");
   const [accountNumber, setAccountNumber] = useState("1234 5678 9012 3456");
+  const [accountHolder, setAccountHolder] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [submittingWithdraw, setSubmittingWithdraw] = useState(false);
 
@@ -566,6 +568,7 @@ export default function UserDashboardPage() {
         setSettingsName(data.user.name || "Abdul");
         setSettingsEmail(data.user.email || "abdul@breakout.id");
         if (data.user.avatar) setSettingsAvatar(data.user.avatar);
+        setAccountHolder((prev) => prev || data.user.name || "");
       }
       // Also fetch messages for inbox
       const msgRes = await fetch("/api/messages");
@@ -762,6 +765,11 @@ export default function UserDashboardPage() {
       return;
     }
 
+    if (!accountHolder.trim()) {
+      showNotice("Mohon masukkan nama pemilik rekening bank (sesuai buku tabungan / KTP).");
+      return;
+    }
+
     setSubmittingWithdraw(true);
     try {
       const res = await fetch("/api/withdrawals", {
@@ -770,6 +778,7 @@ export default function UserDashboardPage() {
         body: JSON.stringify({
           method: withdrawMethod,
           accountNumber,
+          accountHolder: accountHolder.trim(),
           amount: amountNum,
         }),
       });
@@ -904,9 +913,17 @@ export default function UserDashboardPage() {
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("overview");
+                        setMobileMenuOpen(false);
+                      }}
+                      title="Dashboard Overview"
+                      className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                    >
                       <div className="w-3.5 h-6 rounded-full border-2 border-white" />
-                    </div>
+                    </button>
                     <div>
                       <span className="font-bold text-sm tracking-tight text-white block">BREAKOUT</span>
                       <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Artist Studio</span>
@@ -990,13 +1007,14 @@ export default function UserDashboardPage() {
         <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
           {/* Top Logo Circle */}
           <div className="flex flex-col items-center gap-10">
-            <Link
-              href="/"
-              title="Back to Landing Page"
-              className="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform"
+            <button
+              type="button"
+              onClick={() => setActiveTab("overview")}
+              title="Dashboard Overview"
+              className="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
             >
               <div className="w-4 h-7 rounded-full border-2 border-white" />
-            </Link>
+            </button>
 
             {/* Navigation Pill Icons */}
             <nav className="flex flex-col items-center gap-3.5 mt-2">
@@ -3710,7 +3728,12 @@ export default function UserDashboardPage() {
                               )}
                             </div>
                             <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                              <span className="text-white/60 text-[11px]">{w.date}</span>
+                              <div>
+                                <span className="text-white/60 text-[11px] block">{w.date}</span>
+                                {w.accountHolder && (
+                                  <span className="text-[10px] text-white/80">A/N: {w.accountHolder}</span>
+                                )}
+                              </div>
                               <span className="font-bold text-sm text-[#c8f560]">
                                 Rp {w.amount.toLocaleString("id-ID")}
                               </span>
@@ -3744,7 +3767,12 @@ export default function UserDashboardPage() {
                               key={w.id}
                               className="grid grid-cols-12 items-center py-4 text-xs"
                             >
-                              <div className="col-span-3 font-medium text-white/90">{w.date}</div>
+                              <div className="col-span-3">
+                                <span className="font-medium text-white/90 block">{w.date}</span>
+                                {w.accountHolder && (
+                                  <span className="text-[10px] text-white/70">A/N: {w.accountHolder}</span>
+                                )}
+                              </div>
                               <div className="col-span-3 text-center font-bold text-[#c8f560]">
                                 Rp {w.amount.toLocaleString("id-ID")}
                               </div>
@@ -3825,11 +3853,30 @@ export default function UserDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-white/75 mb-1">Account Number</label>
+                      <label className="block text-white/75 mb-1">
+                        Nama Pemilik Rekening Bank <span className="text-[#c8f560] text-[11px] font-normal">(Sesuai Buku Tabungan / KTP)</span>
+                      </label>
                       <input
                         type="text"
+                        required
+                        value={accountHolder}
+                        onChange={(e) => setAccountHolder(e.target.value)}
+                        placeholder="Contoh: Budi Santoso"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 font-medium text-white focus:outline-none focus:border-[#c8f560] placeholder-white/35"
+                      />
+                      <p className="text-[10px] text-white/60 mt-1">
+                        *Nama asli pemilik rekening (bisa berbeda dari nama panggung artis).
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-white/75 mb-1">Nomor Rekening / No. HP E-Wallet</label>
+                      <input
+                        type="text"
+                        required
                         value={accountNumber}
                         onChange={(e) => setAccountNumber(e.target.value)}
+                        placeholder="Contoh: 1234 5678 9012"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 font-medium text-white focus:outline-none focus:border-[#c8f560]"
                       />
                     </div>

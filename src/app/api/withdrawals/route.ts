@@ -69,6 +69,7 @@ export async function POST(req: Request) {
           amount,
           method: body.method || "Bank • BCA",
           accountNumber: body.accountNumber || "1234 5678 9012 3456",
+          accountHolder: body.accountHolder ? String(body.accountHolder).trim() : (user.name || ""),
           status: "Pending",
           userId,
         },

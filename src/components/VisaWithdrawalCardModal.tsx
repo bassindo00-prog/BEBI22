@@ -21,6 +21,7 @@ type WithdrawalData = {
   amount: number;
   method: string;
   accountNumber: string;
+  accountHolder?: string;
   status: string;
   user?: {
     id?: string;
@@ -206,14 +207,14 @@ export default function VisaWithdrawalCardModal({
             {/* Bottom Row: Cardholder Name + Request Date + Status Badge */}
             <div className="relative z-10 mt-5 pt-3 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div>
-                <p className="text-[9px] uppercase tracking-wider text-white/60">
-                  Nama Pemilik Rekening / Artis
+                <p className="text-[9px] uppercase tracking-wider text-[#c8f560] font-semibold">
+                  Nama Pemilik Rekening Bank
                 </p>
                 <p className="font-bold text-white uppercase tracking-wider text-sm mt-0.5">
-                  {withdrawal.user?.name || "ARTIST ACCOUNT"}
+                  {withdrawal.accountHolder || withdrawal.user?.name || "PEMILIK REKENING"}
                 </p>
-                <p className="text-[10px] text-white/70 lowercase font-mono">
-                  {withdrawal.user?.email || "artist@breakout.id"}
+                <p className="text-[10px] text-white/70">
+                  Akun Artis: {withdrawal.user?.name || "Artist"} • <span className="font-mono text-white/60 lowercase">{withdrawal.user?.email || "artist@breakout.id"}</span>
                 </p>
               </div>
 
@@ -247,6 +248,16 @@ export default function VisaWithdrawalCardModal({
 
         {/* Detailed Breakdown Box */}
         <div className="relative z-10 bg-white/10 border border-white/15 rounded-2xl p-4 text-xs space-y-2 mb-6">
+          <div className="flex items-center justify-between text-white/80">
+            <span>Nama Pemilik Rekening:</span>
+            <span className="font-bold text-[#c8f560] text-sm">
+              {withdrawal.accountHolder || withdrawal.user?.name || "-"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-white/80">
+            <span>Nama Artis / User Akun:</span>
+            <span className="font-semibold text-white">{withdrawal.user?.name || "-"}</span>
+          </div>
           <div className="flex items-center justify-between text-white/80">
             <span>Metode Pembayaran:</span>
             <span className="font-semibold text-white">{withdrawal.method}</span>
