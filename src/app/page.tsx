@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Disc,
   Play,
@@ -297,13 +298,11 @@ export default function App() {
   // State FAQ
   const [openFaq, setOpenFaq] = useState(0);
 
-  // State Modal Auth & Modal Tambah Rilisan Prisma
-  const [authModal, setAuthModal] = useState({ open: false, mode: 'register' });
+  // State Modal Tambah Rilisan Prisma
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
   const [activeCodeTab, setActiveCodeTab] = useState('prisma');
   const [copiedCode, setCopiedCode] = useState(false);
-  const [formFeedback, setFormFeedback] = useState('');
 
   const fullHeroCopy =
     'Nggak perlu gabung major label buat masuk Spotify, Apple Music, atau TikTok. Di BREAKOUT.ID, master lagu tetap 100% punya lo, proses rilis nggak pakai drama, dan royalti cair langsung ke rekening BCA, Mandiri, atau GoPay.';
@@ -333,43 +332,6 @@ export default function App() {
     }, 160);
     return () => clearInterval(interval);
   }, [deckPlaying]);
-
-  // Handler Submit Registrasi Artis (Simulasi Server Action Prisma)
-  const handleArtistSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const bandOrArtist = (formData.get('bandOrArtist') as string) || 'Artis Independen';
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    try {
-      const endpoint = authModal.mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const body = authModal.mode === 'login' ? { email, password } : { name: bandOrArtist, email, password };
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        window.location.href = '/dashboard';
-        return;
-      }
-    } catch (_) {}
-
-    const newArtist = {
-      id: `cuid_${Date.now()}`,
-      bandOrArtist,
-      email,
-    };
-    setRegisteredArtists((prev) => [newArtist, ...prev]);
-    setFormFeedback(`[PRISMA INSERT OK] Record artis "${bandOrArtist}" tersimpan ke tabel ArtistUser.`);
-
-    setTimeout(() => {
-      setFormFeedback('');
-      setAuthModal({ open: false, mode: 'register' });
-      window.location.href = '/dashboard';
-    }, 1200);
-  };
 
   // Handler Tambah Rilisan ke Katalog (Simulasi prisma.release.create)
   const handleAddRelease = (e: React.FormEvent<HTMLFormElement>) => {
@@ -504,19 +466,19 @@ export default function App() {
 
             {/* Right Actions */}
             <div className="hidden md:flex items-center gap-3">
-              <button
-                onClick={() => setAuthModal({ open: true, mode: 'login' })}
+              <Link
+                href="/login"
                 className="px-4 py-2.5 font-mono-code text-xs uppercase text-[#F4F1EA] hover:text-[#FF4D1C] transition-colors"
               >
                 [Log Masuk]
-              </button>
+              </Link>
 
-              <button
-                onClick={() => setAuthModal({ open: true, mode: 'register' })}
+              <Link
+                href="/register"
                 className="px-5 py-2.5 bg-[#F4F1EA] text-[#0A0A09] font-mono-code font-bold text-xs uppercase tracking-wider hover:bg-[#FF4D1C] hover:text-[#F4F1EA] transition-colors"
               >
                 Upload Master →
-              </button>
+              </Link>
             </div>
 
             {/* Mobile Menu Trigger */}
@@ -549,24 +511,20 @@ export default function App() {
                 05. Kata Musisi
               </a>
               <div className="pt-4 border-t border-[#262623] flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setAuthModal({ open: true, mode: 'login' });
-                  }}
-                  className="w-full py-3 border border-[#262623] text-[#F4F1EA]"
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 border border-[#262623] text-[#F4F1EA] text-center"
                 >
                   Log Masuk Artis
-                </button>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setAuthModal({ open: true, mode: 'register' });
-                  }}
-                  className="w-full py-3 bg-[#FF4D1C] text-[#F4F1EA] font-bold"
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 bg-[#FF4D1C] text-[#F4F1EA] font-bold text-center"
                 >
                   Upload Master →
-                </button>
+                </Link>
               </div>
             </div>
           )}
@@ -600,13 +558,13 @@ export default function App() {
 
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
-                  <button
-                    onClick={() => setAuthModal({ open: true, mode: 'register' })}
+                  <Link
+                    href="/register"
                     className="px-8 py-4 bg-[#FF4D1C] text-[#F4F1EA] font-mono-code font-bold text-sm uppercase tracking-wider hover:bg-[#F4F1EA] hover:text-[#0A0A09] transition-colors hard-shadow flex items-center justify-center gap-3"
                   >
                     <span>Mulai Rilis Sekarang</span>
                     <ArrowUpRight className="w-5 h-5" />
-                  </button>
+                  </Link>
                   <a
                     href="#kalkulator"
                     className="px-6 py-4 bg-[#121210] border border-[#262623] text-[#F4F1EA] font-mono-code text-xs uppercase tracking-wider hover:border-[#F4F1EA] transition-colors flex items-center justify-center gap-2"
@@ -976,12 +934,12 @@ export default function App() {
                     Rp {(streams * selectedPlat.rate).toLocaleString('id-ID')}
                   </span>
                 </div>
-                <button
-                  onClick={() => setAuthModal({ open: true, mode: 'register' })}
-                  className="px-6 py-4 bg-[#F4F1EA] text-[#0A0A09] font-mono-code font-bold text-xs uppercase hover:bg-[#FF4D1C] hover:text-[#F4F1EA] transition-colors shrink-0"
+                <Link
+                  href="/register"
+                  className="px-6 py-4 bg-[#F4F1EA] text-[#0A0A09] font-mono-code font-bold text-xs uppercase hover:bg-[#FF4D1C] hover:text-[#F4F1EA] transition-colors shrink-0 text-center"
                 >
                   Upload Lagu →
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -1126,121 +1084,6 @@ export default function App() {
           </div>
         </footer>
       </div>
-
-      {/* ================= MODAL REGISTRASI / LOGIN ARTIS (FROSTED GLASS) ================= */}
-      {authModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-[420px] rounded-[32px] border border-white/40 bg-cover bg-center relative p-8 sm:p-10 text-white shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] overflow-hidden"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80')`,
-            }}
-          >
-            {/* Frosted Glass Blur Overlay */}
-            <div className="absolute inset-0 bg-slate-950/30 backdrop-blur-2xl" />
-
-            <div className="relative z-10">
-              <button
-                onClick={() => setAuthModal({ open: false, mode: 'register' })}
-                className="absolute -top-2 -right-2 w-8 h-8 rounded-full border border-white/40 bg-black/30 text-white/80 hover:text-white flex items-center justify-center text-xs"
-              >
-                ✕
-              </button>
-
-              <div className="mb-6">
-                <h3 className="text-3xl font-bold tracking-tight text-white mb-1.5">
-                  {authModal.mode === 'login' ? 'Login' : 'Signup'}
-                </h3>
-                <p className="text-xs text-white/80">
-                  {authModal.mode === 'login'
-                    ? 'Welcome back please login to your account'
-                    : 'Create your account to start releasing music'}
-                </p>
-              </div>
-
-              <form onSubmit={handleArtistSubmit} className="space-y-4 text-xs font-sans">
-                {authModal.mode !== 'login' && (
-                  <div className="relative">
-                    <input
-                      name="bandOrArtist"
-                      type="text"
-                      required
-                      placeholder="User Name / Artist"
-                      className="w-full px-5 py-3.5 pr-12 rounded-2xl border border-white/50 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 text-sm focus:outline-none focus:border-white focus:bg-white/15 transition-all"
-                    />
-                    <User className="w-5 h-5 text-white/80 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                )}
-
-                <div className="relative">
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="Email Address"
-                    className="w-full px-5 py-3.5 pr-12 rounded-2xl border border-white/50 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 text-sm focus:outline-none focus:border-white focus:bg-white/15 transition-all"
-                  />
-                  <Mail className="w-5 h-5 text-white/80 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-
-                <div className="relative">
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    placeholder="Password"
-                    className="w-full px-5 py-3.5 pr-12 rounded-2xl border border-white/50 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 text-sm focus:outline-none focus:border-white focus:bg-white/15 transition-all"
-                  />
-                  <Lock className="w-5 h-5 text-white/80 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#6b9eb8] to-[#457b9d] hover:from-[#7bb0ce] hover:to-[#508ea8] active:scale-[0.99] transition-all shadow-lg backdrop-blur-md mt-2"
-                >
-                  {authModal.mode === 'login' ? 'Login' : 'Signup'}
-                </button>
-
-                <div className="text-center pt-2 text-xs text-white/85">
-                  {authModal.mode === 'login' ? (
-                    <>
-                      Don't have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setAuthModal({ open: true, mode: 'register' })}
-                        className="font-bold text-white hover:underline"
-                      >
-                        Signup
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      Already have an account?{' '}
-                      <button
-                        type="button"
-                        onClick={() => setAuthModal({ open: true, mode: 'login' })}
-                        className="font-bold text-white hover:underline"
-                      >
-                        Login
-                      </button>
-                    </>
-                  )}
-                </div>
-              </form>
-
-              {formFeedback && (
-                <div className="mt-4 p-3 bg-white/10 border border-white/30 rounded-xl text-white text-xs">
-                  {formFeedback}
-                </div>
-              )}
-
-              <div className="text-center mt-6 pt-3 border-t border-white/10 text-[11px] text-white/60">
-                created by <span className="text-white font-semibold">BREAKOUT.ID</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ================= MODAL SIMULASI INSERT RILISAN PRISMA ================= */}
       {releaseModalOpen && (
