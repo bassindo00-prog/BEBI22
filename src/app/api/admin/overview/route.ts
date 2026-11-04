@@ -7,8 +7,9 @@ export async function GET() {
       prisma.user.findMany({
         orderBy: { createdAt: "desc" },
         include: {
+          artists: true,
           _count: {
-            select: { releases: true, withdrawals: true },
+            select: { releases: true, withdrawals: true, artists: true },
           },
         },
       }),

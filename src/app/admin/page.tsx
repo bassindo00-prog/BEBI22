@@ -39,6 +39,7 @@ import {
   Menu,
   Volume2,
   Globe,
+  Sparkles,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 import AdminLandingCMS from "@/components/AdminLandingCMS";
@@ -114,6 +115,8 @@ export default function AdminDashboardPage() {
   const [inputRoyaltyPending, setInputRoyaltyPending] = useState<number>(0);
   const [inputTotalStreams, setInputTotalStreams] = useState<number>(0);
   const [savingRoyalty, setSavingRoyalty] = useState(false);
+  const [grossRoyaltyInput, setGrossRoyaltyInput] = useState<number>(100000);
+  const [cutPercentage, setCutPercentage] = useState<number>(30);
 
   // Admin Settings State
   const [autoApproveVerified, setAutoApproveVerified] = useState(false);
@@ -169,19 +172,28 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch("/api/admin/overview");
       const data = await res.json();
-      if (data.users) {
-        setUsers(data.users);
-        if (!selectedUserForRoyalty && data.users.length > 0) {
-          const firstUser = data.users.find((u: any) => u.role !== "ADMIN") || data.users[0];
-          setSelectedUserForRoyalty(firstUser.id);
-          setInputRoyaltyBalance(firstUser.royaltyBalance || 0);
-          setInputRoyaltyPending(firstUser.royaltyPending || 0);
-          setInputTotalStreams(firstUser.totalStreams || 0);
-        }
-      }
+      if (data.users) setUsers(data.users);
       if (data.releases) setReleases(data.releases);
       if (data.withdrawals) setWithdrawals(data.withdrawals);
       if (data.catalogs) setCatalogs(data.catalogs);
+
+      if (data.users && data.releases) {
+        const appRels = (data.releases || []).filter((r: any) => r.status === "Approved");
+        const appArt = (data.users || []).filter(
+          (u: any) => u.role !== "ADMIN" && appRels.some((r: any) => r.userId === u.id)
+        );
+        const target =
+          appArt.find((u: any) => u.id === selectedUserForRoyalty) ||
+          appArt[0] ||
+          data.users.find((u: any) => u.role !== "ADMIN") ||
+          data.users[0];
+        if (target && !selectedUserForRoyalty) {
+          setSelectedUserForRoyalty(target.id);
+          setInputRoyaltyBalance(target.royaltyBalance || 0);
+          setInputRoyaltyPending(target.royaltyPending || 0);
+          setInputTotalStreams(target.totalStreams || 0);
+        }
+      }
 
       const msgRes = await fetch("/api/messages?admin=true");
       const msgData = await msgRes.json();
@@ -196,6 +208,17 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchAdminData();
   }, []);
+
+  // Calculate Royalty with percentage deduction
+  const updateRoyaltyCalc = (newGross: number, newCutPercent: number) => {
+    const gross = Math.max(0, newGross);
+    const cutPct = Math.min(100, Math.max(0, newCutPercent));
+    setGrossRoyaltyInput(gross);
+    setCutPercentage(cutPct);
+    const calculatedCut = Math.round(gross * (cutPct / 100));
+    const net = Math.max(0, gross - calculatedCut);
+    setInputRoyaltyBalance(net);
+  };
 
   // When selected user changes for royalty input
   const handleSelectUserChange = (uId: string) => {
@@ -476,13 +499,22 @@ export default function AdminDashboardPage() {
     .filter((w) => w.status === "Approved")
     .reduce((acc, w) => acc + Number(w.amount || 0), 0);
 
-  // Filter artis yang sudah pernah submit / rilis lagu saja yang tampil di Daftar Artis Admin
-  const releasedArtists = users.filter(
+  // Helper to extract artist display name (prefer registered Artist profile over generic account name)
+  const getArtistDisplayName = (u: any) => {
+    if (!u) return "Artis";
+    if (u.artists && u.artists.length > 0 && u.artists[0]?.name) {
+      return u.artists[0].name;
+    }
+    return u.name || "Artis";
+  };
+
+  // Filter artis yang sudah creat new artis & sudah punya rilisan lagu ACC (Approved)
+  const approvedArtists = users.filter(
     (u) =>
       u.role !== "ADMIN" &&
-      ((u._count?.releases && u._count.releases > 0) ||
-        releases.some((r) => r.userId === u.id))
+      approvedReleases.some((r) => r.userId === u.id)
   );
+  const releasedArtists = approvedArtists;
 
   const totalGlobalStreams = users.reduce((acc, u) => acc + (u.totalStreams || 0), 0);
   const totalGlobalRoyalty = users.reduce((acc, u) => acc + (u.royaltyBalance || 0), 0);
@@ -2310,28 +2342,161 @@ export default function AdminDashboardPage() {
                     </span>
                   </div>
 
-                  {/* Pilih User Tujuan */}
+                  {/* Pilih User / Artis Tujuan (Hanya yang sudah ACC & Tanpa Email) */}
                   <div>
-                    <label className="block text-white/75 text-xs mb-1">
-                      Pilih Akun Artis / User:
+                    <label className="block text-white/80 text-xs font-semibold mb-1">
+                      Pilih Akun Artis (Hanya yang Memiliki Rilisan Lagu ACC):
                     </label>
                     <select
                       value={selectedUserForRoyalty}
                       onChange={(e) => handleSelectUserChange(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs font-semibold focus:outline-none focus:border-[#c8f560]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs font-bold focus:outline-none focus:border-[#c8f560]"
                     >
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id} className="bg-[#312042]">
-                          {u.name} — {u.email} ({u.role})
+                      {approvedArtists.length === 0 ? (
+                        <option value="" disabled className="bg-[#312042]">
+                          Belum ada artis dengan lagu yang berstatus ACC
                         </option>
-                      ))}
+                      ) : (
+                        approvedArtists.map((u) => (
+                          <option key={u.id} value={u.id} className="bg-[#312042]">
+                            {getArtistDisplayName(u)}
+                          </option>
+                        ))
+                      )}
                     </select>
+                    <p className="text-[10px] text-white/60 mt-1">
+                      *Menampilkan hanya nama panggung / profil artis yang rilisannya telah disetujui (ACC).
+                    </p>
+                  </div>
+
+                  {/* Kalkulator Potongan Royalti Otomatis (%) */}
+                  <div className="p-4 rounded-2xl bg-black/25 border border-white/15 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                      <span className="text-xs font-bold text-[#c8f560] flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Kalkulator Potongan Royalti (%)
+                      </span>
+                      <span className="text-[10px] text-white/60">
+                        Otomatis Memotong Saldo Bersih
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      {/* 1. Nominal Royalti Kotor */}
+                      <div>
+                        <label className="block text-white/80 font-medium mb-1">
+                          Nominal Royalti Kotor (Gross Rp)
+                        </label>
+                        <div className="flex items-center px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
+                          <span className="text-[#c8f560] font-bold text-xs mr-2">Rp</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="100.000"
+                            value={formatNumberWithDots(grossRoyaltyInput)}
+                            onChange={(e) => {
+                              const val = parseFormattedNumber(e.target.value);
+                              updateRoyaltyCalc(val, cutPercentage);
+                            }}
+                            className="w-full bg-transparent text-white font-bold text-sm focus:outline-none placeholder-white/40"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 2. Potongan Persen */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-white/80 font-medium">
+                            Potongan Royalti Label (%)
+                          </label>
+                          <span className="text-[10px] text-[#c8f560] font-semibold">
+                            {cutPercentage}% Terpotong
+                          </span>
+                        </div>
+                        <div className="flex items-center px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="30"
+                            value={cutPercentage === 0 ? "" : cutPercentage}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              updateRoyaltyCalc(grossRoyaltyInput, val);
+                            }}
+                            className="w-full bg-transparent text-white font-bold text-sm focus:outline-none placeholder-white/40"
+                          />
+                          <span className="text-white/70 font-bold text-xs ml-1">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preset Tombol Cepat Gross & Persen */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px]">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-white/60 text-[10px]">Pilih %:</span>
+                        {[0, 10, 20, 30, 50, 70].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => updateRoyaltyCalc(grossRoyaltyInput, pct)}
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors ${
+                              cutPercentage === pct
+                                ? "bg-[#c8f560] text-[#312042]"
+                                : "bg-white/15 hover:bg-white/25 text-white"
+                            }`}
+                          >
+                            {pct}%
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-white/60 text-[10px]">Nominal:</span>
+                        {[100000, 500000, 1000000, 5000000].map((bonus) => (
+                          <button
+                            key={bonus}
+                            type="button"
+                            onClick={() => updateRoyaltyCalc(bonus, cutPercentage)}
+                            className="px-2 py-0.5 rounded-lg bg-white/15 hover:bg-white/25 text-[10px] font-medium text-white transition-colors"
+                          >
+                            Rp {(bonus / 1000).toLocaleString("id-ID")}K
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Rincian Potongan Live Card */}
+                    <div className="p-3 rounded-xl bg-white/10 border border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-white/60 block">Nominal Kotor:</span>
+                        <span className="font-semibold text-white">
+                          Rp {grossRoyaltyInput.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-[10px] text-red-300 block">
+                          Potongan ({cutPercentage}%):
+                        </span>
+                        <span className="font-semibold text-red-300">
+                          - Rp {Math.round(grossRoyaltyInput * (cutPercentage / 100)).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-[#c8f560] font-bold block">
+                          Saldo Bersih Artis (Net):
+                        </span>
+                        <span className="font-extrabold text-sm text-[#c8f560]">
+                          Rp {Math.max(0, grossRoyaltyInput - Math.round(grossRoyaltyInput * (cutPercentage / 100))).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
                       <label className="block text-white/75 mb-1">
-                        Royalty Balance (Rp)
+                        Royalty Balance Bersih (Rp)
                       </label>
                       <div className="flex items-center px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
                         <span className="text-[#c8f560] font-bold text-xs mr-2">Rp</span>
@@ -2344,7 +2509,7 @@ export default function AdminDashboardPage() {
                           className="w-full bg-transparent text-white font-bold text-sm focus:outline-none placeholder-white/40"
                         />
                       </div>
-                      <span className="text-[10px] text-white/60">Saldo siap ditarik</span>
+                      <span className="text-[10px] text-[#c8f560]">Saldo bersih siap ditarik</span>
                     </div>
 
                     <div>
@@ -2383,40 +2548,32 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  {/* Tombol Shortcut Tambah Royalti Cepat */}
-                  <div className="pt-1">
-                    <span className="text-[11px] text-white/70 block mb-1.5">
-                      Shortcut Tambah Saldo:
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {[100000, 500000, 1000000, 5000000].map((bonus) => (
-                        <button
-                          key={bonus}
-                          type="button"
-                          onClick={() => setInputRoyaltyBalance((prev) => prev + bonus)}
-                          className="px-3 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-xs font-semibold text-white transition-colors"
-                        >
-                          +Rp {bonus.toLocaleString("id-ID")}
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setInputTotalStreams((prev) => prev + 100000)}
-                        className="px-3 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-xs font-semibold text-white transition-colors"
-                      >
-                        +100K Streams
-                      </button>
-                    </div>
-                  </div>
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const net = Math.max(0, grossRoyaltyInput - Math.round(grossRoyaltyInput * (cutPercentage / 100)));
+                        const curr = users.find((u) => u.id === selectedUserForRoyalty);
+                        const curBal = Number(curr?.royaltyBalance || 0);
+                        setInputRoyaltyBalance(curBal + net);
+                        showNotice(`+Rp ${net.toLocaleString("id-ID")} ditambahkan ke saldo berjalan artis!`);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-medium text-xs transition-colors flex items-center gap-1.5"
+                    >
+                      <span>+ Tambah ke Saldo Berjalan</span>
+                    </button>
 
-                  <div className="pt-3 flex justify-end">
                     <button
                       type="submit"
-                      disabled={savingRoyalty}
+                      disabled={savingRoyalty || !selectedUserForRoyalty}
                       className="px-6 py-2.5 rounded-xl bg-[#c8f560] hover:opacity-90 text-[#312042] font-bold text-xs flex items-center gap-2 shadow"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>{savingRoyalty ? "Menyimpan..." : "Simpan ke User Ini"}</span>
+                      <span>
+                        {savingRoyalty
+                          ? "Menyimpan..."
+                          : `Input Saldo Rp ${inputRoyaltyBalance.toLocaleString("id-ID")}`}
+                      </span>
                     </button>
                   </div>
                 </form>
@@ -2429,7 +2586,8 @@ export default function AdminDashboardPage() {
                     </h3>
                     {(() => {
                       const curr = users.find((u) => u.id === selectedUserForRoyalty);
-                      if (!curr) return <p className="text-xs text-white/70">Pilih artis</p>;
+                      if (!curr) return <p className="text-xs text-white/70">Pilih artis dengan rilisan ACC</p>;
+                      const accSongsCount = approvedReleases.filter((r) => r.userId === curr.id).length;
                       return (
                         <div className="space-y-3 text-xs">
                           <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/10">
@@ -2438,21 +2596,36 @@ export default function AdminDashboardPage() {
                                 curr.avatar ||
                                 "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
                               }
-                              alt={curr.name}
+                              alt={getArtistDisplayName(curr)}
                               className="w-12 h-12 rounded-full object-cover border border-white/20"
                             />
                             <div>
-                              <p className="font-bold text-white text-sm">{curr.name}</p>
-                              <p className="text-white/70 text-[11px]">{curr.email}</p>
+                              <p className="font-bold text-white text-base">{getArtistDisplayName(curr)}</p>
                               <span className="inline-block mt-0.5 px-2 py-0.5 rounded bg-[#312042] text-[#c8f560] text-[10px] font-bold">
-                                {curr.role}
+                                {accSongsCount} Lagu Rilis ACC • Terverifikasi
                               </span>
+                            </div>
+                          </div>
+
+                          {/* Live Calculation Preview Card */}
+                          <div className="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1.5 text-xs">
+                            <div className="flex justify-between text-white/70">
+                              <span>Nominal Kotor:</span>
+                              <span className="font-semibold text-white">Rp {grossRoyaltyInput.toLocaleString("id-ID")}</span>
+                            </div>
+                            <div className="flex justify-between text-red-300">
+                              <span>Potongan ({cutPercentage}%):</span>
+                              <span className="font-semibold">- Rp {Math.round(grossRoyaltyInput * (cutPercentage / 100)).toLocaleString("id-ID")}</span>
+                            </div>
+                            <div className="flex justify-between text-[#c8f560] font-bold pt-1 border-t border-white/10">
+                              <span>Saldo Bersih yang Masuk:</span>
+                              <span>Rp {inputRoyaltyBalance.toLocaleString("id-ID")}</span>
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2 text-center">
                             <div className="p-3 rounded-xl bg-white/10">
-                              <p className="text-white/60 text-[10px]">Saldo Royalti</p>
+                              <p className="text-white/60 text-[10px]">Saldo di Akun Saat Ini</p>
                               <p className="font-bold text-base text-[#c8f560]">
                                 Rp {Number(curr.royaltyBalance || 0).toLocaleString("id-ID")}
                               </p>
@@ -2751,17 +2924,17 @@ export default function AdminDashboardPage() {
                             u.avatar ||
                             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
                           }
-                          alt={u.name}
+                          alt={getArtistDisplayName(u)}
                           className="w-11 h-11 rounded-full object-cover border border-white/30 shrink-0"
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm text-white truncate">{u.name}</p>
+                            <p className="font-bold text-sm text-white truncate">{getArtistDisplayName(u)}</p>
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#312042] text-[#c8f560] shrink-0">
-                              {u._count?.releases || 1} Rilisan
+                              {approvedReleases.filter(r => r.userId === u.id).length} Rilisan ACC
                             </span>
                           </div>
-                          <p className="text-white/75 truncate text-[11px]">{u.email}</p>
+                          <p className="text-[#c8f560] truncate text-[11px] font-medium">Artis Terverifikasi</p>
                         </div>
                       </div>
 
