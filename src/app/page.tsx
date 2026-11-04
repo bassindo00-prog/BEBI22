@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ALL_DSP_PLATFORMS } from '@/lib/dspPlatforms';
 import {
   Disc,
   Play,
@@ -112,23 +113,8 @@ const INITIAL_TESTIMONIALS = [
   },
 ];
 
-const DSP_ROW_1 = [
-  { name: 'SPOTIFY', badge: 'VERIFIED', desc: 'Audio + Canvas + Musixmatch Lyrics', color: '#1DB954' },
-  { name: 'APPLE MUSIC & iTUNES', badge: '24-BIT', desc: 'Lossless ALAC & Dolby Atmos Ready', color: '#F4F1EA' },
-  { name: 'TIKTOK & CAPCUT', badge: 'VIRAL SOUND', desc: 'Monetisasi Pemakaian Video Kreator', color: '#00F2FE' },
-  { name: 'YOUTUBE MUSIC', badge: 'CONTENT ID', desc: 'OAC (Official Artist Channel) & Shorts', color: '#FF0000' },
-  { name: 'INSTAGRAM & FACEBOOK', badge: 'META', desc: 'Stiker Musik Story & Audio Reels', color: '#E1306C' },
-  { name: 'SOUNDCLOUD GO+', badge: 'DIRECT', desc: 'Fan-Powered Royalties', color: '#FF5500' },
-];
-
-const DSP_ROW_2 = [
-  { name: 'LANGITMUSIK & TREBEL', desc: 'Jaringan Streaming Lokal Indonesia', color: '#FF4D1C' },
-  { name: 'TIDAL HI-FI', desc: 'Master Studio Quality Stream', color: '#00FFFF' },
-  { name: 'DEEZER', desc: 'FLAC High Fidelity Global', color: '#A238FF' },
-  { name: 'BEATPORT & TRAXSOURCE', desc: 'Khusus Rilisan Elektronik / Club / DJ', color: '#D4FF33' },
-  { name: 'AMAZON MUSIC', desc: 'HD Streaming & Alexa Voice', color: '#00A8E1' },
-  { name: 'SHAZAM & SIRI', desc: 'Audio Fingerprinting Otomatis', color: '#0088FF' },
-];
+const DSP_ROW_1 = ALL_DSP_PLATFORMS.slice(0, 28);
+const DSP_ROW_2 = ALL_DSP_PLATFORMS.slice(28);
 
 // ============================================================================
 // KODE FULL-STACK NEXT.JS + PRISMA UNTUK DI-COPAS USER
@@ -697,17 +683,17 @@ export default function App() {
           </div>
         </section>
 
-        {/* ================= ANIMASI PLATFORM BERJALAN (DUAL MARQUEE) ================= */}
+        {/* ================= ANIMASI PLATFORM BERJALAN (DUAL MARQUEE 50+ DSPs) ================= */}
         <section id="dsp-ticker" className="border-b border-[#262623] bg-[#121210] relative overflow-hidden">
           <div className="w-full px-4 sm:px-8 lg:px-12 py-4 border-b border-[#262623] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2 font-mono-code text-xs">
               <span className="px-2 py-0.5 bg-[#FF4D1C] text-[#F4F1EA] font-bold">LIVE FEED</span>
               <span className="text-[#F4F1EA] uppercase">
-                KONEKSI LANGSUNG KE 150+ DIGITAL SERVICE PROVIDERS (DSP)
+                JARINGAN RESMI 50+ DIGITAL SERVICE PROVIDERS (DSP) GLOBAL & ASIA
               </span>
             </div>
             <span className="font-mono-code text-[11px] text-[#8E8D8A]">
-              ARAHKAN KURSOR UNTUK BERHENTI
+              ARAHKAN KURSOR UNTUK BERHENTI • LOGO RESMI GOOGLE VERIFIKASI
             </span>
           </div>
 
@@ -717,19 +703,28 @@ export default function App() {
               {[...DSP_ROW_1, ...DSP_ROW_1].map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 px-8 py-5 border-r border-[#262623] hover:bg-[#121210] transition-colors"
+                  className="flex items-center gap-3.5 px-6 py-4 border-r border-[#262623] hover:bg-[#121210] transition-colors shrink-0"
                 >
-                  <Disc className="w-6 h-6 shrink-0" style={{ color: item.color }} />
+                  <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img
+                      src={item.logoUrl}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-display font-bold text-[#F4F1EA] text-sm">
                         {item.name}
                       </span>
-                      <span className="font-mono-code text-[10px] px-1.5 py-0.5 bg-[#262623] text-[#D4FF33]">
-                        {item.badge}
-                      </span>
+                      {item.badge && (
+                        <span className="font-mono-code text-[10px] px-1.5 py-0.5 bg-[#262623] text-[#D4FF33]">
+                          {item.badge}
+                        </span>
+                      )}
                     </div>
-                    <p className="font-mono-code text-[11px] text-[#8E8D8A]">{item.desc}</p>
+                    <p className="font-mono-code text-[11px] text-[#8E8D8A] truncate max-w-[240px]">{item.sub}</p>
                   </div>
                 </div>
               ))}
@@ -742,14 +737,28 @@ export default function App() {
               {[...DSP_ROW_2, ...DSP_ROW_2].map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 px-8 py-5 border-r border-[#262623] hover:bg-[#121210] transition-colors"
+                  className="flex items-center gap-3.5 px-6 py-4 border-r border-[#262623] hover:bg-[#121210] transition-colors shrink-0"
                 >
-                  <Radio className="w-6 h-6 shrink-0" style={{ color: item.color }} />
+                  <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/20 p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img
+                      src={item.logoUrl}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                   <div>
-                    <span className="font-display font-bold text-[#F4F1EA] text-sm block">
-                      {item.name}
-                    </span>
-                    <p className="font-mono-code text-[11px] text-[#8E8D8A]">{item.desc}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-bold text-[#F4F1EA] text-sm">
+                        {item.name}
+                      </span>
+                      {item.badge && (
+                        <span className="font-mono-code text-[10px] px-1.5 py-0.5 bg-[#262623] text-[#D4FF33]">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-mono-code text-[11px] text-[#8E8D8A] truncate max-w-[240px]">{item.sub}</p>
                   </div>
                 </div>
               ))}

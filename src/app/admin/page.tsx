@@ -806,7 +806,7 @@ export default function AdminDashboardPage() {
                   {[
                     { id: "overview", label: "Admin Overview", icon: Home },
                     { id: "releases", label: `Moderate Releases (${releases.length})`, icon: Disc3 },
-                    { id: "catalog", label: `Kelola Katalog (${catalogs.length})`, icon: ListMusic },
+                    { id: "catalog", label: `Daftar Katalog (${catalogs.length})`, icon: ListMusic },
                     { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
                     { id: "withdrawals", label: `Payouts & VISA ACC (${withdrawals.length})`, icon: Wallet },
                     { id: "inbox", label: "Inbox & Broadcast", icon: Mail },
@@ -890,7 +890,7 @@ export default function AdminDashboardPage() {
               {/* Dedicated Catalog Menu Button */}
               <button
                 onClick={() => setActiveTab("catalog")}
-                title="Kelola & Upload Katalog Musik"
+                title="Daftar Katalog Musik"
                 className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
                   activeTab === "catalog"
                     ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
@@ -1789,238 +1789,18 @@ export default function AdminDashboardPage() {
                     <span className="p-2 rounded-xl bg-[#c8f560] text-[#312042] shadow-md">
                       <ListMusic className="w-5 h-5" />
                     </span>
-                    <span>Upload & Manajemen Katalog Musik</span>
+                    <span>Daftar Katalog Musik</span>
                   </h2>
                   <p className="text-xs text-white/75 mt-1">
-                    Upload lagu baru lengkap dengan SONG ID, Vokal/Artis, Publisher, Status, serta Tautan YouTube & Google Drive (Otomatis tampil di akun User)
+                    Daftar seluruh lagu musisi yang terdaftar dalam katalog distribusi BREAKOUT.ID. (Form unggah lagu hanya tersedia di akun Artis / User)
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setBulkMode(!bulkMode)}
-                    className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-semibold flex items-center gap-2 transition-all"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-[#c8f560]" />
-                    <span>{bulkMode ? "Mode Form Satuan" : "Mode Upload Massal (CSV)"}</span>
-                  </button>
                   <span className="px-3.5 py-2 rounded-xl bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-xs font-bold">
                     {catalogs.length} Lagu Terdaftar
                   </span>
                 </div>
-              </div>
-
-              {/* Upload Form (Single or Bulk) */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {bulkMode ? (
-                  /* Bulk Upload Mode */
-                  <div className={`lg:col-span-12 ${ROYALTY_CARD} space-y-4`}>
-                    <div className="pb-3 border-b border-white/15 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-white flex items-center gap-2">
-                        <FileSpreadsheet className="w-4 h-4 text-[#c8f560]" />
-                        <span>Upload Massal Katalog Musik (Format CSV / Tab-Separated)</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setBulkCsvText(
-                            `HRM-ID-0201,Golden Sunrise,Abdul,HERMES Publishing,Aktif,https://youtube.com/watch?v=sample1,https://drive.google.com/sample1\nHRM-ID-0202,Echoes of Tomorrow,Sarah Lynn,Sony Music / HERMES,Aktif,https://youtube.com/watch?v=sample2,https://drive.google.com/sample2\nHRM-ID-0203,Neon Cyberpunk,Luxoa Studio,Warner Chappell,Review,https://youtube.com/watch?v=sample3,https://drive.google.com/sample3`
-                          )
-                        }
-                        className="text-xs text-[#c8f560] underline font-medium hover:text-white"
-                      >
-                        Isi Contoh Format
-                      </button>
-                    </div>
-
-                    <p className="text-xs text-white/70">
-                      Format baris: <code className="bg-black/30 px-2 py-0.5 rounded text-[#c8f560]">SONG_ID, JUDUL_LAGU, VOKAL_ARTIS, PUBLISHER, STATUS, LINK_YT, LINK_DRIVE</code> (1 baris per lagu).
-                    </p>
-
-                    <textarea
-                      rows={6}
-                      value={bulkCsvText}
-                      onChange={(e) => setBulkCsvText(e.target.value)}
-                      placeholder="Paste baris data katalog di sini..."
-                      className="w-full px-4 py-3 rounded-2xl bg-white/15 border border-white/25 text-white font-mono text-xs placeholder:text-white/40 focus:outline-none focus:border-[#c8f560]"
-                    />
-
-                    <div className="flex justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setBulkMode(false)}
-                        className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-medium"
-                      >
-                        Batal
-                      </button>
-                      <button
-                        type="button"
-                        disabled={uploadingCatalog}
-                        onClick={handleBulkUploadCatalog}
-                        className="px-6 py-2.5 rounded-xl bg-[#c8f560] hover:opacity-90 text-[#312042] font-bold text-xs flex items-center gap-2 shadow"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>{uploadingCatalog ? "Mengupload..." : "Upload Semua Lagu Massal"}</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Single Item Form */
-                  <form
-                    onSubmit={handleSaveCatalog}
-                    className={`lg:col-span-12 ${ROYALTY_CARD} space-y-4`}
-                  >
-                    <div className="pb-3 border-b border-white/15 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-white flex items-center gap-2">
-                        <PlusCircle className="w-4 h-4 text-[#c8f560]" />
-                        <span>Form Tambah Lagu Baru ke Katalog User</span>
-                      </span>
-                      <span className="text-[10px] text-[#c8f560] font-semibold">
-                        DIRECT USER SYNC
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs">
-                      {/* SONG ID */}
-                      <div className="sm:col-span-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-white/75">SONG ID:</label>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCatSongId(`HRM-ID-${Math.floor(1000 + Math.random() * 9000)}`)
-                            }
-                            className="text-[10px] text-[#c8f560] hover:underline"
-                          >
-                            Acak ID
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          required
-                          value={catSongId}
-                          onChange={(e) => setCatSongId(e.target.value)}
-                          placeholder="Contoh: HRM-ID-0106"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-mono font-bold text-xs focus:outline-none focus:border-[#c8f560]"
-                        />
-                      </div>
-
-                      {/* JUDUL LAGU */}
-                      <div className="sm:col-span-5">
-                        <label className="block text-white/75 mb-1">JUDUL LAGU:</label>
-                        <input
-                          type="text"
-                          required
-                          value={catTitle}
-                          onChange={(e) => setCatTitle(e.target.value)}
-                          placeholder="Masukkan judul lagu..."
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-semibold text-xs focus:outline-none focus:border-[#c8f560]"
-                        />
-                      </div>
-
-                      {/* VOKAL / ARTIS */}
-                      <div className="sm:col-span-4">
-                        <label className="block text-white/75 mb-1">VOKAL / ARTIS:</label>
-                        <input
-                          type="text"
-                          required
-                          value={catArtist}
-                          onChange={(e) => setCatArtist(e.target.value)}
-                          placeholder="Nama artis / vokalis..."
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white font-medium text-xs focus:outline-none focus:border-[#c8f560]"
-                        />
-                      </div>
-
-                      {/* PUBLISHER */}
-                      <div className="sm:col-span-4">
-                        <label className="block text-white/75 mb-1">PUBLISHER:</label>
-                        <select
-                          value={catPublisher}
-                          onChange={(e) => setCatPublisher(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs font-medium focus:outline-none focus:border-[#c8f560]"
-                        >
-                          <option value="HERMES Publishing / Sony Music" className="bg-[#312042]">
-                            HERMES Publishing / Sony Music
-                          </option>
-                          <option value="Luxoa Universal Songs" className="bg-[#312042]">
-                            Luxoa Universal Songs
-                          </option>
-                          <option value="Warner Chappell Indonesia" className="bg-[#312042]">
-                            Warner Chappell Indonesia
-                          </option>
-                          <option value="BMG Rights Management" className="bg-[#312042]">
-                            BMG Rights Management
-                          </option>
-                          <option value="Independent / Self-Published" className="bg-[#312042]">
-                            Independent / Self-Published
-                          </option>
-                        </select>
-                      </div>
-
-                      {/* STATUS / AKTIF */}
-                      <div className="sm:col-span-2">
-                        <label className="block text-white/75 mb-1">STATUS / AKTIF:</label>
-                        <select
-                          value={catStatus}
-                          onChange={(e) => setCatStatus(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs font-semibold focus:outline-none focus:border-[#c8f560]"
-                        >
-                          <option value="Aktif" className="bg-[#312042]">
-                            Aktif
-                          </option>
-                          <option value="Review" className="bg-[#312042]">
-                            Review
-                          </option>
-                          <option value="Nonaktif" className="bg-[#312042]">
-                            Nonaktif
-                          </option>
-                        </select>
-                      </div>
-
-                      {/* LINK YOUTUBE */}
-                      <div className="sm:col-span-3">
-                        <label className="block text-white/75 mb-1 flex items-center gap-1">
-                          <Youtube className="w-3.5 h-3.5 text-red-400" />
-                          <span>LINK YOUTUBE:</span>
-                        </label>
-                        <input
-                          type="url"
-                          value={catYoutube}
-                          onChange={(e) => setCatYoutube(e.target.value)}
-                          placeholder="https://youtube.com/watch?v=..."
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs placeholder:text-white/35 focus:outline-none focus:border-[#c8f560]"
-                        />
-                      </div>
-
-                      {/* LINK DRIVE */}
-                      <div className="sm:col-span-3">
-                        <label className="block text-white/75 mb-1 flex items-center gap-1">
-                          <HardDrive className="w-3.5 h-3.5 text-blue-400" />
-                          <span>LINK GOOGLE DRIVE:</span>
-                        </label>
-                        <input
-                          type="url"
-                          value={catDrive}
-                          onChange={(e) => setCatDrive(e.target.value)}
-                          placeholder="https://drive.google.com/..."
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs placeholder:text-white/35 focus:outline-none focus:border-[#c8f560]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="submit"
-                        disabled={uploadingCatalog}
-                        className="px-6 py-3 rounded-xl bg-[#c8f560] hover:opacity-90 text-[#312042] font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>{uploadingCatalog ? "Mengupload..." : "+ Upload ke Katalog User"}</span>
-                      </button>
-                    </div>
-                  </form>
-                )}
               </div>
 
               {/* Table of Catalog Items in Admin */}
