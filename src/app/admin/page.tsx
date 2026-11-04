@@ -37,8 +37,10 @@ import {
   Copy,
   Menu,
   Volume2,
+  Globe,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
+import AdminLandingCMS from "@/components/AdminLandingCMS";
 
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
@@ -57,7 +59,7 @@ const parseFormattedNumber = (val: string | number) => {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "releases" | "catalog" | "withdrawals" | "users" | "inbox" | "royalty-input" | "settings"
+    "overview" | "releases" | "catalog" | "cms" | "withdrawals" | "users" | "inbox" | "royalty-input" | "settings"
   >("overview");
   const [period, setPeriod] = useState<"Daily" | "Weekly" | "Monthly">("Daily");
   const [themeMode, setThemeMode] = useState<"Light" | "Dark">("Light");
@@ -807,6 +809,7 @@ export default function AdminDashboardPage() {
                     { id: "overview", label: "Admin Overview", icon: Home },
                     { id: "releases", label: `Moderate Releases (${releases.length})`, icon: Disc3 },
                     { id: "catalog", label: `Daftar Katalog (${catalogs.length})`, icon: ListMusic },
+                    { id: "cms", label: "Web CMS Landing Page", icon: Globe },
                     { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
                     { id: "withdrawals", label: `Payouts & VISA ACC (${withdrawals.length})`, icon: Wallet },
                     { id: "inbox", label: "Inbox & Broadcast", icon: Mail },
@@ -898,6 +901,19 @@ export default function AdminDashboardPage() {
                 }`}
               >
                 <ListMusic className="w-4 h-4" />
+              </button>
+
+              {/* Web CMS Landing Page Button */}
+              <button
+                onClick={() => setActiveTab("cms")}
+                title="Web CMS Landing Page Manager"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  activeTab === "cms"
+                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                <Globe className="w-4 h-4" />
               </button>
 
               <button
@@ -1031,6 +1047,7 @@ export default function AdminDashboardPage() {
                     { id: "overview", label: "Overview" },
                     { id: "releases", label: `Releases (${releases.length})` },
                     { id: "catalog", label: `Katalog (${catalogs.length})` },
+                    { id: "cms", label: "🌐 Web CMS" },
                     { id: "royalty-input", label: "Rp Input Royalty" },
                     { id: "inbox", label: "✉ Inbox" },
                     { id: "withdrawals", label: `Payouts (${withdrawals.length})` },
@@ -1935,6 +1952,14 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          {/* =========================================================
+              ADMIN VIEW CMS: WEB CMS LANDING PAGE MANAGER
+             ========================================================= */}
+          {activeTab === "cms" && (
+            <AdminLandingCMS showNotice={showNotice} />
+          )}
+
           {activeTab === "royalty-input" && (
             <div className="space-y-6 animate-card-enter">
               <div className="flex flex-wrap items-center justify-between gap-4">

@@ -87,3 +87,24 @@ model Catalog {
   updatedAt   DateTime @updatedAt
 }
 
+model LandingContent {
+  id               String   @id @default("default")
+  heroSubtitle     String   @default("Global Reach By BREAKOUT.ID")
+  heroTitle1       String   @default("BREAKOUT")
+  heroTitle2       String   @default("ID")
+  heroBgImage      String   @default("/6293920186406475229_121.jpg")
+  navBgImage       String   @default("/header-bg.jpg")
+  storesCount      Int      @default(150)
+  card1Text        String   @default("We reshape the future of music distribution and artist services as a platform (MaaS).")
+  card1Image       String   @default("/6293920186406475218_120.jpg")
+  card2Title       String   @default("Driven By A Passion.")
+  card2Desc        String   @default("Pushing the boundaries of what's possible in the global audio realm.")
+  card2Image       String   @default("/6293920186406475218_120.jpg")
+  card3Title       String   @default("Distribution Solutions.")
+  card3Desc        String   @default("Tailored to your unique sound crafting new sonic landscapes.")
+  card3Image       String   @default("/6293920186406475218_120.jpg")
+  artistsJson      String   @default("[]")
+  testimonialsJson String   @default("[]")
+  updatedAt        DateTime @updatedAt
+}
+
