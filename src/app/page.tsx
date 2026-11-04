@@ -776,9 +776,6 @@ export default function App() {
                         (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
                       }}
                     />
-                    <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 border border-white/20 text-[11px] font-semibold text-brand-green">
-                      {artist.genre}
-                    </div>
                   </div>
 
                   <div className="flex items-center justify-between mb-2">
