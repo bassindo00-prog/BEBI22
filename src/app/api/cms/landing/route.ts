@@ -79,9 +79,9 @@ const DEFAULT_LANDING_CONTENT = {
   id: "default",
   heroSubtitle: "Global Reach By BREAKOUT.ID",
   heroTitle1: "BREAKOUT",
-  heroTitle2: "ID",
-  heroBgImage: "/6293920186406475229_121.jpg",
-  navBgImage: "/header-bg.jpg",
+  heroTitle2: "",
+  heroBgImage: "/api/storage/releases/anonymous/covers/1793783563730-he543j3-Cat.jpg",
+  navBgImage: "/api/storage/releases/anonymous/covers/1793782330345-bn6suo3-backgorund-hitam.jpg",
   storesCount: 150,
   card1Text:
     "We reshape the future of music distribution and artist services as a platform (MaaS).",
