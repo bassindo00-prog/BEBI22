@@ -482,10 +482,12 @@ input[type=range]::-webkit-slider-thumb {
   }
 }
 
-.animate-platform-marquee {
+.animate-platform-marquee,
+.ticker-track {
   display: flex;
   width: max-content;
-  animation: platformScroll 26s linear infinite;
+  animation: platformScroll 22s linear infinite;
+  will-change: transform;
 }
 
 .animate-platform-marquee-reverse {
@@ -495,7 +497,8 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 .animate-platform-marquee:hover,
-.animate-platform-marquee-reverse:hover {
+.animate-platform-marquee-reverse:hover,
+.ticker-track:hover {
   animation-play-state: paused;
 }
 

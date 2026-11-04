@@ -670,12 +670,16 @@ export default function LandingClient({
           </div>
         </div>
 
-        <div className="relative w-full overflow-hidden flex whitespace-nowrap">
-          <div className="ticker-track flex items-center space-x-12 py-3">
-            {[...DSP_ICONS, ...DSP_ICONS].map((dsp, idx) => (
+        <div className="relative w-full overflow-hidden flex whitespace-nowrap py-2">
+          {/* Edge Fade Masks */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-r from-[#0f111a] to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-28 bg-gradient-to-l from-[#0f111a] to-transparent z-10" />
+
+          <div className="ticker-track animate-platform-marquee flex items-center space-x-6 sm:space-x-8 py-3">
+            {[...DSP_ICONS, ...DSP_ICONS, ...DSP_ICONS, ...DSP_ICONS].map((dsp, idx) => (
               <div
                 key={idx}
-                className="flex items-center space-x-3 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-green/40 transition-colors"
+                className="flex items-center space-x-3 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 hover:border-brand-green/40 transition-colors shrink-0 shadow-sm"
               >
                 <i
                   className={`fa-brands ${dsp.icon} text-2xl`}
