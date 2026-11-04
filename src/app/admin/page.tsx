@@ -701,7 +701,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => {
                       handleReleaseStatus(selectedRelease.id, "Approved");
-                      setSelectedRelease({ ...selectedRelease, status: "Approved" });
+                      setSelectedRelease(null);
                     }}
                     className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] text-xs font-bold hover:opacity-90 shadow"
                   >
@@ -711,7 +711,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => {
                       handleReleaseStatus(selectedRelease.id, "Rejected");
-                      setSelectedRelease({ ...selectedRelease, status: "Rejected" });
+                      setSelectedRelease(null);
                     }}
                     className="px-4 py-2 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 text-xs font-bold hover:bg-red-500/40 shadow transition-colors"
                   >
@@ -721,7 +721,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => {
                       handleReleaseStatus(selectedRelease.id, "Pending");
-                      setSelectedRelease({ ...selectedRelease, status: "Pending" });
+                      setSelectedRelease(null);
                     }}
                     className="px-4 py-2 rounded-xl bg-white/15 text-white text-xs font-medium hover:bg-white/25"
                   >
