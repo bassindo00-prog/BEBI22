@@ -38,8 +38,13 @@ export async function GET(
     // Generate signed GET URL with range request support (valid for 24h)
     const presignedGetUrl = await getPresignedDownloadUrl(key, filename, isDownload);
 
-    // Redirect client directly to R2
-    return NextResponse.redirect(presignedGetUrl, { status: 307 });
+    // Redirect client directly to R2 with cache headers
+    const response = NextResponse.redirect(presignedGetUrl, { status: 307 });
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400"
+    );
+    return response;
   } catch (error: any) {
     console.error("Storage redirect error:", error);
     return NextResponse.json(

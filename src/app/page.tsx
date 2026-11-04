@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
+
+function normalizeImageUrl(url?: string | null): string {
+  if (!url) return "";
+  return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
+}
 
 // ============================================================================
 // DATA TYPES UNTUK CMS LANDING PAGE
@@ -184,6 +190,7 @@ const TypewriterText: React.FC<TypewriterProps> = ({
 export default function App() {
   const [dbData, setDbData] = useState<LandingPageData>(DEFAULT_LANDING_DATA);
   const [loaded, setLoaded] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // State urutan animasi Header
   const [animStep, setAnimStep] = useState(0);
@@ -200,7 +207,23 @@ export default function App() {
         if (res.ok) {
           const json = await res.json();
           if (json?.data) {
-            setDbData(json.data);
+            const raw = json.data;
+            setDbData({
+              ...raw,
+              heroBgImage: normalizeImageUrl(raw.heroBgImage),
+              navBgImage: normalizeImageUrl(raw.navBgImage),
+              card1Image: normalizeImageUrl(raw.card1Image),
+              card2Image: normalizeImageUrl(raw.card2Image),
+              card3Image: normalizeImageUrl(raw.card3Image),
+              artists: (raw.artists || []).map((a: any) => ({
+                ...a,
+                photo: normalizeImageUrl(a.photo),
+              })),
+              testimonials: (raw.testimonials || []).map((t: any) => ({
+                ...t,
+                avatar: normalizeImageUrl(t.avatar),
+              })),
+            });
           }
         }
       } catch (err) {
@@ -332,6 +355,9 @@ export default function App() {
             src={dbData.heroBgImage || "/6293920186406475229_121.jpg"}
             alt="Hero Background"
             className="w-full h-full object-cover object-center opacity-90 transition-opacity duration-700"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0f111a]/85 via-[#0f111a]/40 to-[#0f111a]/60"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-transparent to-transparent"></div>
@@ -375,21 +401,131 @@ export default function App() {
             </a>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Desktop Actions (Hidden on Mobile) */}
+          <div className="hidden md:flex items-center space-x-3">
             <Link
               href="/login"
-              className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/30 hover:bg-white/15 hover:text-brand-green transition-all"
+              className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full border border-white/30 hover:bg-white/15 hover:text-brand-green transition-all"
             >
               Log Masuk
             </Link>
             <Link
               href="/register"
-              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-brand-green text-black hover:bg-[#a6ff2e] transition-all shadow-[0_0_15px_rgba(143,255,0,0.4)]"
+              className="text-xs font-bold uppercase tracking-widest px-5 py-2 rounded-full bg-brand-green text-black hover:bg-[#a6ff2e] transition-all shadow-[0_0_15px_rgba(143,255,0,0.4)]"
             >
               Upload Master →
             </Link>
           </div>
+
+          {/* Mobile Hamburger / Slide Bar Toggle Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white hover:text-brand-green transition-all active:scale-95"
+              aria-label="Buka Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
         </nav>
+
+        {/* Mobile Slide Bar Drawer (Slide in from Right) */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 transition-opacity md:hidden animate-fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
+        <aside
+          className={`fixed top-0 right-0 h-full w-[285px] sm:w-[320px] bg-[#120e20]/95 backdrop-blur-2xl border-l border-white/15 z-50 p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-in-out md:hidden ${
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {/* Top Bar: Brand + Close Button */}
+          <div>
+            <div className="flex items-center justify-between pb-5 border-b border-white/10">
+              <div className="flex items-center space-x-1">
+                <span className="text-2xl font-syncopate font-bold text-white">1</span>
+                <div className="w-5 h-5 border-2 border-white rounded-full flex items-center justify-center -ml-1"></div>
+                <span className="ml-2 text-xs font-bold tracking-widest text-brand-green uppercase">
+                  BREAKOUT.ID
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                aria-label="Tutup Menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Navigation Menu List */}
+            <nav className="flex flex-col space-y-2 pt-6 text-xs font-semibold tracking-wider uppercase">
+              <a
+                href="#"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-3.5 rounded-xl hover:bg-white/10 text-white hover:text-brand-green transition-colors flex items-center justify-between"
+              >
+                <span>Home</span>
+                <span className="text-white/40">→</span>
+              </a>
+              <a
+                href="#stores"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-3.5 rounded-xl hover:bg-white/10 text-white hover:text-brand-green transition-colors flex items-center justify-between"
+              >
+                <span>Jaringan DSP ({dbData.storesCount}+)</span>
+                <span className="text-white/40">→</span>
+              </a>
+              <a
+                href="#artists"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-3.5 rounded-xl hover:bg-white/10 text-white hover:text-brand-green transition-colors flex items-center justify-between"
+              >
+                <span>Artis Kami</span>
+                <span className="text-white/40">→</span>
+              </a>
+              <a
+                href="#testimonials"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-3.5 rounded-xl hover:bg-white/10 text-white hover:text-brand-green transition-colors flex items-center justify-between"
+              >
+                <span>Testimoni Musisi</span>
+                <span className="text-white/40">→</span>
+              </a>
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 px-3.5 rounded-xl hover:bg-white/10 text-white hover:text-brand-green transition-colors flex items-center justify-between"
+              >
+                <span>Fitur Unggulan</span>
+                <span className="text-white/40">→</span>
+              </a>
+            </nav>
+          </div>
+
+          {/* Bottom Actions inside Slide Bar */}
+          <div className="space-y-3 pt-6 border-t border-white/10">
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full block text-center text-xs font-semibold uppercase tracking-widest py-3 rounded-full border border-white/30 text-white hover:bg-white/15 hover:text-brand-green transition-all"
+            >
+              Log Masuk
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full block text-center text-xs font-bold uppercase tracking-widest py-3 rounded-full bg-brand-green text-black hover:bg-[#a6ff2e] transition-all shadow-[0_0_15px_rgba(143,255,0,0.4)]"
+            >
+              Upload Master →
+            </Link>
+          </div>
+        </aside>
 
         {/* Main Hero Content */}
         <main className="relative z-10 flex-grow flex flex-col justify-center px-5 sm:px-8 md:px-16 w-full max-w-7xl mx-auto pt-24 sm:pt-28 md:pt-16 pb-4 md:pb-0">
@@ -487,6 +623,9 @@ export default function App() {
                   src={dbData.card1Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 1"
                   className="w-full h-full object-cover object-top transform scale-150"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                  }}
                 />
               </div>
               <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
@@ -519,6 +658,9 @@ export default function App() {
                   src={dbData.card2Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 2"
                   className="w-full h-full object-cover object-top transform scale-150 filter-orange"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                  }}
                 />
               </div>
               <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
@@ -551,6 +693,9 @@ export default function App() {
                   src={dbData.card3Image || "/6293920186406475218_120.jpg"}
                   alt="Feature 3"
                   className="w-full h-full object-cover object-top transform scale-150 filter-blue"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                  }}
                 />
               </div>
               <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
@@ -646,6 +791,9 @@ export default function App() {
                       src={artist.photo || "/6293920186406475218_120.jpg"}
                       alt={artist.name}
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                      }}
                     />
                     <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/70 border border-white/20 text-[11px] font-semibold text-brand-green">
                       {artist.genre}
@@ -741,6 +889,9 @@ export default function App() {
                       src={testi.avatar || "/6293920186406475218_120.jpg"}
                       alt={testi.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                      }}
                     />
                   </div>
                   <div className="leading-tight">

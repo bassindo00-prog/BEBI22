@@ -23,6 +23,11 @@ import type { ArtistItem, TestimonialItem, LandingPageData } from "@/app/page";
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
 
+export function normalizeImageUrl(url?: string | null): string {
+  if (!url) return "";
+  return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
+}
+
 interface AdminLandingCMSProps {
   showNotice: (msg: string) => void;
 }
@@ -100,20 +105,30 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
         setHeroTitle1(d.heroTitle1 || "");
         setHeroTitle2(d.heroTitle2 || "");
         setStoresCount(d.storesCount || 150);
-        setHeroBgImage(d.heroBgImage || "");
-        setNavBgImage(d.navBgImage || "");
+        setHeroBgImage(normalizeImageUrl(d.heroBgImage) || "");
+        setNavBgImage(normalizeImageUrl(d.navBgImage) || "");
 
         setCard1Text(d.card1Text || "");
-        setCard1Image(d.card1Image || "");
+        setCard1Image(normalizeImageUrl(d.card1Image) || "");
         setCard2Title(d.card2Title || "");
         setCard2Desc(d.card2Desc || "");
-        setCard2Image(d.card2Image || "");
+        setCard2Image(normalizeImageUrl(d.card2Image) || "");
         setCard3Title(d.card3Title || "");
         setCard3Desc(d.card3Desc || "");
-        setCard3Image(d.card3Image || "");
+        setCard3Image(normalizeImageUrl(d.card3Image) || "");
 
-        setArtists(d.artists || []);
-        setTestimonials(d.testimonials || []);
+        setArtists(
+          (d.artists || []).map((a) => ({
+            ...a,
+            photo: normalizeImageUrl(a.photo),
+          }))
+        );
+        setTestimonials(
+          (d.testimonials || []).map((t) => ({
+            ...t,
+            avatar: normalizeImageUrl(t.avatar),
+          }))
+        );
       }
     } catch (err) {
       console.error("Fetch CMS error:", err);
@@ -155,7 +170,8 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
 
         const json = await res.json().catch(() => null);
         if (res.ok && json?.url) {
-          callback(json.url);
+          const finalUrl = normalizeImageUrl(json.url);
+          callback(finalUrl);
           showNotice(`✅ Foto berhasil diunggah: ${file.name}`);
         } else if (clientDataUrl) {
           callback(clientDataUrl);
@@ -490,9 +506,13 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
               <div className="w-full h-24 rounded-xl overflow-hidden border border-white/20 relative bg-black/40">
                 {navBgImage ? (
                   <img
-                    src={navBgImage}
+                    src={normalizeImageUrl(navBgImage)}
                     alt="Navbar BG"
                     className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails
+                      (e.currentTarget as HTMLImageElement).src = "/header-bg.jpg";
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
@@ -541,9 +561,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
               <div className="w-full h-24 rounded-xl overflow-hidden border border-white/20 relative bg-black/40">
                 {heroBgImage ? (
                   <img
-                    src={heroBgImage}
+                    src={normalizeImageUrl(heroBgImage)}
                     alt="Hero BG"
                     className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
@@ -617,9 +640,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#8fff00] shrink-0 bg-black">
                   <img
-                    src={card1Image || "/6293920186406475218_120.jpg"}
+                    src={normalizeImageUrl(card1Image) || "/6293920186406475218_120.jpg"}
                     alt="Card 1"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                    }}
                   />
                 </div>
                 <div className="flex-1 space-y-1.5">
@@ -681,9 +707,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#ff5722] shrink-0 bg-black">
                   <img
-                    src={card2Image || "/6293920186406475218_120.jpg"}
+                    src={normalizeImageUrl(card2Image) || "/6293920186406475218_120.jpg"}
                     alt="Card 2"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                    }}
                   />
                 </div>
                 <div className="flex-1 space-y-1.5">
@@ -745,9 +774,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#2196f3] shrink-0 bg-black">
                   <img
-                    src={card3Image || "/6293920186406475218_120.jpg"}
+                    src={normalizeImageUrl(card3Image) || "/6293920186406475218_120.jpg"}
                     alt="Card 3"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                    }}
                   />
                 </div>
                 <div className="flex-1 space-y-1.5">
@@ -810,9 +842,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
                 <div>
                   <div className="w-full h-36 rounded-xl overflow-hidden mb-3 relative bg-black/40">
                     <img
-                      src={artist.photo || "/6293920186406475218_120.jpg"}
+                      src={normalizeImageUrl(artist.photo) || "/6293920186406475218_120.jpg"}
                       alt={artist.name}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                      }}
                     />
                     <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-[10px] text-[#c8f560] font-semibold border border-white/20">
                       {artist.genre}
@@ -909,9 +944,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
                   <div className="flex items-center gap-3 pt-3 border-t border-white/10 mb-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden border border-[#c8f560]/60 shrink-0 bg-black">
                       <img
-                        src={testi.avatar || "/6293920186406475218_120.jpg"}
+                        src={normalizeImageUrl(testi.avatar) || "/6293920186406475218_120.jpg"}
                         alt={testi.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                        }}
                       />
                     </div>
                     <div className="leading-tight">
@@ -1063,9 +1101,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/20 bg-black shrink-0">
                     <img
-                      src={artistForm.photo || "/6293920186406475218_120.jpg"}
+                      src={normalizeImageUrl(artistForm.photo) || "/6293920186406475218_120.jpg"}
                       alt="Artist Preview"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                      }}
                     />
                   </div>
                   <input
@@ -1212,9 +1253,12 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 bg-black shrink-0">
                     <img
-                      src={testimonialForm.avatar || "/6293920186406475218_120.jpg"}
+                      src={normalizeImageUrl(testimonialForm.avatar) || "/6293920186406475218_120.jpg"}
                       alt="Avatar Preview"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
+                      }}
                     />
                   </div>
                   <input

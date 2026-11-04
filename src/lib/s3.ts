@@ -130,7 +130,11 @@ export async function generatePresignedUploadUrl({
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
-  const objectPublicUrl = `${publicUrl.replace(/\/$/, "")}/${key}`;
+  // Always route through /api/storage if the external storage domain is unreachable/vpsmurah
+  const isVpsMurah = publicUrl.includes("storage.vpsmurah.co.id");
+  const objectPublicUrl = isVpsMurah || !publicUrl
+    ? `/api/storage/${key}`
+    : `${publicUrl.replace(/\/$/, "")}/${key}`;
 
   return {
     uploadUrl,
@@ -188,7 +192,11 @@ export async function uploadBufferToR2({
     })
   );
 
-  const objectPublicUrl = `${publicUrl.replace(/\/$/, "")}/${key}`;
+  // Always route through /api/storage if the external storage domain is unreachable/vpsmurah
+  const isVpsMurah = publicUrl.includes("storage.vpsmurah.co.id");
+  const objectPublicUrl = isVpsMurah || !publicUrl
+    ? `/api/storage/${key}`
+    : `${publicUrl.replace(/\/$/, "")}/${key}`;
   return {
     key,
     publicUrl: objectPublicUrl,

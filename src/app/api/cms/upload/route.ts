@@ -27,10 +27,13 @@ export async function POST(req: NextRequest) {
           contentType: mimeType,
           fileType: "cover",
         });
-        if (r2Result?.publicUrl) {
+        if (r2Result) {
+          const finalUrl = r2Result.key
+            ? `/api/storage/${r2Result.key}`
+            : r2Result.publicUrl;
           return NextResponse.json({
             ok: true,
-            url: r2Result.publicUrl,
+            url: finalUrl,
             fileName: file.name,
             provider: "r2",
           });

@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function cleanUrl(url: any): string {
+  if (typeof url !== "string") return url || "";
+  return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
+}
+
 const DEFAULT_ARTISTS = [
   {
     id: "art-1",
@@ -131,19 +136,19 @@ export async function GET() {
         heroSubtitle: content.heroSubtitle || DEFAULT_LANDING_CONTENT.heroSubtitle,
         heroTitle1: content.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
         heroTitle2: content.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
-        heroBgImage: content.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage,
-        navBgImage: content.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage,
+        heroBgImage: cleanUrl(content.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
+        navBgImage: cleanUrl(content.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage),
         storesCount: Number(content.storesCount) || 150,
         card1Text: content.card1Text || DEFAULT_LANDING_CONTENT.card1Text,
-        card1Image: content.card1Image || DEFAULT_LANDING_CONTENT.card1Image,
+        card1Image: cleanUrl(content.card1Image || DEFAULT_LANDING_CONTENT.card1Image),
         card2Title: content.card2Title || DEFAULT_LANDING_CONTENT.card2Title,
         card2Desc: content.card2Desc || DEFAULT_LANDING_CONTENT.card2Desc,
-        card2Image: content.card2Image || DEFAULT_LANDING_CONTENT.card2Image,
+        card2Image: cleanUrl(content.card2Image || DEFAULT_LANDING_CONTENT.card2Image),
         card3Title: content.card3Title || DEFAULT_LANDING_CONTENT.card3Title,
         card3Desc: content.card3Desc || DEFAULT_LANDING_CONTENT.card3Desc,
-        card3Image: content.card3Image || DEFAULT_LANDING_CONTENT.card3Image,
-        artists: parsedArtists,
-        testimonials: parsedTestimonials,
+        card3Image: cleanUrl(content.card3Image || DEFAULT_LANDING_CONTENT.card3Image),
+        artists: (parsedArtists || []).map((a: any) => ({ ...a, photo: cleanUrl(a.photo) })),
+        testimonials: (parsedTestimonials || []).map((t: any) => ({ ...t, avatar: cleanUrl(t.avatar) })),
       },
     });
   } catch (error) {
@@ -159,8 +164,17 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const artistsJson = JSON.stringify(body.artists || DEFAULT_ARTISTS);
-    const testimonialsJson = JSON.stringify(body.testimonials || DEFAULT_TESTIMONIALS);
+    const sanitizedArtists = (body.artists || DEFAULT_ARTISTS).map((a: any) => ({
+      ...a,
+      photo: cleanUrl(a.photo),
+    }));
+    const sanitizedTestimonials = (body.testimonials || DEFAULT_TESTIMONIALS).map((t: any) => ({
+      ...t,
+      avatar: cleanUrl(t.avatar),
+    }));
+
+    const artistsJson = JSON.stringify(sanitizedArtists);
+    const testimonialsJson = JSON.stringify(sanitizedTestimonials);
 
     const updated = await prisma.landingContent.upsert({
       where: { id: "default" },
@@ -169,17 +183,17 @@ export async function POST(req: Request) {
         heroSubtitle: body.heroSubtitle || DEFAULT_LANDING_CONTENT.heroSubtitle,
         heroTitle1: body.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
         heroTitle2: body.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
-        heroBgImage: body.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage,
-        navBgImage: body.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage,
+        heroBgImage: cleanUrl(body.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
+        navBgImage: cleanUrl(body.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage),
         storesCount: Number(body.storesCount) || 150,
         card1Text: body.card1Text || DEFAULT_LANDING_CONTENT.card1Text,
-        card1Image: body.card1Image || DEFAULT_LANDING_CONTENT.card1Image,
+        card1Image: cleanUrl(body.card1Image || DEFAULT_LANDING_CONTENT.card1Image),
         card2Title: body.card2Title || DEFAULT_LANDING_CONTENT.card2Title,
         card2Desc: body.card2Desc || DEFAULT_LANDING_CONTENT.card2Desc,
-        card2Image: body.card2Image || DEFAULT_LANDING_CONTENT.card2Image,
+        card2Image: cleanUrl(body.card2Image || DEFAULT_LANDING_CONTENT.card2Image),
         card3Title: body.card3Title || DEFAULT_LANDING_CONTENT.card3Title,
         card3Desc: body.card3Desc || DEFAULT_LANDING_CONTENT.card3Desc,
-        card3Image: body.card3Image || DEFAULT_LANDING_CONTENT.card3Image,
+        card3Image: cleanUrl(body.card3Image || DEFAULT_LANDING_CONTENT.card3Image),
         artistsJson,
         testimonialsJson,
       },
@@ -187,17 +201,17 @@ export async function POST(req: Request) {
         heroSubtitle: body.heroSubtitle,
         heroTitle1: body.heroTitle1,
         heroTitle2: body.heroTitle2,
-        heroBgImage: body.heroBgImage,
-        navBgImage: body.navBgImage,
+        heroBgImage: cleanUrl(body.heroBgImage),
+        navBgImage: cleanUrl(body.navBgImage),
         storesCount: Number(body.storesCount) || 150,
         card1Text: body.card1Text,
-        card1Image: body.card1Image,
+        card1Image: cleanUrl(body.card1Image),
         card2Title: body.card2Title,
         card2Desc: body.card2Desc,
-        card2Image: body.card2Image,
+        card2Image: cleanUrl(body.card2Image),
         card3Title: body.card3Title,
         card3Desc: body.card3Desc,
-        card3Image: body.card3Image,
+        card3Image: cleanUrl(body.card3Image),
         artistsJson,
         testimonialsJson,
       },
