@@ -34,3 +34,4 @@ export async function uploadToStorage(
 
   return `${publicUrl.replace(/\/$/, "")}/${key}`;
 }
+
