@@ -475,7 +475,7 @@ export default function App() {
                   BREAKOUT.ID
                 </span>
                 <span className="font-mono-code text-[10px] text-[#8E8D8A] tracking-widest">
-                  NEXT.JS + PRISMA DISTRO
+                  INDEPENDENT AUDIO DISTRO
                 </span>
               </div>
             </a>
@@ -499,17 +499,8 @@ export default function App() {
               </a>
             </nav>
 
-            {/* Right Actions + Tombol Buka Source Code Next.js Prisma */}
+            {/* Right Actions */}
             <div className="hidden md:flex items-center gap-3">
-              <button
-                onClick={() => setCodeDrawerOpen(true)}
-                className="px-3.5 py-2.5 border border-[#D4FF33]/50 bg-[#D4FF33]/10 text-[#D4FF33] font-mono-code text-xs uppercase flex items-center gap-2 hover:bg-[#D4FF33] hover:text-[#0A0A09] transition-colors"
-                title="Lihat & Copy Kode Next.js + Prisma"
-              >
-                <Database className="w-3.5 h-3.5" />
-                <span>[Kode Next.js + Prisma]</span>
-              </button>
-
               <button
                 onClick={() => setAuthModal({ open: true, mode: 'login' })}
                 className="px-4 py-2.5 font-mono-code text-xs uppercase text-[#F4F1EA] hover:text-[#FF4D1C] transition-colors"
@@ -527,12 +518,6 @@ export default function App() {
 
             {/* Mobile Menu Trigger */}
             <div className="flex md:hidden items-center gap-2">
-              <button
-                onClick={() => setCodeDrawerOpen(true)}
-                className="p-2 border border-[#D4FF33]/50 text-[#D4FF33] font-mono-code text-[10px]"
-              >
-                PRISMA
-              </button>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2 border border-[#262623] text-[#F4F1EA]"
@@ -1115,12 +1100,9 @@ export default function App() {
               <span className="font-display font-extrabold text-2xl text-[#F4F1EA] block">
                 BREAKOUT.ID
               </span>
-              <span>PT BREAKOUT DISTRIBUSI MUSIK INDONESIA — NEXT.JS + PRISMA ENGINE</span>
+              <span>PT BREAKOUT DISTRIBUSI MUSIK INDONESIA — INDEPENDENT AUDIO DISTRO</span>
             </div>
             <div className="flex flex-wrap gap-6 text-[#F4F1EA]">
-              <button onClick={() => setCodeDrawerOpen(true)} className="text-[#D4FF33] hover:underline">
-                [LIHAT KODE PRISMA]
-              </button>
               <a href="#dsp-ticker" className="hover:text-[#FF4D1C]">
                 DSP LIST
               </a>
