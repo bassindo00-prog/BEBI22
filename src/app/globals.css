@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100%;
+  }
+
+  body {
+    background: linear-gradient(135deg, #918fb9 0%, #aba9d3 48%, #8b89b5 100%);
+    color: #ffffff;
+    height: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/* Animated moving diagonal stripes inside the 76% Release Completion battery card */
+@keyframes stripeSlide {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 45.25px 0;
+  }
+}
+
+.progress-stripes {
+  background-image: repeating-linear-gradient(-45deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.08) 8px,
+      rgba(255, 255, 255, 0.2) 8px,
+      rgba(255, 255, 255, 0.2) 16px);
+  background-size: 45.25px 45.25px;
+  animation: stripeSlide 1.8s linear infinite;
+}
+
+/* Smooth card entrance animation when entering dashboard or switching tabs */
+@keyframes cardFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-card-enter {
+  animation: cardFadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* SVG Line Chart Path Draw Animation */
+@keyframes svgLineDraw {
+  0% {
+    stroke-dashoffset: 600;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-svg-line {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: svgLineDraw 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Vertical Highlight Pillar Grow Animation */
+@keyframes pillarRise {
+  0% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-pillar-rise {
+  transform-origin: bottom;
+  animation: pillarRise 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+/* Tooltip Float & Pop Animation */
+@keyframes tooltipFloat {
+
+  0%,
+  100% {
+    transform: translate(-50%, 0px);
+  }
+
+  50% {
+    transform: translate(-50%, -4px);
+  }
+}
+
+.animate-tooltip-float {
+  animation: tooltipFloat 2.8s ease-in-out infinite;
+}
+
+/* Live Equalizer / Audio Waveform Animation */
+@keyframes equalizerPulse {
+
+  0%,
+  100% {
+    transform: scaleY(0.45);
+  }
+
+  50% {
+    transform: scaleY(1.08);
+  }
+}
+
+.animate-eq-bar {
+  transform-origin: center;
+  animation: equalizerPulse 1.4s ease-in-out infinite;
+}
+
+/* Battery Shimmer Sweep */
+@keyframes batteryShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.animate-battery-shimmer {
+  animation: batteryShimmer 2.6s ease-in-out infinite;
+}
+
+/* Smooth infinite marquee for running platforms */
+@keyframes platformScroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes platformScrollReverse {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-platform-marquee {
+  display: flex;
+  width: max-content;
+  animation: platformScroll 26s linear infinite;
+}
+
+.animate-platform-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: platformScrollReverse 30s linear infinite;
+}
+
+.animate-platform-marquee:hover,
+.animate-platform-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}

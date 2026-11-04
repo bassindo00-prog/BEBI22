@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String       @id @default(cuid())
+  name             String
+  email            String       @unique
+  password         String
+  role             String       @default("USER") // "USER" | "ADMIN"
+  avatar           String?
+  totalStreams     Int          @default(3457000)
+  royaltyBalance   Float        @default(12450)
+  royaltyPending   Float        @default(90)
+  totalWithdrawn   Float        @default(5200)
+  pendingWithdraw  Float        @default(300)
+  createdAt        DateTime     @default(now())
+  releases         Release[]
+  withdrawals      Withdrawal[]
+  receivedMessages Message[]    @relation("UserMessages")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  sender    String   @default("Admin HERMES")
+  userId    String?  // null means sent to ALL users
+  user      User?    @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Release {
+  id          String   @id @default(cuid())
+  title       String
+  artist      String
+  featuring   String   @default("")
+  composer    String   @default("Abdul • HERMES")
+  producer    String   @default("Luxoa Studio")
+  tiktokClip  String   @default("00:45 - 01:15 (30s)")
+  genre       String
+  releaseDate String
+  duration    String   @default("3:42")
+  streams     String   @default("0")
+  streamsNum  Int      @default(0)
+  platform    String   @default("Spotify")
+  platforms   String   @default("Spotify,Apple Music,TikTok,YouTube")
+  status      String   @default("Pending") // "Approved" | "Pending" | "Rejected"
+  coverUrl    String
+  audioFile   String   @default("audio_preview_final.wav")
+  upc         String   @default("")
+  isrc        String   @default("")
+  country     String   @default("United States")
+  royaltyGrowth String @default("+12.4%")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Withdrawal {
+  id            String   @id @default(cuid())
+  date          String
+  amount        Float
+  method        String   // e.g. "Bank • BCA", "E-Wallet • OVO", "Bank • Mandiri"
+  accountNumber String
+  status        String   @default("Pending") // "Approved" | "Pending" | "Rejected"
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+}
+
+model Catalog {
+  id          String   @id @default(cuid())
+  songId      String   @unique
+  title       String
+  artist      String
+  publisher   String
+  status      String   @default("Aktif") // "Aktif" | "Nonaktif" | "Review"
+  youtubeLink String?
+  driveLink   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
