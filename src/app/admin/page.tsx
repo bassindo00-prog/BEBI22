@@ -476,6 +476,14 @@ export default function AdminDashboardPage() {
     .filter((w) => w.status === "Approved")
     .reduce((acc, w) => acc + Number(w.amount || 0), 0);
 
+  // Filter artis yang sudah pernah submit / rilis lagu saja yang tampil di Daftar Artis Admin
+  const releasedArtists = users.filter(
+    (u) =>
+      u.role !== "ADMIN" &&
+      ((u._count?.releases && u._count.releases > 0) ||
+        releases.some((r) => r.userId === u.id))
+  );
+
   const totalGlobalStreams = users.reduce((acc, u) => acc + (u.totalStreams || 0), 0);
   const totalGlobalRoyalty = users.reduce((acc, u) => acc + (u.royaltyBalance || 0), 0);
   const hasGlobalData = totalGlobalStreams > 0 || totalGlobalRoyalty > 0;
@@ -829,7 +837,7 @@ export default function AdminDashboardPage() {
                     { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
                     { id: "withdrawals", label: `Payouts & VISA ACC (${withdrawals.length})`, icon: Wallet },
                     { id: "inbox", label: "Inbox & Broadcast", icon: Mail },
-                    { id: "users", label: `Daftar Artis (${users.length})`, icon: Users },
+                    { id: "users", label: `Daftar Artis (${releasedArtists.length})`, icon: Users },
                     { id: "settings", label: "Pengaturan Sistem", icon: Settings },
                   ].map((item) => {
                     const Icon = item.icon;
@@ -1111,7 +1119,7 @@ export default function AdminDashboardPage() {
                     { id: "royalty-input", label: "Rp Input Royalty" },
                     { id: "inbox", label: "✉ Inbox" },
                     { id: "withdrawals", label: `Payouts (${withdrawals.length})` },
-                    { id: "users", label: `Artists (${users.length})` },
+                    { id: "users", label: `Artists (${releasedArtists.length})` },
                     { id: "settings", label: "⚙ Pengaturan" },
                   ].map((t) => (
                     <button
@@ -1309,7 +1317,7 @@ export default function AdminDashboardPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#c4c3f0]" />
-                  {users.length} Artists
+                  {releasedArtists.length} Artists Aktif
                 </span>
               </div>
             </div>
@@ -2685,108 +2693,112 @@ export default function AdminDashboardPage() {
           )}
 
           {/* =========================================================
-              ADMIN VIEW 4: USERS & ROYALTY BALANCE MANAGEMENT
+              ADMIN VIEW 4: DAFTAR ARTIS DENGAN RILISAN AKTIF
              ========================================================= */}
           {activeTab === "users" && (
             <div className={`${ROYALTY_CARD} animate-card-enter`}>
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/15">
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">
-                    Registered Artists & Administrators
+                    Daftar Artis Rilis Aktif ({releasedArtists.length})
                   </h3>
                   <p className="text-xs text-white/75">
-                    Manage accounts stored in Prisma SQLite database
+                    Menampilkan hanya kreator dan musisi yang telah memiliki rilisan lagu resmi
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab("royalty-input")}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#b5e050] transition-colors"
                 >
                   + Input Royalty/Streams
                 </button>
               </div>
 
               <div className="divide-y divide-white/15 text-xs">
-                {users.map((u) => (
-                  <div
-                    key={u.id}
-                    className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <img
-                        src={
-                          u.avatar ||
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                        }
-                        alt={u.name}
-                        className="w-11 h-11 rounded-full object-cover border border-white/30 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-sm text-white truncate">{u.name}</p>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
-                              u.role === "ADMIN"
-                                ? "bg-[#312042] text-[#c8f560]"
-                                : "bg-white/20 text-white"
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </div>
-                        <p className="text-white/75 truncate text-[11px]">{u.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                      <div>
-                        <p className="text-white/65 text-[10px] sm:text-[11px]">Royalty Balance</p>
-                        <p className="font-bold text-xs sm:text-sm text-[#c8f560]">
-                          Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-white/65 text-[10px] sm:text-[11px]">Streams</p>
-                        <p className="font-semibold text-white text-xs sm:text-sm">
-                          {(Number(u.totalStreams || 0) / 1000).toFixed(0)}K
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-white/65 text-[10px] sm:text-[11px]">Withdrawn</p>
-                        <p className="font-semibold text-white text-xs sm:text-sm">
-                          Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUserForRoyalty(u.id);
-                          setInputRoyaltyBalance(u.royaltyBalance || 0);
-                          setInputRoyaltyPending(u.royaltyPending || 0);
-                          setInputTotalStreams(u.totalStreams || 0);
-                          setActiveTab("royalty-input");
-                        }}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-xs transition-colors"
-                      >
-                        Edit Royalty
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMsgTargetUser(u.id);
-                          setActiveTab("inbox");
-                        }}
-                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-semibold text-xs hover:bg-[#422c58] transition-colors"
-                      >
-                        Kirim Pesan
-                      </button>
-                    </div>
+                {releasedArtists.length === 0 ? (
+                  <div className="py-12 text-center text-white/70 space-y-2">
+                    <Users className="w-10 h-10 mx-auto text-white/30" />
+                    <p className="font-semibold text-sm text-white">Belum Ada Artis yang Merilis Lagu</p>
+                    <p className="text-xs text-white/60">
+                      Hanya akun artis yang telah mengajukan/merilis lagu yang akan ditampilkan pada daftar ini.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  releasedArtists.map((u) => (
+                    <div
+                      key={u.id}
+                      className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={
+                            u.avatar ||
+                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
+                          }
+                          alt={u.name}
+                          className="w-11 h-11 rounded-full object-cover border border-white/30 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm text-white truncate">{u.name}</p>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#312042] text-[#c8f560] shrink-0">
+                              {u._count?.releases || 1} Rilisan
+                            </span>
+                          </div>
+                          <p className="text-white/75 truncate text-[11px]">{u.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                        <div>
+                          <p className="text-white/65 text-[10px] sm:text-[11px]">Royalty Balance</p>
+                          <p className="font-bold text-xs sm:text-sm text-[#c8f560]">
+                            Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-white/65 text-[10px] sm:text-[11px]">Streams</p>
+                          <p className="font-semibold text-white text-xs sm:text-sm">
+                            {(Number(u.totalStreams || 0) / 1000).toFixed(0)}K
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-white/65 text-[10px] sm:text-[11px]">Withdrawn</p>
+                          <p className="font-semibold text-white text-xs sm:text-sm">
+                            Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUserForRoyalty(u.id);
+                            setInputRoyaltyBalance(u.royaltyBalance || 0);
+                            setInputRoyaltyPending(u.royaltyPending || 0);
+                            setInputTotalStreams(u.totalStreams || 0);
+                            setActiveTab("royalty-input");
+                          }}
+                          className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-xs transition-colors"
+                        >
+                          Edit Royalty
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMsgTargetUser(u.id);
+                            setActiveTab("inbox");
+                          }}
+                          className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-semibold text-xs hover:bg-[#422c58] transition-colors"
+                        >
+                          Kirim Pesan
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

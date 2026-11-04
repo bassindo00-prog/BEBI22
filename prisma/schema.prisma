@@ -22,6 +22,7 @@ model User {
   createdAt        DateTime     @default(now())
   releases         Release[]
   withdrawals      Withdrawal[]
+  artists          Artist[]
   receivedMessages Message[]    @relation("UserMessages")
 }
 
@@ -60,6 +61,19 @@ model Release {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+}
+
+model Artist {
+  id        String   @id @default(cuid())
+  name      String
+  genre     String   @default("Pop")
+  spotifyId String   @default("")
+  appleId   String   @default("")
+  photoUrl  String   @default("")
+  bio       String   @default("")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Withdrawal {
