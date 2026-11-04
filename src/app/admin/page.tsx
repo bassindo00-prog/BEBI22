@@ -25,7 +25,7 @@ import {
   Eye,
   X,
   TrendingUp,
-  DollarSign,
+  Banknote,
   Music,
   ExternalLink,
   ListMusic,
@@ -807,7 +807,7 @@ export default function AdminDashboardPage() {
                     { id: "overview", label: "Admin Overview", icon: Home },
                     { id: "releases", label: `Moderate Releases (${releases.length})`, icon: Disc3 },
                     { id: "catalog", label: `Kelola Katalog (${catalogs.length})`, icon: ListMusic },
-                    { id: "royalty-input", label: "Input Royalty & Streams", icon: DollarSign },
+                    { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
                     { id: "withdrawals", label: `Payouts & VISA ACC (${withdrawals.length})`, icon: Wallet },
                     { id: "inbox", label: "Inbox & Broadcast", icon: Mail },
                     { id: "users", label: `Daftar Artis (${users.length})`, icon: Users },
@@ -909,7 +909,7 @@ export default function AdminDashboardPage() {
                     : "bg-white/20 text-white hover:bg-white/30"
                 }`}
               >
-                <DollarSign className="w-4 h-4" />
+                <Banknote className="w-4 h-4" />
               </button>
 
               <button
@@ -1031,7 +1031,7 @@ export default function AdminDashboardPage() {
                     { id: "overview", label: "Overview" },
                     { id: "releases", label: `Releases (${releases.length})` },
                     { id: "catalog", label: `Katalog (${catalogs.length})` },
-                    { id: "royalty-input", label: "$ Input Royalty" },
+                    { id: "royalty-input", label: "Rp Input Royalty" },
                     { id: "inbox", label: "✉ Inbox" },
                     { id: "withdrawals", label: `Payouts (${withdrawals.length})` },
                     { id: "users", label: `Artists (${users.length})` },
@@ -2176,7 +2176,7 @@ export default function AdminDashboardPage() {
                 >
                   <div className="pb-3 border-b border-white/15 flex items-center justify-between">
                     <span className="text-sm font-semibold text-white flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#c8f560]" />
+                      <Banknote className="w-4 h-4 text-[#c8f560]" />
                       <span>Form Update Royalty & Streaming User</span>
                     </span>
                     <span className="text-[10px] text-[#c8f560] font-semibold">

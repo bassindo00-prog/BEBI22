@@ -3305,12 +3305,20 @@ export default function UserDashboardPage() {
                             type="text"
                             inputMode="numeric"
                             placeholder="0"
+                            disabled={Math.max(0, user?.royaltyBalance || 0) <= 0}
                             value={withdrawAmount}
                             onChange={(e) => {
-                              const formatted = formatNumberWithDots(e.target.value);
-                              setWithdrawAmount(formatted);
+                              const parsed = parseFormattedNumber(e.target.value);
+                              const maxBal = Math.max(0, user?.royaltyBalance || 0);
+                              if (parsed > maxBal) {
+                                setWithdrawAmount(formatNumberWithDots(maxBal));
+                                showNotice(`Batas maksimal penarikan sesuai saldo Anda: Rp ${maxBal.toLocaleString("id-ID")}`);
+                              } else {
+                                const formatted = formatNumberWithDots(e.target.value);
+                                setWithdrawAmount(formatted);
+                              }
                             }}
-                            className="w-full bg-transparent text-white focus:outline-none placeholder-white/40"
+                            className="w-full bg-transparent text-white focus:outline-none placeholder-white/40 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                         </div>
                       </div>
