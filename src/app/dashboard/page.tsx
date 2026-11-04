@@ -653,7 +653,12 @@ export default function UserDashboardPage() {
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = parseFormattedNumber(withdrawAmount);
-    const currentBalance = user?.royaltyBalance || 0;
+    const currentBalance = Math.max(0, user?.royaltyBalance || 0);
+
+    if (currentBalance <= 0) {
+      showNotice("Anda tidak memiliki saldo royalti yang dapat ditarik (Saldo Rp 0).");
+      return;
+    }
 
     if (amountNum <= 0) {
       showNotice("Jumlah penarikan harus lebih besar dari Rp 0.");
@@ -662,7 +667,7 @@ export default function UserDashboardPage() {
 
     if (amountNum > currentBalance) {
       showNotice(
-        `Saldo tidak mencukupi! Saldo Anda saat ini Rp ${currentBalance.toLocaleString("id-ID")}, tidak dapat menarik Rp ${amountNum.toLocaleString("id-ID")}.`
+        `Penarikan ditolak! Nominal Rp ${amountNum.toLocaleString("id-ID")} melebihi saldo Anda saat ini (Maksimal Rp ${currentBalance.toLocaleString("id-ID")}).`
       );
       return;
     }
@@ -3279,10 +3284,23 @@ export default function UserDashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-white/75 mb-1">Jumlah Penarikan (Amount)</label>
-                      <div className="px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 focus-within:border-[#c8f560]">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-white/75">Jumlah Penarikan (Amount)</label>
+                        <span className="text-[10px] text-white/60">
+                          Maks: <strong className="text-[#c8f560]">Rp {Math.max(0, user?.royaltyBalance || 0).toLocaleString("id-ID")}</strong>
+                        </span>
+                      </div>
+                      <div className={`px-3.5 py-2 rounded-xl bg-white/15 border transition-colors ${
+                        parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0)
+                          ? "border-red-400 bg-red-500/10"
+                          : "border-white/25 focus-within:border-[#c8f560]"
+                      }`}>
                         <div className="flex items-center font-semibold text-white">
-                          <span className="text-[#c8f560] mr-2 text-sm font-bold">Rp</span>
+                          <span className={`mr-2 text-sm font-bold ${
+                            parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0)
+                              ? "text-red-400"
+                              : "text-[#c8f560]"
+                          }`}>Rp</span>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -3295,18 +3313,71 @@ export default function UserDashboardPage() {
                             className="w-full bg-transparent text-white focus:outline-none placeholder-white/40"
                           />
                         </div>
-                        <p className="text-[10px] text-white/65 mt-1">
-                          Tersedia: Rp {(user?.royaltyBalance || 0).toLocaleString("id-ID")}
-                        </p>
                       </div>
+
+                      {/* Warning text if exceeding */}
+                      {parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0) && (
+                        <p className="text-[11px] font-semibold text-red-300 mt-1.5 flex items-center gap-1 bg-red-500/20 px-2.5 py-1 rounded-lg border border-red-500/40">
+                          ⚠️ Melebihi saldo! Saldo maksimal Anda Rp {Math.max(0, user?.royaltyBalance || 0).toLocaleString("id-ID")}
+                        </p>
+                      )}
+
+                      {/* Quick Fill Percentage Shortcuts */}
+                      {Math.max(0, user?.royaltyBalance || 0) > 0 && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="text-[10px] text-white/60 mr-1">Pilih Cepat:</span>
+                          <button
+                            type="button"
+                            onClick={() => setWithdrawAmount(formatNumberWithDots(Math.floor(Math.max(0, user?.royaltyBalance || 0) * 0.25)))}
+                            className="px-2 py-0.5 rounded-lg bg-white/15 hover:bg-white/25 text-[10px] font-medium text-white transition-colors"
+                          >
+                            25%
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setWithdrawAmount(formatNumberWithDots(Math.floor(Math.max(0, user?.royaltyBalance || 0) * 0.5)))}
+                            className="px-2 py-0.5 rounded-lg bg-white/15 hover:bg-white/25 text-[10px] font-medium text-white transition-colors"
+                          >
+                            50%
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setWithdrawAmount(formatNumberWithDots(Math.max(0, user?.royaltyBalance || 0)))}
+                            className="px-2.5 py-0.5 rounded-lg bg-[#c8f560] hover:bg-[#d8ff75] text-[10px] font-bold text-[#312042] transition-colors"
+                          >
+                            Tarik Semua (100%)
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <button
                       type="submit"
-                      disabled={submittingWithdraw}
-                      className="w-full py-3 rounded-xl bg-[#312042] hover:bg-[#422c58] text-white font-semibold text-xs transition-all"
+                      disabled={
+                        submittingWithdraw ||
+                        Math.max(0, user?.royaltyBalance || 0) <= 0 ||
+                        parseFormattedNumber(withdrawAmount) <= 0 ||
+                        parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0)
+                      }
+                      className={`w-full py-3 rounded-xl font-bold text-xs transition-all ${
+                        Math.max(0, user?.royaltyBalance || 0) <= 0
+                          ? "bg-white/10 text-white/35 cursor-not-allowed border border-white/10"
+                          : parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0)
+                          ? "bg-red-500/20 text-red-300 border border-red-500/40 cursor-not-allowed"
+                          : parseFormattedNumber(withdrawAmount) <= 0
+                          ? "bg-white/15 text-white/50 cursor-not-allowed"
+                          : "bg-[#c8f560] text-[#312042] hover:bg-[#d8ff75] shadow-md hover:scale-[1.01]"
+                      }`}
                     >
-                      {submittingWithdraw ? "Processing..." : "+ Withdraw"}
+                      {submittingWithdraw
+                        ? "Memproses Penarikan..."
+                        : Math.max(0, user?.royaltyBalance || 0) <= 0
+                        ? "Saldo Rp 0 (Tidak Ada Saldo)"
+                        : parseFormattedNumber(withdrawAmount) > Math.max(0, user?.royaltyBalance || 0)
+                        ? "Nominal Melebihi Saldo Tersedia"
+                        : parseFormattedNumber(withdrawAmount) <= 0
+                        ? "Masukkan Jumlah Penarikan"
+                        : `Tarik Saldo Rp ${parseFormattedNumber(withdrawAmount).toLocaleString("id-ID")}`}
                     </button>
 
                     <p className="text-center text-[10px] text-white/65">

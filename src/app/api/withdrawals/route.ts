@@ -36,11 +36,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Akun user tidak ditemukan" }, { status: 404 });
     }
 
-    const currentBalance = user.royaltyBalance || 0;
+    const currentBalance = Math.max(0, Number(user.royaltyBalance) || 0);
+
+    if (currentBalance <= 0) {
+      return NextResponse.json(
+        {
+          error: "Saldo royalti Anda saat ini Rp 0. Tidak ada saldo yang dapat ditarik.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (amount > currentBalance) {
       return NextResponse.json(
         {
-          error: `Saldo tidak mencukupi! Saldo Anda saat ini Rp ${currentBalance.toLocaleString("id-ID")}, tidak dapat menarik Rp ${amount.toLocaleString("id-ID")}.`,
+          error: `Gagal! Jumlah penarikan (Rp ${amount.toLocaleString("id-ID")}) melebihi saldo yang Anda miliki saat ini (Rp ${currentBalance.toLocaleString("id-ID")}).`,
         },
         { status: 400 }
       );
@@ -51,25 +61,26 @@ export async function POST(req: Request) {
       now.getMonth() + 1
     ).padStart(2, "0")}-${now.getFullYear()}`;
 
-    const withdrawal = await prisma.withdrawal.create({
-      data: {
-        date: formattedDate,
-        amount,
-        method: body.method || "Bank • BCA",
-        accountNumber: body.accountNumber || "1234 5678 9012 3456",
-        status: "Pending",
-        userId,
-      },
-    });
-
-    // Update user's pendingWithdraw & royaltyBalance
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        royaltyBalance: { decrement: amount },
-        pendingWithdraw: { increment: amount },
-      },
-    });
+    // Execute withdrawal creation and user balance decrement atomically
+    const [withdrawal] = await prisma.$transaction([
+      prisma.withdrawal.create({
+        data: {
+          date: formattedDate,
+          amount,
+          method: body.method || "Bank • BCA",
+          accountNumber: body.accountNumber || "1234 5678 9012 3456",
+          status: "Pending",
+          userId,
+        },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          royaltyBalance: { decrement: amount },
+          pendingWithdraw: { increment: amount },
+        },
+      }),
+    ]);
 
     return NextResponse.json({ ok: true, withdrawal });
   } catch (error) {
