@@ -36,7 +36,6 @@ import {
   FileSpreadsheet,
   Copy,
   Menu,
-  Volume2,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 
@@ -397,28 +396,10 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Trigger file download helper (for audio MP3/WAV and Cover Art from S3)
+  // Trigger file download helper (for audio MP3/WAV and Cover Art)
   const downloadAsset = (url: string, filename: string) => {
-    if (!url) {
-      showNotice("File tidak ditemukan!");
-      return;
-    }
-
-    let targetUrl = url;
-    if (targetUrl.startsWith("/api/storage/")) {
-      targetUrl = `${targetUrl}?download=1&filename=${encodeURIComponent(filename)}`;
-    } else if (
-      targetUrl.includes("cloudflarestorage.com") ||
-      targetUrl.includes("storage.vpsmurah.co.id")
-    ) {
-      const key = targetUrl.split("/").pop();
-      if (key) {
-        targetUrl = `/api/storage/${key}?download=1&filename=${encodeURIComponent(filename)}`;
-      }
-    }
-
     const a = document.createElement("a");
-    a.href = targetUrl;
+    a.href = url;
     a.download = filename;
     a.target = "_blank";
     document.body.appendChild(a);
@@ -529,7 +510,7 @@ export default function AdminDashboardPage() {
                       onClick={() =>
                         downloadAsset(
                           selectedRelease.coverUrl,
-                          `${selectedRelease.artist || "Artist"} - ${selectedRelease.title || "Track"} - Cover.jpg`
+                          `${selectedRelease.title}-artwork.jpg`
                         )
                       }
                       className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-medium flex items-center gap-1.5"
@@ -542,8 +523,8 @@ export default function AdminDashboardPage() {
                       type="button"
                       onClick={() =>
                         downloadAsset(
-                          selectedRelease.audioFile,
-                          `${selectedRelease.artist || "Artist"} - ${selectedRelease.title || "Track"} - Master.mp3`
+                          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                          `${selectedRelease.title}-master.mp3`
                         )
                       }
                       className="px-3.5 py-1.5 rounded-xl bg-[#312042] hover:bg-[#422c58] text-[#c8f560] border border-[#c8f560]/50 text-xs font-semibold flex items-center gap-1.5 shadow"
@@ -552,29 +533,6 @@ export default function AdminDashboardPage() {
                       <span>Unduh Master Audio (MP3/WAV)</span>
                     </button>
                   </div>
-
-                  {/* Real-time In-Browser Audio Player from S3 */}
-                  {selectedRelease.audioFile && (
-                    <div className="p-3 rounded-xl bg-white/10 border border-white/15 mt-3">
-                      <div className="flex items-center justify-between mb-1.5 text-xs font-medium">
-                        <span className="text-[#c8f560] flex items-center gap-1.5">
-                          <Volume2 className="w-4 h-4" />
-                          <span>Audio Player Submisi Artis</span>
-                        </span>
-                        <span className="text-[10px] text-white/60 font-mono">
-                          {selectedRelease.audioFile.startsWith("/api/storage/") || selectedRelease.audioFile.includes("cloudflarestorage")
-                            ? "S3 Cloud Storage"
-                            : "Direct Stream"}
-                        </span>
-                      </div>
-                      <audio
-                        controls
-                        src={selectedRelease.audioFile}
-                        className="w-full h-8 rounded-lg bg-black/20"
-                        preload="metadata"
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -750,7 +708,7 @@ export default function AdminDashboardPage() {
       <div className="w-full h-full flex overflow-hidden">
         {/* MOBILE SLIDE-OUT MENU DRAWER — Muncul saat hamburger menu diklik pada layar HP */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden flex animate-fade-in">
+          <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
@@ -827,7 +785,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
-        <aside className="hidden lg:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
+        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
           <div className="flex flex-col items-center gap-10">
             <Link
               href="/"
@@ -966,7 +924,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="lg:hidden p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
+                    className="md:hidden p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
                     title="Buka Menu Admin"
                   >
                     <Menu className="w-5 h-5" />

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,16 +7,78 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     height: 100%;
   }
 
   body {
-    background: linear-gradient(135deg, #918fb9 0%, #aba9d3 48%, #8b89b5 100%);
+    background: #050508;
     color: #ffffff;
     height: 100%;
     overflow-x: hidden;
   }
+}
+
+/* ZENTRY & BREAKOUT ID ANIMATIONS & CLIP PATHS */
+.font-zentry {
+  font-family: 'Syne', 'Bebas Neue', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-editorial {
+  font-family: 'Bebas Neue', 'Syne', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.special-font b {
+  font-family: 'Syne', sans-serif;
+}
+
+/* Audio Indicator Line in Navbar */
+.indicator-line {
+  background-color: white;
+  width: 2.5px;
+  height: 6px;
+  margin: 0 1.5px;
+  border-radius: 9999px;
+  transition: height 0.25s ease, background-color 0.25s ease;
+}
+
+.indicator-line.active {
+  animation: bounce-equalizer 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes bounce-equalizer {
+  0% {
+    height: 4px;
+    background-color: #ff5e00;
+  }
+  100% {
+    height: 18px;
+    background-color: #a855f7;
+  }
+}
+
+/* Geometric Clip Paths for Zentry Scrollytelling */
+.clip-hero-initial {
+  clip-path: polygon(14% 0%, 72% 0%, 90% 90%, 0% 100%);
+  border-radius: 0 0 25% 10%;
+}
+
+.clip-about {
+  clip-path: polygon(4% 0%, 96% 0%, 100% 95%, 0% 100%);
+}
+
+.story-img-mask {
+  clip-path: polygon(4% 0%, 83% 21%, 100% 73%, 0% 90%);
+}
+
+.contact-clip-path-1 {
+  clip-path: polygon(25% 0%, 74% 0%, 69% 64%, 0% 61%);
+}
+
+.contact-clip-path-2 {
+  clip-path: polygon(29% 0%, 70% 0%, 100% 100%, 0% 100%);
 }
 
 /* Animated moving diagonal stripes inside the 76% Release Completion battery card */

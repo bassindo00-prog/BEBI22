@@ -13,20 +13,13 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const result = await uploadToStorage(
-      buffer,
-      file.name,
-      file.type || "application/octet-stream"
-    );
+    const fileUrl = await uploadToStorage(buffer, file.name, file.type || "application/octet-stream");
 
     return NextResponse.json({
       ok: true,
-      url: result.url,
-      publicUrl: result.publicUrl,
-      key: result.key,
+      url: fileUrl,
       fileName: file.name,
       size: file.size,
-      mimeType: file.type,
     });
   } catch (error: any) {
     console.error("Storage upload error:", error);
@@ -36,3 +29,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

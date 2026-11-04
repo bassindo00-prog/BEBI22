@@ -16,19 +16,12 @@ export const s3Client = new S3Client({
   },
 });
 
-export interface UploadResult {
-  url: string;        // Proxy stream URL
-  publicUrl: string;  // Direct public URL
-  key: string;        // S3 object key
-}
-
 export async function uploadToStorage(
   fileBuffer: Buffer,
   fileName: string,
   contentType: string
-): Promise<UploadResult> {
-  const cleanName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const key = `${Date.now()}-${cleanName}`;
+): Promise<string> {
+  const key = `${Date.now()}-${fileName.replace(/\s+/g, "-")}`;
 
   await s3Client.send(
     new PutObjectCommand({
@@ -39,9 +32,6 @@ export async function uploadToStorage(
     })
   );
 
-  return {
-    url: `/api/storage/${key}`,
-    publicUrl: `${publicUrl.replace(/\/$/, "")}/${key}`,
-    key,
-  };
+  return `${publicUrl.replace(/\/$/, "")}/${key}`;
 }
+
