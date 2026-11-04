@@ -57,7 +57,7 @@ const DEFAULT_LANDING_DATA: LandingPageData = {
   id: "default",
   heroSubtitle: "Global Reach By BREAKOUT.ID",
   heroTitle1: "BREAKOUT",
-  heroTitle2: "ID",
+  heroTitle2: "",
   heroBgImage: "/6293920186406475229_121.jpg",
   navBgImage: "/header-bg.jpg",
   storesCount: 150,
@@ -541,29 +541,10 @@ export default function App() {
             </p>
 
             {/* Big Title — Fluid Responsive Size (No mobile overflow / overlap) */}
-            <div className="flex flex-wrap md:flex-nowrap items-center text-[1.65rem] sm:text-4xl md:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold uppercase tracking-tight sm:tracking-widest text-white font-syncopate leading-tight md:leading-none mb-4 md:mb-8 min-h-[2.5rem] md:min-h-[5rem]">
+            <div className="flex items-center text-[2.2rem] sm:text-4xl md:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-bold uppercase tracking-tight sm:tracking-widest text-white font-syncopate leading-tight md:leading-none mb-4 md:mb-8 min-h-[2.5rem] md:min-h-[5rem]">
               <TypewriterText
-                text={dbData.heroTitle1}
+                text={dbData.heroTitle1 || "BREAKOUT"}
                 start={animStep >= 2}
-                speed={160}
-                onComplete={() => {
-                  setAnimStep(3);
-                  setTimeout(() => setAnimStep(4), 280);
-                }}
-              />
-
-              {/* Dot - Animates in at Step 3 */}
-              <div
-                className={`w-5 h-5 sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20 rounded-full bg-brand-green flex items-center justify-center mx-1 sm:mx-3 md:mx-4 text-black text-base sm:text-2xl md:text-5xl font-bold shadow-[0_0_30px_rgba(143,255,0,0.4)] pb-1 sm:pb-3 md:pb-5 transition-all duration-500 ease-out ${
-                  animStep >= 3 ? "opacity-100 scale-100" : "opacity-0 scale-50"
-                }`}
-              >
-                .
-              </div>
-
-              <TypewriterText
-                text={dbData.heroTitle2}
-                start={animStep >= 4}
                 speed={160}
                 onComplete={() => setAnimStep(5)}
               />

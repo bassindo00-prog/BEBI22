@@ -464,7 +464,7 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
             {/* Hero Title 1 */}
             <div>
               <label className="block text-xs font-semibold text-white/80 mb-1">
-                Hero Title 1 (Sebelum Titik Hijau)
+                Hero Title (Judul Utama Hero, misal: BREAKOUT)
               </label>
               <input
                 type="text"
@@ -478,13 +478,13 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
             {/* Hero Title 2 */}
             <div>
               <label className="block text-xs font-semibold text-white/80 mb-1">
-                Hero Title 2 (Setelah Titik Hijau)
+                Hero Title 2 (Opsional / Kosongkan jika tanpa ekstensi)
               </label>
               <input
                 type="text"
                 value={heroTitle2}
                 onChange={(e) => setHeroTitle2(e.target.value)}
-                placeholder="ID"
+                placeholder="Kosongkan jika hanya BREAKOUT"
                 className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-mono uppercase focus:outline-none focus:border-[#c8f560]"
               />
             </div>
