@@ -34,92 +34,12 @@ export async function POST(req: Request) {
         role,
         avatar:
           "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        totalStreams: 3457000,
-        royaltyBalance: 12450,
-        royaltyPending: 90,
-        totalWithdrawn: 5200,
-        pendingWithdraw: 300,
+        totalStreams: 0,
+        royaltyBalance: 0,
+        royaltyPending: 0,
+        totalWithdrawn: 0,
+        pendingWithdraw: 0,
       },
-    });
-
-    // Seed initial sample releases for new user so dashboard is immediately rich
-    await prisma.release.createMany({
-      data: [
-        {
-          title: "Midnight Echoes",
-          artist: user.name,
-          genre: "Pop • Electronic",
-          releaseDate: "22-05-2024",
-          duration: "3:02",
-          streams: "1.200K",
-          streamsNum: 1200000,
-          platform: "Spotify",
-          platforms: "Spotify,Apple Music,TikTok,YouTube",
-          status: "Approved",
-          coverUrl:
-            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80",
-          userId: user.id,
-        },
-        {
-          title: "Neon Nightfall",
-          artist: user.name,
-          genre: "Synthwave • Dance",
-          releaseDate: "16-04-2024",
-          duration: "4:00",
-          streams: "1.500K",
-          streamsNum: 1500000,
-          platform: "Apple Music",
-          platforms: "Spotify,Apple Music,YouTube",
-          status: "Approved",
-          coverUrl:
-            "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=300&auto=format&fit=crop&q=80",
-          userId: user.id,
-        },
-        {
-          title: "Velvet Horizon",
-          artist: user.name,
-          genre: "Chill • R&B",
-          releaseDate: "10-03-2024",
-          duration: "3:45",
-          streams: "450K",
-          streamsNum: 450000,
-          platform: "TikTok",
-          platforms: "Spotify,TikTok,YouTube",
-          status: "Pending",
-          coverUrl:
-            "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=300&auto=format&fit=crop&q=80",
-          userId: user.id,
-        },
-      ],
-    });
-
-    await prisma.withdrawal.createMany({
-      data: [
-        {
-          date: "22-05-2024",
-          amount: 1200,
-          method: "Bank • BCA",
-          accountNumber: "1234 5678 9012 3456",
-          status: "Approved",
-          userId: user.id,
-        },
-        {
-          date: "16-04-2024",
-          amount: 900,
-          method: "E-Wallet • OVO",
-          accountNumber: "0812 3456 7890",
-          status: "Approved",
-          userId: user.id,
-        },
-        {
-          date: "10-03-2024",
-          amount: 300,
-          method: "Bank • Mandiri",
-          accountNumber: "1370 0098 7654 3",
-          status: "Pending",
-          userId: user.id,
-        },
-      ],
     });
 
     const response = NextResponse.json({

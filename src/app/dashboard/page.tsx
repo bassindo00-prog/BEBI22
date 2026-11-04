@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -412,25 +412,73 @@ export default function UserDashboardPage() {
 
   const releases = user?.releases || [];
   const withdrawals = user?.withdrawals || [];
-  const approvedCount = releases.filter((r) => r.status === "Approved").length + 16;
-  const pendingCount = releases.filter((r) => r.status === "Pending").length + 3;
-  const totalReleasesCount = approvedCount + pendingCount + 2;
+  const approvedCount = releases.filter((r) => r.status === "Approved").length;
+  const pendingCount = releases.filter((r) => r.status === "Pending").length;
+  const totalReleasesCount = releases.length;
 
-  const batteryTarget = period === "Daily" ? 76 : period === "Weekly" ? 84 : 92;
+  const userStreams = user?.totalStreams || 0;
+  const userRoyalty = user?.royaltyBalance || 0;
+  const userPendingRoyalty = user?.royaltyPending || 0;
+
+  const batteryTarget = releases.length > 0 ? Math.round((approvedCount / releases.length) * 100) : 0;
   const animatedBatteryPct = Math.round(batteryTarget * animProgress);
-  const animatedStreamsToday = Math.round(
-    (period === "Daily" ? 3457 : period === "Weekly" ? 8920 : 24650) * animProgress
-  );
-  const animatedRoyaltyPending = Math.round(
-    (user?.royaltyPending ?? 90) *
-      (period === "Daily" ? 1 : period === "Weekly" ? 2.4 : 6.5) *
-      animProgress
-  );
-  const animatedDonutPct = Math.round(71 * animProgress);
+  const animatedStreamsToday = Math.round(userStreams * animProgress);
+  const animatedRoyaltyPending = Math.round(userPendingRoyalty * animProgress);
+  const animatedRoyaltyBalance = Math.round(userRoyalty * animProgress);
 
-  const activeOverviewPoint = OVERVIEW_CHART_POINTS[hoveredDayIdx] || OVERVIEW_CHART_POINTS[4];
-  const activeAnalyticsPoint =
-    ANALYTICS_CHART_POINTS[hoveredMonthIdx] || ANALYTICS_CHART_POINTS[4];
+  const hasStreamData = userStreams > 0 || userRoyalty > 0;
+  const animatedDonutPct = hasStreamData ? Math.round(71 * animProgress) : 0;
+
+  const overviewChartPoints = useMemo(() => {
+    if (!hasStreamData) {
+      return [
+        { day: "Mon", x: 18, y: 92, val: 0 },
+        { day: "Tue", x: 68, y: 92, val: 0 },
+        { day: "Wed", x: 115, y: 92, val: 0 },
+        { day: "Thu", x: 160, y: 92, val: 0 },
+        { day: "Fri", x: 205, y: 92, val: 0 },
+        { day: "Sat", x: 260, y: 92, val: 0 },
+        { day: "Sun", x: 306, y: 92, val: 0 },
+      ];
+    }
+    const base = Math.max(1, Math.round(userStreams / 7));
+    return [
+      { day: "Mon", x: 18, y: 55, val: Math.round(base * 0.8) },
+      { day: "Tue", x: 68, y: 62, val: Math.round(base * 0.7) },
+      { day: "Wed", x: 115, y: 66, val: Math.round(base * 0.6) },
+      { day: "Thu", x: 160, y: 42, val: Math.round(base * 1.1) },
+      { day: "Fri", x: 205, y: 21, val: Math.round(base * 1.5) },
+      { day: "Sat", x: 260, y: 58, val: Math.round(base * 0.9) },
+      { day: "Sun", x: 306, y: 34, val: Math.round(base * 1.2) },
+    ];
+  }, [hasStreamData, userStreams]);
+
+  const analyticsChartPoints = useMemo(() => {
+    if (!hasStreamData) {
+      return [
+        { month: "Jan", x: 12, y: 88, val: 0 },
+        { month: "Feb", x: 52, y: 88, val: 0 },
+        { month: "Apr", x: 88, y: 88, val: 0 },
+        { month: "May", x: 125, y: 88, val: 0 },
+        { month: "Jun", x: 161, y: 88, val: 0 },
+        { month: "Jul", x: 208, y: 88, val: 0 },
+        { month: "now", x: 250, y: 88, val: 0 },
+      ];
+    }
+    const base = Math.max(1, Math.round(userRoyalty / 6));
+    return [
+      { month: "Jan", x: 12, y: 52, val: Math.round(base * 0.7) },
+      { month: "Feb", x: 52, y: 56, val: Math.round(base * 0.6) },
+      { month: "Apr", x: 88, y: 68, val: Math.round(base * 0.5) },
+      { month: "May", x: 125, y: 39, val: Math.round(base * 0.9) },
+      { month: "Jun", x: 161, y: 21, val: Math.round(base * 1.2) },
+      { month: "Jul", x: 208, y: 54, val: Math.round(base * 0.8) },
+      { month: "now", x: 250, y: 30, val: Math.round(base * 1.1) },
+    ];
+  }, [hasStreamData, userRoyalty]);
+
+  const activeOverviewPoint = overviewChartPoints[hoveredDayIdx] || overviewChartPoints[4];
+  const activeAnalyticsPoint = analyticsChartPoints[hoveredMonthIdx] || analyticsChartPoints[4];
 
   return (
     <div
@@ -860,17 +908,16 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Total streams today</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedStreamsToday}K
+                      {animatedStreamsToday > 0 ? `${animatedStreamsToday.toLocaleString()}K` : "0"}
                     </p>
                   </div>
 
                   <div className="h-9 w-[1px] bg-white/25 hidden sm:block" />
 
                   <div>
-                    <p className="text-xs text-white/80">royalty pending</p>
+                    <p className="text-xs text-white/80">Royalty pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending}{" "}
-                      <span className="text-xs font-normal text-white/50">bpm</span>
+                      ${animatedRoyaltyPending.toLocaleString()}
                     </p>
                   </div>
 
@@ -1013,7 +1060,7 @@ export default function UserDashboardPage() {
                         }}
                         className="absolute -top-1 bg-[#312042] border border-[#c8f560]/60 text-[#c8f560] px-3 py-1 rounded-xl text-xs font-bold shadow-lg transition-all duration-300 animate-tooltip-float z-20 tabular-nums"
                       >
-                        {Math.round(activeOverviewPoint.val * animProgress)} K
+                        {Math.round(activeOverviewPoint.val * animProgress)} {hasStreamData ? "K" : "Streams"}
                         <div className="w-2 h-2 bg-[#312042] rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
                       </div>
 
@@ -1025,52 +1072,77 @@ export default function UserDashboardPage() {
                           </linearGradient>
                         </defs>
 
-                        <rect
-                          x={activeOverviewPoint.x - 11}
-                          y={activeOverviewPoint.y}
-                          width="22"
-                          height={105 - activeOverviewPoint.y}
-                          rx="11"
-                          fill="url(#barGlow)"
-                          className="animate-pillar-rise transition-all duration-300"
-                        />
+                        {hasStreamData ? (
+                          <>
+                            <rect
+                              x={activeOverviewPoint.x - 11}
+                              y={activeOverviewPoint.y}
+                              width="22"
+                              height={105 - activeOverviewPoint.y}
+                              rx="11"
+                              fill="url(#barGlow)"
+                              className="animate-pillar-rise transition-all duration-300"
+                            />
 
-                        <path
-                          d="M 10 85 C 45 85, 65 85, 95 62 C 125 42, 150 78, 185 68 C 215 58, 240 42, 265 65 C 285 80, 300 75, 312 62"
-                          fill="none"
-                          stroke="rgba(255,255,255,0.35)"
-                          strokeWidth="2.5"
-                          className="animate-svg-line"
-                        />
+                            <path
+                              d="M 10 85 C 45 85, 65 85, 95 62 C 125 42, 150 78, 185 68 C 215 58, 240 42, 265 65 C 285 80, 300 75, 312 62"
+                              fill="none"
+                              stroke="rgba(255,255,255,0.35)"
+                              strokeWidth="2.5"
+                              className="animate-svg-line"
+                            />
 
-                        <path
-                          d="M 10 55 C 45 55, 65 55, 85 68 C 110 82, 130 50, 160 42 C 185 35, 198 18, 212 22 C 235 28, 265 62, 285 58 C 300 54, 308 38, 312 32"
-                          fill="none"
-                          stroke="#c8f560"
-                          strokeWidth="3"
-                          className="animate-svg-line"
-                        />
+                            <path
+                              d="M 10 55 C 45 55, 65 55, 85 68 C 110 82, 130 50, 160 42 C 185 35, 198 18, 212 22 C 235 28, 265 62, 285 58 C 300 54, 308 38, 312 32"
+                              fill="none"
+                              stroke="#c8f560"
+                              strokeWidth="3"
+                              className="animate-svg-line"
+                            />
 
-                        <circle
-                          cx={activeOverviewPoint.x}
-                          cy={activeOverviewPoint.y}
-                          r="11"
-                          fill="#c8f560"
-                          opacity="0.3"
-                          className="animate-ping transition-all duration-300"
-                        />
+                            <circle
+                              cx={activeOverviewPoint.x}
+                              cy={activeOverviewPoint.y}
+                              r="11"
+                              fill="#c8f560"
+                              opacity="0.3"
+                              className="animate-ping transition-all duration-300"
+                            />
 
-                        <circle
-                          cx={activeOverviewPoint.x}
-                          cy={activeOverviewPoint.y}
-                          r="6"
-                          fill="#8a88b5"
-                          stroke="#c8f560"
-                          strokeWidth="3.5"
-                          className="transition-all duration-300"
-                        />
+                            <circle
+                              cx={activeOverviewPoint.x}
+                              cy={activeOverviewPoint.y}
+                              r="6"
+                              fill="#8a88b5"
+                              stroke="#c8f560"
+                              strokeWidth="3.5"
+                              className="transition-all duration-300"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <line
+                              x1="10"
+                              y1="92"
+                              x2="310"
+                              y2="92"
+                              stroke="#c8f560"
+                              strokeWidth="2"
+                              strokeDasharray="4 4"
+                              opacity="0.45"
+                            />
+                            <circle
+                              cx={activeOverviewPoint.x}
+                              cy={92}
+                              r="5"
+                              fill="#312042"
+                              stroke="#c8f560"
+                              strokeWidth="2.5"
+                            />
+                          </>
+                        )}
 
-                        {OVERVIEW_CHART_POINTS.map((pt, idx) => (
+                        {overviewChartPoints.map((pt, idx) => (
                           <rect
                             key={pt.day}
                             x={pt.x - 20}
@@ -1084,8 +1156,16 @@ export default function UserDashboardPage() {
                         ))}
                       </svg>
 
+                      {!hasStreamData && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-6">
+                          <span className="text-[10px] text-white/50 bg-[#312042]/50 px-2.5 py-0.5 rounded-full border border-white/10">
+                            Belum ada statistik streaming
+                          </span>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between text-[11px] text-white/75 pt-1">
-                        {OVERVIEW_CHART_POINTS.map((pt, idx) => (
+                        {overviewChartPoints.map((pt, idx) => (
                           <button
                             key={pt.day}
                             type="button"
@@ -1118,7 +1198,7 @@ export default function UserDashboardPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-end justify-between h-32 pt-4 gap-2">
+                  <div className="flex items-end justify-between h-32 pt-4 gap-2 relative">
                     <div className="flex flex-col justify-between h-full text-[10px] text-white/70 pb-5 shrink-0">
                       <span>600</span>
                       <span>400</span>
@@ -1133,8 +1213,8 @@ export default function UserDashboardPage() {
                         { label: "YouTube", h1: 82, h2: 56, c1: "bg-[#c4c3f0]" },
                       ].map((bar, i) => {
                         const liveOffset = liveTick % 2 === i % 2 ? 3 : -2;
-                        const height1 = barsReady ? Math.max(12, bar.h1 + liveOffset) : 0;
-                        const height2 = barsReady ? Math.max(10, bar.h2 - liveOffset) : 0;
+                        const height1 = barsReady ? (hasStreamData ? Math.max(12, bar.h1 + liveOffset) : 6) : 0;
+                        const height2 = barsReady ? (hasStreamData ? Math.max(10, bar.h2 - liveOffset) : 6) : 0;
                         return (
                           <div key={i} className="flex flex-col items-center gap-2 group min-w-0">
                             <div className="flex items-end justify-center gap-1 h-24 w-full">
@@ -1190,35 +1270,51 @@ export default function UserDashboardPage() {
                         <div className="col-span-3 text-right font-semibold">ISRC Code</div>
                       </div>
 
-                      <div className="divide-y divide-white/15">
-                        {releases.slice(0, 3).map((item) => (
-                          <div
-                            key={item.id}
-                            className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/10 rounded-xl px-2 transition-colors"
+                      {releases.length === 0 ? (
+                        <div className="py-10 text-center text-white/70">
+                          <Music className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
+                          <p className="text-[11px] text-white/60 mt-1 max-w-sm mx-auto">
+                            Lagu yang Anda submit akan muncul di sini lengkap dengan status verifikasi, barcode UPC & ISRC.
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("upload")}
+                            className="mt-3 px-4 py-1.5 rounded-full bg-[#312042] text-[11px] text-[#c8f560] font-semibold hover:bg-[#422c58] transition-colors"
                           >
-                            <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                              <img
-                                src={item.coverUrl}
-                                alt={item.title}
-                                className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/25"
-                              />
-                              <div className="min-w-0">
-                                <p className="font-semibold text-white truncate">{item.title}</p>
-                                <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                            + Submit Lagu Baru
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-white/15">
+                          {releases.slice(0, 3).map((item) => (
+                            <div
+                              key={item.id}
+                              className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/10 rounded-xl px-2 transition-colors"
+                            >
+                              <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+                                <img
+                                  src={item.coverUrl}
+                                  alt={item.title}
+                                  className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/25"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-white truncate">{item.title}</p>
+                                  <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                                </div>
+                              </div>
+                              <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
+                                {item.releaseDate}
+                              </div>
+                              <div className="col-span-2 text-center font-mono font-semibold text-white/90 text-[11px] whitespace-nowrap">
+                                {item.upc || "899214578101"}
+                              </div>
+                              <div className="col-span-3 text-right font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
+                                {item.isrc || "ID-HRM-24-00101"}
                               </div>
                             </div>
-                            <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
-                              {item.releaseDate}
-                            </div>
-                            <div className="col-span-2 text-center font-mono font-semibold text-white/90 text-[11px] whitespace-nowrap">
-                              {item.upc || "899214578101"}
-                            </div>
-                            <div className="col-span-3 text-right font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
-                              {item.isrc || "ID-HRM-24-00101"}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1231,68 +1327,62 @@ export default function UserDashboardPage() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-medium text-white">Upcoming Releases</h3>
                     <span className="text-xs text-white/75 flex items-center gap-1">
-                      January <ChevronDown className="w-3.5 h-3.5" />
+                      Schedule <ChevronDown className="w-3.5 h-3.5" />
                     </span>
                   </div>
 
-                  <div className="space-y-4 text-xs">
-                    <div className="grid grid-cols-12 items-center gap-2 pb-3 border-b border-white/15">
-                      <div className="col-span-3 text-white/75">
-                        <p className="text-[11px] text-white/70 mb-1">Spotify</p>
-                        <p className="font-semibold text-white">08</p>
-                        <p className="text-[11px]">Tue</p>
-                      </div>
-                      <div className="col-span-9">
-                        <p className="text-[11px] text-white/70 mb-1.5">Schedule Today</p>
-                        <div className="px-4 py-2.5 rounded-2xl bg-white/15 text-white font-medium">
-                          Release Schedule
-                        </div>
-                      </div>
+                  {releases.length === 0 ? (
+                    <div className="py-10 text-center text-white/70">
+                      <Calendar className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                      <p className="font-medium text-xs text-white">Belum Ada Jadwal Rilis</p>
+                      <p className="text-[11px] text-white/60 mt-1">
+                        Jadwal tanggal rilis DSP Anda akan muncul di sini.
+                      </p>
                     </div>
-
-                    {[
-                      {
-                        day: "08",
-                        dow: "Tue",
-                        title: "Midnight Echoes",
-                        time: "3:02 - 4:30",
-                        bg: "bg-[#c8f560] text-[#312042]",
-                      },
-                      {
-                        day: "09",
-                        dow: "Wed",
-                        title: "Neon Nightfall",
-                        time: "8:07 - 9:30",
-                        bg: "bg-[#312042] text-white",
-                      },
-                      {
-                        day: "10",
-                        dow: "Thu",
-                        title: "Velvet Horizon",
-                        time: "6:05 - 8:30",
-                        bg: "bg-white/20 text-white",
-                      },
-                    ].map((slot, idx) => (
-                      <div key={idx} className="grid grid-cols-12 items-center gap-2">
-                        <div className="col-span-3">
-                          <p className="font-semibold text-white">{slot.day}</p>
-                          <p className="text-[11px] text-white/70">{slot.dow}</p>
+                  ) : (
+                    <div className="space-y-4 text-xs">
+                      <div className="grid grid-cols-12 items-center gap-2 pb-3 border-b border-white/15">
+                        <div className="col-span-3 text-white/75">
+                          <p className="text-[11px] text-white/70 mb-1">DSP</p>
+                          <p className="font-semibold text-white">Live</p>
+                          <p className="text-[11px]">Active</p>
                         </div>
                         <div className="col-span-9">
-                          <div
-                            style={{
-                              width: barsReady ? "100%" : "0%",
-                              transitionDelay: `${idx * 140 + 200}ms`,
-                            }}
-                            className={`px-3.5 py-2.5 rounded-2xl ${slot.bg} flex items-center justify-between text-[11px] font-medium overflow-hidden whitespace-nowrap transition-all duration-700 ease-out`}
-                          >
-                            <span>{slot.title}</span>
-                            <span>{slot.time}</span>
+                          <p className="text-[11px] text-white/70 mb-1.5">Scheduled Releases</p>
+                          <div className="px-4 py-2.5 rounded-2xl bg-white/15 text-white font-medium">
+                            {releases.length} Track Terjadwal
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {releases.slice(0, 3).map((slot, idx) => (
+                        <div key={slot.id} className="grid grid-cols-12 items-center gap-2">
+                          <div className="col-span-3">
+                            <p className="font-semibold text-white text-[11px]">{slot.releaseDate.split("-")[0] || "01"}</p>
+                            <p className="text-[10px] text-white/70">DSP</p>
+                          </div>
+                          <div className="col-span-9">
+                            <div
+                              style={{
+                                width: barsReady ? "100%" : "0%",
+                                transitionDelay: `${idx * 140 + 200}ms`,
+                              }}
+                              className={`px-3.5 py-2.5 rounded-2xl ${
+                                idx === 0
+                                  ? "bg-[#c8f560] text-[#312042]"
+                                  : idx === 1
+                                  ? "bg-[#312042] text-white"
+                                  : "bg-white/20 text-white"
+                              } flex items-center justify-between text-[11px] font-medium overflow-hidden whitespace-nowrap transition-all duration-700 ease-out`}
+                            >
+                              <span className="truncate">{slot.title}</span>
+                              <span className="text-[10px] opacity-80 shrink-0 ml-1">{slot.status}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1317,19 +1407,19 @@ export default function UserDashboardPage() {
                   <div>
                     <p className="text-xs text-white/80">Total Streams</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedStreamsToday}K
+                      {animatedStreamsToday > 0 ? `${animatedStreamsToday.toLocaleString()}K` : "0"}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-white/80">Royalty</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      ${animatedRoyaltyPending}
+                      ${animatedRoyaltyPending.toLocaleString()}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-white/80">Top Platform</p>
                     <p className="text-xl sm:text-2xl font-semibold text-white mt-0.5">
-                      Spotify
+                      {hasStreamData ? "Spotify" : "-"}
                     </p>
                   </div>
                   <button
@@ -1378,47 +1468,72 @@ export default function UserDashboardPage() {
                         {Math.round(activeAnalyticsPoint.val * animProgress)}$
                       </div>
                       <svg viewBox="0 0 260 100" className="w-full h-28 overflow-visible">
-                        <rect
-                          x={activeAnalyticsPoint.x - 9}
-                          y={activeAnalyticsPoint.y}
-                          width="18"
-                          height={95 - activeAnalyticsPoint.y}
-                          rx="9"
-                          fill="rgba(200,245,96,0.38)"
-                          className="animate-pillar-rise transition-all duration-300"
-                        />
-                        <path
-                          d="M 5 75 C 35 75, 50 75, 70 50 C 90 30, 115 70, 140 55 C 165 40, 185 55, 210 68 C 230 78, 245 72, 255 60"
-                          fill="none"
-                          stroke="rgba(255,255,255,0.4)"
-                          strokeWidth="2.2"
-                          className="animate-svg-line"
-                        />
-                        <path
-                          d="M 5 52 C 35 52, 50 52, 68 64 C 88 76, 105 42, 130 38 C 150 35, 156 18, 168 22 C 185 28, 210 56, 230 52 C 245 48, 250 35, 255 28"
-                          fill="none"
-                          stroke="#c8f560"
-                          strokeWidth="2.8"
-                          className="animate-svg-line"
-                        />
-                        <circle
-                          cx={activeAnalyticsPoint.x}
-                          cy={activeAnalyticsPoint.y}
-                          r="9"
-                          fill="#c8f560"
-                          opacity="0.35"
-                          className="animate-ping transition-all duration-300"
-                        />
-                        <circle
-                          cx={activeAnalyticsPoint.x}
-                          cy={activeAnalyticsPoint.y}
-                          r="5.5"
-                          fill="#8a88b5"
-                          stroke="#c8f560"
-                          strokeWidth="3.5"
-                          className="transition-all duration-300"
-                        />
-                        {ANALYTICS_CHART_POINTS.map((pt, idx) => (
+                        {hasStreamData ? (
+                          <>
+                            <rect
+                              x={activeAnalyticsPoint.x - 9}
+                              y={activeAnalyticsPoint.y}
+                              width="18"
+                              height={95 - activeAnalyticsPoint.y}
+                              rx="9"
+                              fill="rgba(200,245,96,0.38)"
+                              className="animate-pillar-rise transition-all duration-300"
+                            />
+                            <path
+                              d="M 5 75 C 35 75, 50 75, 70 50 C 90 30, 115 70, 140 55 C 165 40, 185 55, 210 68 C 230 78, 245 72, 255 60"
+                              fill="none"
+                              stroke="rgba(255,255,255,0.4)"
+                              strokeWidth="2.2"
+                              className="animate-svg-line"
+                            />
+                            <path
+                              d="M 5 52 C 35 52, 50 52, 68 64 C 88 76, 105 42, 130 38 C 150 35, 156 18, 168 22 C 185 28, 210 56, 230 52 C 245 48, 250 35, 255 28"
+                              fill="none"
+                              stroke="#c8f560"
+                              strokeWidth="2.8"
+                              className="animate-svg-line"
+                            />
+                            <circle
+                              cx={activeAnalyticsPoint.x}
+                              cy={activeAnalyticsPoint.y}
+                              r="9"
+                              fill="#c8f560"
+                              opacity="0.35"
+                              className="animate-ping transition-all duration-300"
+                            />
+                            <circle
+                              cx={activeAnalyticsPoint.x}
+                              cy={activeAnalyticsPoint.y}
+                              r="5.5"
+                              fill="#8a88b5"
+                              stroke="#c8f560"
+                              strokeWidth="3.5"
+                              className="transition-all duration-300"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <line
+                              x1="5"
+                              y1="88"
+                              x2="255"
+                              y2="88"
+                              stroke="#c8f560"
+                              strokeWidth="2"
+                              strokeDasharray="4 4"
+                              opacity="0.4"
+                            />
+                            <circle
+                              cx={activeAnalyticsPoint.x}
+                              cy={88}
+                              r="4.5"
+                              fill="#312042"
+                              stroke="#c8f560"
+                              strokeWidth="2"
+                            />
+                          </>
+                        )}
+                        {analyticsChartPoints.map((pt, idx) => (
                           <rect
                             key={pt.month}
                             x={pt.x - 16}
@@ -1432,7 +1547,7 @@ export default function UserDashboardPage() {
                         ))}
                       </svg>
                       <div className="flex items-center justify-between text-[10px] text-white/75">
-                        {ANALYTICS_CHART_POINTS.map((pt, idx) => (
+                        {analyticsChartPoints.map((pt, idx) => (
                           <button
                             key={pt.month}
                             type="button"
@@ -1464,7 +1579,7 @@ export default function UserDashboardPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-end justify-between h-36 pt-4 gap-3">
+                  <div className="flex items-end justify-between h-36 pt-4 gap-3 relative">
                     <div className="flex flex-col justify-between h-full text-[10px] text-white/70 pb-5">
                       <span>1200</span>
                       <span>800</span>
@@ -1478,7 +1593,7 @@ export default function UserDashboardPage() {
                       { name: "YouTube", pct: 58, bg: "bg-[#c4c3f0]" },
                     ].map((b, i) => {
                       const jitter = liveTick % 2 === i % 2 ? 3 : -2;
-                      const heightPct = barsReady ? b.pct + jitter : 0;
+                      const heightPct = barsReady ? (hasStreamData ? b.pct + jitter : 5) : 0;
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2">
                           <div className="w-full flex justify-center items-end h-28">
@@ -1525,12 +1640,12 @@ export default function UserDashboardPage() {
                         fill="none"
                         stroke="#c8f560"
                         strokeWidth="5.5"
-                        strokeDasharray={`${30 * animProgress} 100`}
+                        strokeDasharray={`${(hasStreamData ? 30 : 0) * animProgress} 100`}
                         className="transition-all duration-300"
                       />
                     </svg>
                     <span className="absolute text-xl font-bold text-white tabular-nums">
-                      {animatedDonutPct}%
+                      {hasStreamData ? `${animatedDonutPct}%` : "0%"}
                     </span>
                   </div>
 
@@ -1539,11 +1654,11 @@ export default function UserDashboardPage() {
                     <div className="flex items-center gap-4 text-[11px] text-white/75">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560]" />
-                        Spotify {animatedDonutPct}%
+                        Spotify {hasStreamData ? `${animatedDonutPct}%` : "0%"}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-                        Other {100 - animatedDonutPct}%
+                        Other {hasStreamData ? `${100 - animatedDonutPct}%` : "0%"}
                       </span>
                     </div>
                   </div>
@@ -2195,15 +2310,15 @@ export default function UserDashboardPage() {
 
                 <div className="flex flex-wrap items-center gap-6">
                   <div>
-                    <p className="text-xs text-white/80">Total workout today</p>
+                    <p className="text-xs text-white/80">Total streams</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedStreamsToday} <span className="text-base font-normal">hours</span>
+                      {animatedStreamsToday > 0 ? `${animatedStreamsToday.toLocaleString()}K` : "0"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/80">heart rate</p>
+                    <p className="text-xs text-white/80">Royalty pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedRoyaltyPending} <span className="text-base font-normal">bpm</span>
+                      ${animatedRoyaltyPending.toLocaleString()}
                     </p>
                   </div>
                   <button
@@ -2225,7 +2340,7 @@ export default function UserDashboardPage() {
                   dotColor="bg-[#c4c3f0]"
                   valueColor="text-white"
                   cardNumber="4532 •••• •••• 1024"
-                  holderName={`${user?.name || "ABDUL"} • CATALOG`}
+                  holderName={`${user?.name || "ARTIST"} • CATALOG`}
                   expiry="08/29"
                   tier="PLATINUM"
                   variant="lavender"
@@ -2239,7 +2354,7 @@ export default function UserDashboardPage() {
                   dotColor="bg-[#c8f560]"
                   valueColor="text-[#c8f560]"
                   cardNumber="4532 •••• •••• 7718"
-                  holderName={`${user?.name || "ABDUL"} • VERIFIED`}
+                  holderName={`${user?.name || "ARTIST"} • VERIFIED`}
                   expiry="12/29"
                   tier="SIGNATURE"
                   variant="lime-tint"
@@ -2253,7 +2368,7 @@ export default function UserDashboardPage() {
                   dotColor="bg-[#fbbf24]"
                   valueColor="text-[#fde08d]"
                   cardNumber="4532 •••• •••• 3304"
-                  holderName={`${user?.name || "ABDUL"} • QUEUE`}
+                  holderName={`${user?.name || "ARTIST"} • QUEUE`}
                   expiry="05/28"
                   tier="INFINITE"
                   variant="plum"
@@ -2270,7 +2385,7 @@ export default function UserDashboardPage() {
                   <div className="pb-3 flex items-center justify-between border-b border-white/15">
                     <h3 className="text-sm font-medium text-white">My Releases</h3>
                     <span className="text-xs text-[#c8f560] underline cursor-pointer">
-                      See All Releases
+                      Total: {releases.length} Track
                     </span>
                   </div>
 
@@ -2284,46 +2399,62 @@ export default function UserDashboardPage() {
                         <div className="col-span-2 text-right font-semibold">Status</div>
                       </div>
 
-                      <div className="divide-y divide-white/15">
-                        {releases.map((item) => (
-                          <div
-                            key={item.id}
-                            className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/5 rounded-xl px-2 transition-colors"
+                      {releases.length === 0 ? (
+                        <div className="py-12 text-center text-white/70">
+                          <FolderOpen className="w-12 h-12 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-base text-white">Belum Ada Rilisan Lagu</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Anda belum memiliki lagu yang dirilis. Klik tombol Submit Track untuk mengajukan lagu baru ke DSP.
+                          </p>
+                          <button
+                            onClick={() => setActiveTab("upload")}
+                            className="mt-4 px-5 py-2 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold hover:scale-105 transition-all shadow-md"
                           >
-                            <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
-                              <img
-                                src={item.coverUrl}
-                                alt={item.title}
-                                className="w-11 h-11 rounded-xl object-cover border border-white/25 shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <p className="font-semibold text-white truncate">{item.title}</p>
-                                <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                            + Submit Lagu Baru
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-white/15">
+                          {releases.map((item) => (
+                            <div
+                              key={item.id}
+                              className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/5 rounded-xl px-2 transition-colors"
+                            >
+                              <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
+                                <img
+                                  src={item.coverUrl}
+                                  alt={item.title}
+                                  className="w-11 h-11 rounded-xl object-cover border border-white/25 shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-white truncate">{item.title}</p>
+                                  <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
+                                </div>
+                              </div>
+                              <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
+                                {item.releaseDate}
+                              </div>
+                              <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-[11px] whitespace-nowrap">
+                                {item.upc || "899214578101"}
+                              </div>
+                              <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
+                                {item.isrc || "ID-HRM-24-00101"}
+                              </div>
+                              <div className="col-span-2 flex justify-end">
+                                {item.status === "Approved" ? (
+                                  <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
+                                    <Check className="w-3 h-3" /> Approved
+                                  </span>
+                                ) : (
+                                  <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
+                                    <Clock className="w-3 h-3" /> {item.status}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
-                              {item.releaseDate}
-                            </div>
-                            <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-[11px] whitespace-nowrap">
-                              {item.upc || "899214578101"}
-                            </div>
-                            <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
-                              {item.isrc || "ID-HRM-24-00101"}
-                            </div>
-                            <div className="col-span-2 flex justify-end">
-                              {item.status === "Approved" ? (
-                                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
-                                  <Check className="w-3 h-3" /> Approved
-                                </span>
-                              ) : (
-                                <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px] whitespace-nowrap">
-                                  <Clock className="w-3 h-3" /> {item.status}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2336,47 +2467,37 @@ export default function UserDashboardPage() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-medium text-white">Release Calendar</h3>
-                      <span className="text-xs text-white/75">January ▾</span>
+                      <span className="text-xs text-white/75">Schedule ▾</span>
                     </div>
                     <p className="text-xs font-semibold text-white/85 mb-3">Quick Stats</p>
 
-                    <div className="space-y-3 text-xs">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8">
-                          <p className="font-bold text-white">08</p>
-                          <p className="text-[10px] text-white/70">Tue</p>
-                        </div>
-                        <div className="flex-1 px-3.5 py-2 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px]">
-                          Midnight Echoes • Released
-                        </div>
+                    {releases.length === 0 ? (
+                      <div className="py-8 text-center text-white/70">
+                        <Calendar className="w-8 h-8 mx-auto text-white/25 mb-2" />
+                        <p className="font-medium text-xs text-white">Tidak ada jadwal rilis aktif</p>
+                        <p className="text-[11px] text-white/55 mt-1">Ajukan rilisan untuk melihat kalender distribusi.</p>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-8">
-                          <p className="font-bold text-white">09</p>
-                          <p className="text-[10px] text-white/70">Wed</p>
-                        </div>
-                        <div className="flex-1 px-3.5 py-2 rounded-full bg-[#312042] text-white font-medium text-[11px]">
-                          Neon Nightfall • Released
-                        </div>
+                    ) : (
+                      <div className="space-y-3 text-xs">
+                        {releases.slice(0, 3).map((item, idx) => (
+                          <div key={item.id} className="flex items-center gap-3">
+                            <div className="w-8 shrink-0">
+                              <p className="font-bold text-white text-xs">{item.releaseDate.split("-")[0] || "01"}</p>
+                              <p className="text-[10px] text-white/70">DSP</p>
+                            </div>
+                            <div className={`flex-1 px-3.5 py-2 rounded-full ${idx === 0 ? "bg-[#c8f560] text-[#312042]" : "bg-[#312042] text-white"} font-semibold text-[11px] truncate`}>
+                              {item.title} • {item.status}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-8">
-                          <p className="font-bold text-white">15</p>
-                          <p className="text-[10px] text-white/70">Wed</p>
-                        </div>
-                        <div className="flex-1 px-3.5 py-2 rounded-full bg-[#fde08d] text-[#312042] font-semibold text-[11px]">
-                          Velvet Horizon • Out Soon
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="mt-5 p-3.5 rounded-2xl bg-white/15 border border-white/15 text-xs">
-                    <p className="font-semibold text-white">Upcoming</p>
+                    <p className="font-semibold text-white">Status Distribusi</p>
                     <p className="text-white/75 text-[11px] mt-0.5">
-                      1 release scheduled — Jan 15
+                      {releases.length > 0 ? `${releases.length} rilis terdata dalam sistem` : "Belum ada rilisan aktif"}
                     </p>
                   </div>
                 </div>
@@ -2401,15 +2522,15 @@ export default function UserDashboardPage() {
 
                 <div className="flex flex-wrap items-center gap-6">
                   <div>
-                    <p className="text-xs text-white/80">Total workout today</p>
+                    <p className="text-xs text-white/80">Total Royalti</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedStreamsToday} <span className="text-base font-normal">hours</span>
+                      ${animatedRoyaltyBalance.toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-white/80">heart rate</p>
+                    <p className="text-xs text-white/80">Royalti Pending</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedRoyaltyPending} <span className="text-base font-normal">bpm</span>
+                      ${animatedRoyaltyPending.toLocaleString()}
                     </p>
                   </div>
                   <button
@@ -2426,12 +2547,12 @@ export default function UserDashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <VisaMetricCard
                   title="Royalty Balance"
-                  value={`$${Math.round((user?.royaltyBalance ?? 12450) * animProgress).toLocaleString()}`}
+                  value={`$${Math.round((user?.royaltyBalance || 0) * animProgress).toLocaleString()}`}
                   subtitle="Available for withdrawal"
                   dotColor="bg-[#c8f560]"
                   valueColor="text-[#c8f560]"
                   cardNumber="4532 •••• •••• 8891"
-                  holderName={`${user?.name || "ABDUL"} • HERMES PAY`}
+                  holderName={`${user?.name || "ARTIST"} • HERMES PAY`}
                   expiry="09/29"
                   tier="INFINITE"
                   variant="lime-tint"
@@ -2440,12 +2561,12 @@ export default function UserDashboardPage() {
 
                 <VisaMetricCard
                   title="Total Withdrawn"
-                  value={`$${Math.round((user?.totalWithdrawn ?? 5200) * animProgress).toLocaleString()}`}
+                  value={`$${Math.round((user?.totalWithdrawn || 0) * animProgress).toLocaleString()}`}
                   subtitle="Completed payouts"
                   dotColor="bg-[#c4c3f0]"
                   valueColor="text-white"
                   cardNumber="4532 •••• •••• 5204"
-                  holderName={`${user?.name || "ABDUL"} • SETTLED`}
+                  holderName={`${user?.name || "ARTIST"} • SETTLED`}
                   expiry="11/28"
                   tier="SIGNATURE"
                   variant="lavender"
@@ -2454,12 +2575,12 @@ export default function UserDashboardPage() {
 
                 <VisaMetricCard
                   title="Pending Withdrawal"
-                  value={`$${Math.round((user?.pendingWithdraw ?? 300) * animProgress).toLocaleString()}`}
+                  value={`$${Math.round((user?.pendingWithdraw || 0) * animProgress).toLocaleString()}`}
                   subtitle="Processing"
                   dotColor="bg-[#f59e0b]"
                   valueColor="text-[#fde08d]"
                   cardNumber="4532 •••• •••• 0309"
-                  holderName={`${user?.name || "ABDUL"} • ESCROW`}
+                  holderName={`${user?.name || "ARTIST"} • ESCROW`}
                   expiry="04/29"
                   tier="PLATINUM"
                   variant="plum"
@@ -2476,7 +2597,7 @@ export default function UserDashboardPage() {
                   <div className="pb-3 flex items-center justify-between border-b border-white/15">
                     <h3 className="text-sm font-medium text-white">Withdrawal History</h3>
                     <span className="text-xs text-[#c8f560] underline cursor-pointer">
-                      See All Transactions
+                      Total: {withdrawals.length} Transaksi
                     </span>
                   </div>
 
@@ -2488,38 +2609,48 @@ export default function UserDashboardPage() {
                       <div className="col-span-3 text-right">Status</div>
                     </div>
 
-                    <div className="divide-y divide-white/15">
-                      {withdrawals.map((w) => (
-                        <div
-                          key={w.id}
-                          className="grid grid-cols-12 items-center py-4 text-xs"
-                        >
-                          <div className="col-span-3 font-medium text-white/90">{w.date}</div>
-                          <div className="col-span-3 text-center font-bold text-[#c8f560]">
-                            ${w.amount.toLocaleString()}
+                    {withdrawals.length === 0 ? (
+                      <div className="py-10 text-center text-white/70">
+                        <Building2 className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                        <p className="font-semibold text-sm text-white">Belum Ada Riwayat Penarikan</p>
+                        <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                          Anda belum mengajukan pencairan saldo royalti. Ajukan penarikan melalui formulir di samping.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-white/15">
+                        {withdrawals.map((w) => (
+                          <div
+                            key={w.id}
+                            className="grid grid-cols-12 items-center py-4 text-xs"
+                          >
+                            <div className="col-span-3 font-medium text-white/90">{w.date}</div>
+                            <div className="col-span-3 text-center font-bold text-[#c8f560]">
+                              ${w.amount.toLocaleString()}
+                            </div>
+                            <div className="col-span-3 flex items-center justify-center gap-1.5 font-medium text-white">
+                              {w.method.includes("E-Wallet") ? (
+                                <Smartphone className="w-3.5 h-3.5 text-[#c8f560]" />
+                              ) : (
+                                <Building2 className="w-3.5 h-3.5 text-[#c8f560]" />
+                              )}
+                              <span>{w.method}</span>
+                            </div>
+                            <div className="col-span-3 flex justify-end">
+                              {w.status === "Approved" ? (
+                                <span className="px-3.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
+                                  <Check className="w-3 h-3" /> Approved
+                                </span>
+                              ) : (
+                                <span className="px-3.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
+                                  <Clock className="w-3 h-3" /> {w.status}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="col-span-3 flex items-center justify-center gap-1.5 font-medium text-white">
-                            {w.method.includes("E-Wallet") ? (
-                              <Smartphone className="w-3.5 h-3.5 text-[#c8f560]" />
-                            ) : (
-                              <Building2 className="w-3.5 h-3.5 text-[#c8f560]" />
-                            )}
-                            <span>{w.method}</span>
-                          </div>
-                          <div className="col-span-3 flex justify-end">
-                            {w.status === "Approved" ? (
-                              <span className="px-3.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
-                                <Check className="w-3 h-3" /> Approved
-                              </span>
-                            ) : (
-                              <span className="px-3.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
-                                <Clock className="w-3 h-3" /> {w.status}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2752,7 +2883,15 @@ export default function UserDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
-                      {catalogs.filter(
+                      {catalogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-14 text-center text-white/60 text-xs">
+                            <ListMusic className="w-10 h-10 mx-auto text-white/20 mb-2" />
+                            <p className="font-semibold text-sm text-white/80">Katalog Musik Masih Kosong</p>
+                            <p className="text-white/50 text-[11px] mt-1">Lagu resmi yang diupload oleh label/admin akan tercantum di sini.</p>
+                          </td>
+                        </tr>
+                      ) : catalogs.filter(
                         (item) =>
                           !catalogSearch ||
                           item.songId?.toLowerCase().includes(catalogSearch.toLowerCase()) ||

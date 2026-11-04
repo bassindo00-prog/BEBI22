@@ -29,3 +29,5 @@ yarn-error.log*
 # local sqlite
 dev.db
 dev.db-journal
+
+*.tsbuildinfo

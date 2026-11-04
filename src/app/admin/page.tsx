@@ -420,10 +420,14 @@ export default function AdminDashboardPage() {
     .filter((w) => w.status === "Approved")
     .reduce((acc, w) => acc + Number(w.amount || 0), 0);
 
+  const totalGlobalStreams = users.reduce((acc, u) => acc + (u.totalStreams || 0), 0);
+  const totalGlobalRoyalty = users.reduce((acc, u) => acc + (u.royaltyBalance || 0), 0);
+  const hasGlobalData = totalGlobalStreams > 0 || totalGlobalRoyalty > 0;
+
   const adminBatteryPct = Math.round(
     (releases.length > 0
-      ? Math.max(76, Math.round((approvedReleases.length / releases.length) * 100))
-      : 82) * animProgress
+      ? Math.round((approvedReleases.length / releases.length) * 100)
+      : 0) * animProgress
   );
 
   return (
@@ -1053,7 +1057,7 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-xs text-white/80">Global network streams</p>
                 <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                  {Math.round(6914 * animProgress).toLocaleString()}K
+                  {totalGlobalStreams > 0 ? `${Math.round(totalGlobalStreams * animProgress).toLocaleString()}K` : "0"}
                 </p>
               </div>
 
@@ -1176,7 +1180,7 @@ export default function AdminDashboardPage() {
                   Global Label Royalty Velocity
                 </h3>
                 <span className="px-3 py-1 rounded-full bg-white/15 text-xs text-[#c8f560]">
-                  +18.4% Growth
+                  {hasGlobalData ? "+18.4% Growth" : "0% Activity"}
                 </span>
               </div>
 
@@ -1190,7 +1194,7 @@ export default function AdminDashboardPage() {
 
                 <div className="flex-1 relative h-full">
                   <div className="absolute left-[64%] -top-1 -translate-x-1/2 bg-[#312042] border border-[#c8f560]/60 text-[#c8f560] px-3 py-1 rounded-xl text-xs font-bold shadow-md animate-tooltip-float tabular-nums">
-                    ${Math.round(12450 * animProgress).toLocaleString()}
+                    ${Math.round(totalGlobalRoyalty * animProgress).toLocaleString()}
                     <div className="w-2 h-2 bg-[#312042] rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
                   </div>
 
@@ -1201,46 +1205,80 @@ export default function AdminDashboardPage() {
                         <stop offset="100%" stopColor="#c8f560" stopOpacity="0.0" />
                       </linearGradient>
                     </defs>
-                    <rect
-                      x="194"
-                      y="20"
-                      width="22"
-                      height="85"
-                      rx="11"
-                      fill="url(#adminGlow)"
-                      className="animate-pillar-rise"
-                    />
-                    <path
-                      d="M 10 85 C 45 85, 65 85, 95 62 C 125 42, 150 78, 185 68 C 215 58, 240 42, 265 65 C 285 80, 300 75, 312 62"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.35)"
-                      strokeWidth="2.5"
-                      className="animate-svg-line"
-                    />
-                    <path
-                      d="M 10 55 C 45 55, 65 55, 85 68 C 110 82, 130 50, 160 42 C 185 35, 198 18, 212 22 C 235 28, 265 62, 285 58 C 300 54, 308 38, 312 32"
-                      fill="none"
-                      stroke="#c8f560"
-                      strokeWidth="3"
-                      className="animate-svg-line"
-                    />
-                    <circle
-                      cx="205"
-                      cy="21"
-                      r="10"
-                      fill="#c8f560"
-                      opacity="0.35"
-                      className="animate-ping"
-                    />
-                    <circle
-                      cx="205"
-                      cy="21"
-                      r="6"
-                      fill="#8a88b5"
-                      stroke="#c8f560"
-                      strokeWidth="3.5"
-                    />
+
+                    {hasGlobalData ? (
+                      <>
+                        <rect
+                          x="194"
+                          y="20"
+                          width="22"
+                          height="85"
+                          rx="11"
+                          fill="url(#adminGlow)"
+                          className="animate-pillar-rise"
+                        />
+                        <path
+                          d="M 10 85 C 45 85, 65 85, 95 62 C 125 42, 150 78, 185 68 C 215 58, 240 42, 265 65 C 285 80, 300 75, 312 62"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.35)"
+                          strokeWidth="2.5"
+                          className="animate-svg-line"
+                        />
+                        <path
+                          d="M 10 55 C 45 55, 65 55, 85 68 C 110 82, 130 50, 160 42 C 185 35, 198 18, 212 22 C 235 28, 265 62, 285 58 C 300 54, 308 38, 312 32"
+                          fill="none"
+                          stroke="#c8f560"
+                          strokeWidth="3"
+                          className="animate-svg-line"
+                        />
+                        <circle
+                          cx="205"
+                          cy="21"
+                          r="10"
+                          fill="#c8f560"
+                          opacity="0.35"
+                          className="animate-ping"
+                        />
+                        <circle
+                          cx="205"
+                          cy="21"
+                          r="6"
+                          fill="#8a88b5"
+                          stroke="#c8f560"
+                          strokeWidth="3.5"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <line
+                          x1="10"
+                          y1="95"
+                          x2="310"
+                          y2="95"
+                          stroke="#c8f560"
+                          strokeWidth="2"
+                          strokeDasharray="4 4"
+                          opacity="0.4"
+                        />
+                        <circle
+                          cx="205"
+                          cy="95"
+                          r="5"
+                          fill="#312042"
+                          stroke="#c8f560"
+                          strokeWidth="2"
+                        />
+                      </>
+                    )}
                   </svg>
+
+                  {!hasGlobalData && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-6">
+                      <span className="text-[10px] text-white/50 bg-[#312042]/50 px-2.5 py-0.5 rounded-full border border-white/10">
+                        Belum ada data royalti jaringan
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between text-[11px] text-white/75 pt-1">
                     <span>Mon</span>
@@ -1268,7 +1306,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="flex items-end justify-between h-32 pt-4 gap-2">
+              <div className="flex items-end justify-between h-32 pt-4 gap-2 relative">
                 <div className="flex flex-col justify-between h-full text-[11px] text-white/70 pb-5">
                   <span>600</span>
                   <span>400</span>
@@ -1282,19 +1320,21 @@ export default function AdminDashboardPage() {
                   { label: "YouTube", h1: 86, h2: 60, c1: "bg-[#c4c3f0]" },
                 ].map((bar, i) => {
                   const wave = liveTick % 2 === i % 2 ? 3 : -2;
+                  const height1 = barsReady ? (hasGlobalData ? `${bar.h1 + wave}%` : "5%") : "0%";
+                  const height2 = barsReady ? (hasGlobalData ? `${bar.h2 - wave}%` : "5%") : "0%";
                   return (
                     <div key={i} className="flex flex-col items-center gap-2">
                       <div className="flex items-end gap-1.5 h-24">
                         <div
                           style={{
-                            height: barsReady ? `${bar.h1 + wave}%` : "0%",
+                            height: height1,
                             transitionDelay: `${i * 110}ms`,
                           }}
                           className={`w-2.5 rounded-full ${bar.c1} transition-all duration-1000 ease-out`}
                         />
                         <div
                           style={{
-                            height: barsReady ? `${bar.h2 - wave}%` : "0%",
+                            height: height2,
                             transitionDelay: `${i * 110 + 60}ms`,
                           }}
                           className="w-2.5 rounded-full bg-white/25 transition-all duration-1000 ease-out"
@@ -1306,6 +1346,14 @@ export default function AdminDashboardPage() {
                     </div>
                   );
                 })}
+
+                {!hasGlobalData && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-6">
+                    <span className="text-[10px] text-white/50 bg-[#312042]/50 px-2.5 py-0.5 rounded-full border border-white/10">
+                      0 live traffic
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1342,68 +1390,76 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <div className="divide-y divide-white/15">
-                      {releases.map((item) => (
-                        <div
-                          key={item.id}
-                          className="grid grid-cols-12 items-center py-3.5 text-xs gap-2 hover:bg-white/5 rounded-xl px-2 transition-colors cursor-pointer"
-                          onClick={() => setSelectedRelease(item)}
-                        >
-                          <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                            <img
-                              src={item.coverUrl}
-                              alt={item.title}
-                              className="w-10 h-10 rounded-xl object-cover shrink-0 border border-white/25"
-                            />
-                            <div className="min-w-0 truncate">
-                              <p className="font-semibold text-white truncate flex items-center gap-1.5">
-                                <span>{item.title}</span>
-                                <Eye className="w-3 h-3 text-[#c8f560]" />
-                              </p>
-                              <p className="text-[11px] text-white/70 truncate">
-                                {item.artist} • {item.genre}
-                              </p>
+                      {releases.length === 0 ? (
+                        <div className="py-10 text-center text-white/70">
+                          <Disc3 className="w-9 h-9 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-xs text-white">Belum Ada Rilisan Masuk</p>
+                          <p className="text-[11px] text-white/55 mt-0.5">Rilisan yang diajukan artis akan tampil di sini.</p>
+                        </div>
+                      ) : (
+                        releases.map((item) => (
+                          <div
+                            key={item.id}
+                            className="grid grid-cols-12 items-center py-3.5 text-xs gap-2 hover:bg-white/5 rounded-xl px-2 transition-colors cursor-pointer"
+                            onClick={() => setSelectedRelease(item)}
+                          >
+                            <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+                              <img
+                                src={item.coverUrl}
+                                alt={item.title}
+                                className="w-10 h-10 rounded-xl object-cover shrink-0 border border-white/25"
+                              />
+                              <div className="min-w-0 truncate">
+                                <p className="font-semibold text-white truncate flex items-center gap-1.5">
+                                  <span>{item.title}</span>
+                                  <Eye className="w-3 h-3 text-[#c8f560]" />
+                                </p>
+                                <p className="text-[11px] text-white/70 truncate">
+                                  {item.artist} • {item.genre}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="col-span-2 text-center font-semibold text-[#c8f560] whitespace-nowrap">
+                              {item.streams}
+                            </div>
+
+                            <div className="col-span-2 flex justify-center">
+                              {item.status === "Approved" ? (
+                                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
+                                  <Check className="w-3 h-3" /> Approved
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
+                                  <Clock className="w-3 h-3" /> {item.status}
+                                </span>
+                              )}
+                            </div>
+
+                            <div
+                              className="col-span-3 flex items-center justify-end gap-1.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRelease(item)}
+                                title="Buka Detail Rilis & Unduh MP3/Art"
+                                className="p-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25"
+                              >
+                                <Download className="w-3.5 h-3.5 text-[#c8f560]" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseStatus(item.id, "Approved")}
+                                title="Approve Release"
+                                className="px-2.5 py-1 rounded-lg bg-[#312042] text-[#c8f560] text-[11px] font-medium hover:bg-[#422c58]"
+                              >
+                                Approve
+                              </button>
                             </div>
                           </div>
-
-                          <div className="col-span-2 text-center font-semibold text-[#c8f560] whitespace-nowrap">
-                            {item.streams}
-                          </div>
-
-                          <div className="col-span-2 flex justify-center">
-                            {item.status === "Approved" ? (
-                              <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
-                                <Check className="w-3 h-3" /> Approved
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
-                                <Clock className="w-3 h-3" /> {item.status}
-                              </span>
-                            )}
-                          </div>
-
-                          <div
-                            className="col-span-3 flex items-center justify-end gap-1.5"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setSelectedRelease(item)}
-                              title="Buka Detail Rilis & Unduh MP3/Art"
-                              className="p-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25"
-                            >
-                              <Download className="w-3.5 h-3.5 text-[#c8f560]" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleReleaseStatus(item.id, "Approved")}
-                              title="Approve Release"
-                              className="px-2.5 py-1 rounded-lg bg-[#312042] text-[#c8f560] text-[11px] font-medium hover:bg-[#422c58]"
-                            >
-                              Approve
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1426,47 +1482,55 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="space-y-3">
-                    {withdrawals.map((w) => (
-                      <div
-                        key={w.id}
-                        className="p-3.5 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-[#c8f560]">
-                              ${w.amount.toLocaleString()}
-                            </span>
-                            <span className="text-white/90 font-medium">• {w.method}</span>
-                          </div>
-                          <p className="text-[11px] text-white/70 mt-0.5">
-                            {w.user?.name || "Artist"} • Acc: {w.accountNumber}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {w.status === "Pending" ? (
-                            <>
-                              <button
-                                onClick={() => handleWithdrawalStatus(w.id, "Approved")}
-                                className="px-3 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-semibold text-[11px] hover:opacity-90"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleWithdrawalStatus(w.id, "Rejected")}
-                                className="px-2.5 py-1.5 rounded-xl bg-red-500/30 border border-red-300/40 text-white font-medium text-[11px] hover:bg-red-500/45"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px]">
-                              {w.status}
-                            </span>
-                          )}
-                        </div>
+                    {withdrawals.length === 0 ? (
+                      <div className="py-10 text-center text-white/70">
+                        <Wallet className="w-9 h-9 mx-auto text-white/25 mb-2" />
+                        <p className="font-semibold text-xs text-white">Tidak Ada Antrean Payout</p>
+                        <p className="text-[11px] text-white/55 mt-0.5">Semua permintaan pencairan telah diproses.</p>
                       </div>
-                    ))}
+                    ) : (
+                      withdrawals.map((w) => (
+                        <div
+                          key={w.id}
+                          className="p-3.5 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-sm text-[#c8f560]">
+                                ${w.amount.toLocaleString()}
+                              </span>
+                              <span className="text-white/90 font-medium">• {w.method}</span>
+                            </div>
+                            <p className="text-[11px] text-white/70 mt-0.5">
+                              {w.user?.name || "Artist"} • Acc: {w.accountNumber}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {w.status === "Pending" ? (
+                              <>
+                                <button
+                                  onClick={() => handleWithdrawalStatus(w.id, "Approved")}
+                                  className="px-3 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-semibold text-[11px] hover:opacity-90"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleWithdrawalStatus(w.id, "Rejected")}
+                                  className="px-2.5 py-1.5 rounded-xl bg-red-500/30 border border-red-300/40 text-white font-medium text-[11px] hover:bg-red-500/45"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px]">
+                                {w.status}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1513,7 +1577,16 @@ export default function AdminDashboardPage() {
 
                   {/* Rows */}
                   <div className="divide-y divide-white/15">
-                    {releases.map((r) => (
+                    {releases.length === 0 ? (
+                      <div className="py-14 text-center text-white/70">
+                        <Disc3 className="w-12 h-12 mx-auto text-white/25 mb-2" />
+                        <p className="font-semibold text-base text-white">Belum Ada Pengajuan Rilisan</p>
+                        <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                          Rilisan lagu yang diajukan artis akan tampil di sini untuk Anda verifikasi, input ISRC/UPC, atau unduh MP3/artwork.
+                        </p>
+                      </div>
+                    ) : (
+                      releases.map((r) => (
                       <div
                         key={r.id}
                         onClick={() => setSelectedRelease(r)}
@@ -1599,7 +1672,7 @@ export default function AdminDashboardPage() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                    )))}
                   </div>
                 </div>
               </div>
@@ -2318,7 +2391,16 @@ export default function AdminDashboardPage() {
               </p>
 
               <div className="divide-y divide-white/15 text-xs">
-                {withdrawals.map((w) => (
+                {withdrawals.length === 0 ? (
+                  <div className="py-14 text-center text-white/70">
+                    <Wallet className="w-12 h-12 mx-auto text-white/25 mb-2" />
+                    <p className="font-semibold text-base text-white">Belum Ada Permintaan Payout</p>
+                    <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                      Permintaan pencairan royalti dari artis akan muncul di sini untuk Anda transfer dan setujui.
+                    </p>
+                  </div>
+                ) : (
+                  withdrawals.map((w) => (
                   <div
                     key={w.id}
                     className="py-4 flex flex-wrap items-center justify-between gap-4 hover:bg-white/5 rounded-2xl px-3 transition-colors"
@@ -2381,7 +2463,7 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </div>
           )}

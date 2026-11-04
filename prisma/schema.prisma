@@ -14,11 +14,11 @@ model User {
   password         String
   role             String       @default("USER") // "USER" | "ADMIN"
   avatar           String?
-  totalStreams     Int          @default(3457000)
-  royaltyBalance   Float        @default(12450)
-  royaltyPending   Float        @default(90)
-  totalWithdrawn   Float        @default(5200)
-  pendingWithdraw  Float        @default(300)
+  totalStreams     Int          @default(0)
+  royaltyBalance   Float        @default(0)
+  royaltyPending   Float        @default(0)
+  totalWithdrawn   Float        @default(0)
+  pendingWithdraw  Float        @default(0)
   createdAt        DateTime     @default(now())
   releases         Release[]
   withdrawals      Withdrawal[]
