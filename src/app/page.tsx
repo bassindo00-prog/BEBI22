@@ -196,7 +196,7 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/cms/landing");
+        const res = await fetch("/api/cms/landing", { cache: "no-store" });
         if (res.ok) {
           const json = await res.json();
           if (json?.data) {

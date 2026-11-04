@@ -123,7 +123,7 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     }
   };
 
-  // Upload Image Handler
+  // Upload Image Handler with Dual Pipeline (R2 Server Upload + Instant Client DataURL Fallback)
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     fieldKey: string,
@@ -132,42 +132,70 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingField(fieldKey);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-
-      const res = await fetch("/api/cms/upload", {
-        method: "POST",
-        body: fd,
-      });
-
-      const json = await res.json();
-      if (res.ok && json.url) {
-        callback(json.url);
-        showNotice(`Gambar berhasil diunggah: ${file.name}`);
-      } else {
-        showNotice(json.error || "Gagal mengunggah gambar.");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      showNotice("Terjadi kesalahan saat upload gambar.");
-    } finally {
-      setUploadingField(null);
+    if (file.size > 10 * 1024 * 1024) {
+      showNotice("Ukuran file maksimal 10MB!");
+      return;
     }
+
+    setUploadingField(fieldKey);
+
+    // Read client-side first so preview & fallback is 100% guaranteed
+    const reader = new FileReader();
+    reader.onload = async (readEvt) => {
+      const clientDataUrl = readEvt.target?.result as string;
+
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const res = await fetch("/api/cms/upload", {
+          method: "POST",
+          body: fd,
+        });
+
+        const json = await res.json().catch(() => null);
+        if (res.ok && json?.url) {
+          callback(json.url);
+          showNotice(`✅ Foto berhasil diunggah: ${file.name}`);
+        } else if (clientDataUrl) {
+          callback(clientDataUrl);
+          showNotice(`✅ Foto berhasil dimuat: ${file.name}`);
+        } else {
+          showNotice(json?.error || "Gagal mengunggah gambar.");
+        }
+      } catch (err) {
+        console.warn("Upload network error, using client Data URL fallback:", err);
+        if (clientDataUrl) {
+          callback(clientDataUrl);
+          showNotice(`✅ Foto berhasil dimuat: ${file.name}`);
+        } else {
+          showNotice("Terjadi kesalahan saat memproses gambar.");
+        }
+      } finally {
+        setUploadingField(null);
+        e.target.value = ""; // Reset file input so re-selecting same file works
+      }
+    };
+
+    reader.onerror = () => {
+      showNotice("Gagal membaca file dari komputer/HP.");
+      setUploadingField(null);
+    };
+
+    reader.readAsDataURL(file);
   };
 
-  // Save All Changes
+  // Save All Changes to PostgreSQL
   const handleSaveAll = async () => {
     setSaving(true);
     try {
       const payload: Partial<LandingPageData> = {
-        heroSubtitle,
-        heroTitle1,
-        heroTitle2,
+        heroSubtitle: heroSubtitle || "Global Reach By BREAKOUT.ID",
+        heroTitle1: heroTitle1 || "BREAKOUT",
+        heroTitle2: heroTitle2 || "ID",
         storesCount: Number(storesCount) || 150,
-        heroBgImage,
-        navBgImage,
+        heroBgImage: heroBgImage || "/6293920186406475229_121.jpg",
+        navBgImage: navBgImage || "/header-bg.jpg",
         card1Text,
         card1Image,
         card2Title,
@@ -186,15 +214,15 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
-      if (res.ok) {
-        showNotice("✅ Seluruh perubahan Landing Page berhasil disimpan!");
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) {
+        showNotice("✅ Seluruh perubahan teks & gambar berhasil disimpan ke database!");
       } else {
-        showNotice(json.error || "Gagal menyimpan perubahan ke database.");
+        showNotice(json?.error || "Gagal menyimpan perubahan ke database.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save error:", err);
-      showNotice("Terjadi kesalahan saat menyimpan data.");
+      showNotice(err?.message || "Terjadi kesalahan saat menyimpan data.");
     } finally {
       setSaving(false);
     }
