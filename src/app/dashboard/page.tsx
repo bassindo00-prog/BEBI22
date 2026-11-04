@@ -1552,7 +1552,70 @@ export default function UserDashboardPage() {
                     </button>
                   </div>
 
-                  <div className="pt-3 flex-1 overflow-x-auto">
+                  {/* Mobile Overview Releases Card List (< md) */}
+                  <div className="md:hidden space-y-3 pt-3">
+                    {releases.length === 0 ? (
+                      <div className="py-8 text-center text-white/70">
+                        <Music className="w-8 h-8 mx-auto text-white/25 mb-2" />
+                        <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
+                        <button
+                          onClick={() => setActiveTab("upload")}
+                          className="mt-2 px-3.5 py-1.5 rounded-full bg-[#312042] text-[11px] text-[#c8f560] font-semibold"
+                        >
+                          + Submit Lagu Baru
+                        </button>
+                      </div>
+                    ) : (
+                      releases.slice(0, 3).map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={item.coverUrl}
+                              alt={item.title}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                    item.status === "Approved"
+                                      ? "bg-[#c8f560] text-[#312042]"
+                                      : item.status === "Rejected"
+                                      ? "bg-red-500/25 text-red-200"
+                                      : "bg-[#fde08d] text-[#312042]"
+                                  }`}
+                                >
+                                  {item.status}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/10 text-[10px]">
+                            <div>
+                              <span className="text-white/50 block">Rilis</span>
+                              <span className="text-white font-medium truncate block">{item.releaseDate}</span>
+                            </div>
+                            <div>
+                              <span className="text-white/50 block">UPC</span>
+                              <span className="text-white/90 font-mono truncate block">{item.upc || "899214578101"}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-white/50 block">ISRC</span>
+                              <span className="text-[#c8f560] font-mono font-bold truncate block">{item.isrc || "ID-HRM-24-00101"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop Overview Releases Table (md:block) */}
+                  <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
                     <div className="min-w-[480px]">
                       <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
                         <div className="col-span-5 font-semibold">Release Title</div>
@@ -1968,13 +2031,8 @@ export default function UserDashboardPage() {
                     </h3>
                   </div>
                   <div className="pt-3 flex-1">
-                    <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
-                      <div className="col-span-5">Track</div>
-                      <div className="col-span-3 text-center">Country</div>
-                      <div className="col-span-2 text-center">Streams</div>
-                      <div className="col-span-2 text-right">Royalty</div>
-                    </div>
-                    <div className="divide-y divide-white/15">
+                    {/* Mobile Card List (< sm) */}
+                    <div className="sm:hidden space-y-2.5">
                       {[
                         {
                           title: "Midnight Lights",
@@ -2004,29 +2062,91 @@ export default function UserDashboardPage() {
                             "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
                         },
                       ].map((t, idx) => (
-                        <div key={idx} className="grid grid-cols-12 items-center py-3.5 text-xs">
-                          <div className="col-span-5 flex items-center gap-3">
+                        <div key={idx} className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                          <div className="flex items-center gap-3">
                             <img
                               src={t.avatar}
                               alt={t.title}
-                              className="w-10 h-10 rounded-full object-cover border border-white/30"
+                              className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
                             />
-                            <div>
-                              <p className="font-semibold text-white">{t.title}</p>
-                              <p className="text-[11px] text-white/70">{t.sub}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-white truncate">{t.title}</p>
+                              <p className="text-[11px] text-white/70 truncate">{t.sub}</p>
                             </div>
+                            <span className="text-[11px] font-medium text-white/90 bg-white/10 px-2 py-0.5 rounded-full shrink-0">
+                              {t.country}
+                            </span>
                           </div>
-                          <div className="col-span-3 text-center font-medium text-white/90">
-                            {t.country}
-                          </div>
-                          <div className="col-span-2 text-center font-semibold text-white">
-                            {t.streams}
-                          </div>
-                          <div className="col-span-2 text-right font-semibold text-[#c8f560]">
-                            {t.royalty}
+                          <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px]">
+                            <span className="text-white/60">Streams: <strong className="text-white font-semibold">{t.streams}</strong></span>
+                            <span className="text-[#c8f560] font-semibold">{t.royalty}</span>
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Desktop Table (sm:block) */}
+                    <div className="hidden sm:block">
+                      <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
+                        <div className="col-span-5">Track</div>
+                        <div className="col-span-3 text-center">Country</div>
+                        <div className="col-span-2 text-center">Streams</div>
+                        <div className="col-span-2 text-right">Royalty</div>
+                      </div>
+                      <div className="divide-y divide-white/15">
+                        {[
+                          {
+                            title: "Midnight Lights",
+                            sub: "Pop • HERMES",
+                            country: "🇺🇸 United States",
+                            streams: "1.2M",
+                            royalty: "+12.4%",
+                            avatar:
+                              "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80",
+                          },
+                          {
+                            title: "Neon Dawn",
+                            sub: "Electronic • HERMES",
+                            country: "🇬🇧 United Kingdom",
+                            streams: "980K",
+                            royalty: "+8.1%",
+                            avatar:
+                              "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=120&auto=format&fit=crop&q=80",
+                          },
+                          {
+                            title: "City Pulse",
+                            sub: "Chill • HERMES",
+                            country: "🇩🇪 Germany",
+                            streams: "754K",
+                            royalty: "+5.6%",
+                            avatar:
+                              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+                          },
+                        ].map((t, idx) => (
+                          <div key={idx} className="grid grid-cols-12 items-center py-3.5 text-xs">
+                            <div className="col-span-5 flex items-center gap-3">
+                              <img
+                                src={t.avatar}
+                                alt={t.title}
+                                className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
+                              />
+                              <div>
+                                <p className="font-semibold text-white">{t.title}</p>
+                                <p className="text-[11px] text-white/70">{t.sub}</p>
+                              </div>
+                            </div>
+                            <div className="col-span-3 text-center font-medium text-white/90">
+                              {t.country}
+                            </div>
+                            <div className="col-span-2 text-center font-semibold text-white">
+                              {t.streams}
+                            </div>
+                            <div className="col-span-2 text-right font-semibold text-[#c8f560]">
+                              {t.royalty}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2967,7 +3087,68 @@ export default function UserDashboardPage() {
                     </span>
                   </div>
 
-                  <div className="pt-3 flex-1 overflow-x-auto">
+                  {/* Mobile My Releases Card List (< md) */}
+                  <div className="md:hidden space-y-3 pt-3">
+                    {releases.length === 0 ? (
+                      <div className="py-10 text-center text-white/70">
+                        <FolderOpen className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                        <p className="font-semibold text-sm text-white">Belum Ada Rilisan Lagu</p>
+                        <button
+                          onClick={() => setActiveTab("upload")}
+                          className="mt-3 px-4 py-1.5 rounded-full bg-[#312042] text-xs text-[#c8f560] font-semibold"
+                        >
+                          + Submit Lagu Baru
+                        </button>
+                      </div>
+                    ) : (
+                      releases.map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5"
+                        >
+                          <div className="flex items-start gap-3">
+                            <img
+                              src={item.coverUrl}
+                              alt={item.title}
+                              className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-1">
+                                <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
+                                {item.status === "Approved" ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px] shrink-0">
+                                    ✓ Approved
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px] shrink-0">
+                                    ⏳ {item.status}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/10 text-[10px]">
+                            <div>
+                              <span className="text-white/50 block">Rilis</span>
+                              <span className="text-white font-medium truncate block">{item.releaseDate}</span>
+                            </div>
+                            <div>
+                              <span className="text-white/50 block">UPC</span>
+                              <span className="text-white/90 font-mono truncate block">{item.upc || "899214578101"}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-white/50 block">ISRC</span>
+                              <span className="text-[#c8f560] font-mono font-bold truncate block">{item.isrc || "ID-HRM-24-00101"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop My Releases Table (md:block) */}
+                  <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
                     <div className="min-w-[580px]">
                       <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
                         <div className="col-span-4 font-semibold">Title</div>
@@ -3180,55 +3361,101 @@ export default function UserDashboardPage() {
                   </div>
 
                   <div className="pt-3 flex-1">
-                    <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
-                      <div className="col-span-3">Date</div>
-                      <div className="col-span-3 text-center">Amount</div>
-                      <div className="col-span-3 text-center">Method</div>
-                      <div className="col-span-3 text-right">Status</div>
-                    </div>
-
-                    {withdrawals.length === 0 ? (
-                      <div className="py-10 text-center text-white/70">
-                        <Building2 className="w-10 h-10 mx-auto text-white/25 mb-2" />
-                        <p className="font-semibold text-sm text-white">Belum Ada Riwayat Penarikan</p>
-                        <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                          Anda belum mengajukan pencairan saldo royalti. Ajukan penarikan melalui formulir di samping.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-white/15">
-                        {withdrawals.map((w) => (
+                    {/* Mobile Withdrawal Cards (< sm) */}
+                    <div className="sm:hidden space-y-2.5">
+                      {withdrawals.length === 0 ? (
+                        <div className="py-8 text-center text-white/70">
+                          <Building2 className="w-8 h-8 mx-auto text-white/25 mb-1" />
+                          <p className="font-semibold text-xs text-white">Belum Ada Riwayat Penarikan</p>
+                        </div>
+                      ) : (
+                        withdrawals.map((w) => (
                           <div
                             key={w.id}
-                            className="grid grid-cols-12 items-center py-4 text-xs"
+                            className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs"
                           >
-                            <div className="col-span-3 font-medium text-white/90">{w.date}</div>
-                            <div className="col-span-3 text-center font-bold text-[#c8f560]">
-                              Rp {w.amount.toLocaleString("id-ID")}
-                            </div>
-                            <div className="col-span-3 flex items-center justify-center gap-1.5 font-medium text-white">
-                              {w.method.includes("E-Wallet") ? (
-                                <Smartphone className="w-3.5 h-3.5 text-[#c8f560]" />
-                              ) : (
-                                <Building2 className="w-3.5 h-3.5 text-[#c8f560]" />
-                              )}
-                              <span>{w.method}</span>
-                            </div>
-                            <div className="col-span-3 flex justify-end">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 font-medium text-white">
+                                {w.method.includes("E-Wallet") ? (
+                                  <Smartphone className="w-3.5 h-3.5 text-[#c8f560]" />
+                                ) : (
+                                  <Building2 className="w-3.5 h-3.5 text-[#c8f560]" />
+                                )}
+                                <span>{w.method}</span>
+                              </div>
                               {w.status === "Approved" ? (
-                                <span className="px-3.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
-                                  <Check className="w-3 h-3" /> Approved
+                                <span className="px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px]">
+                                  ✓ Approved
                                 </span>
                               ) : (
-                                <span className="px-3.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
-                                  <Clock className="w-3 h-3" /> {w.status}
+                                <span className="px-2 py-0.5 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px]">
+                                  ⏳ {w.status}
                                 </span>
                               )}
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                              <span className="text-white/60 text-[11px]">{w.date}</span>
+                              <span className="font-bold text-sm text-[#c8f560]">
+                                Rp {w.amount.toLocaleString("id-ID")}
+                              </span>
                             </div>
                           </div>
-                        ))}
+                        ))
+                      )}
+                    </div>
+
+                    {/* Desktop Withdrawal Table (sm:block) */}
+                    <div className="hidden sm:block">
+                      <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
+                        <div className="col-span-3">Date</div>
+                        <div className="col-span-3 text-center">Amount</div>
+                        <div className="col-span-3 text-center">Method</div>
+                        <div className="col-span-3 text-right">Status</div>
                       </div>
-                    )}
+
+                      {withdrawals.length === 0 ? (
+                        <div className="py-10 text-center text-white/70">
+                          <Building2 className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-sm text-white">Belum Ada Riwayat Penarikan</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Anda belum mengajukan pencairan saldo royalti. Ajukan penarikan melalui formulir di samping.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-white/15">
+                          {withdrawals.map((w) => (
+                            <div
+                              key={w.id}
+                              className="grid grid-cols-12 items-center py-4 text-xs"
+                            >
+                              <div className="col-span-3 font-medium text-white/90">{w.date}</div>
+                              <div className="col-span-3 text-center font-bold text-[#c8f560]">
+                                Rp {w.amount.toLocaleString("id-ID")}
+                              </div>
+                              <div className="col-span-3 flex items-center justify-center gap-1.5 font-medium text-white">
+                                {w.method.includes("E-Wallet") ? (
+                                  <Smartphone className="w-3.5 h-3.5 text-[#c8f560]" />
+                                ) : (
+                                  <Building2 className="w-3.5 h-3.5 text-[#c8f560]" />
+                                )}
+                                <span>{w.method}</span>
+                              </div>
+                              <div className="col-span-3 flex justify-end">
+                                {w.status === "Approved" ? (
+                                  <span className="px-3.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
+                                    <Check className="w-3 h-3" /> Approved
+                                  </span>
+                                ) : (
+                                  <span className="px-3.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold flex items-center gap-1 text-[11px]">
+                                    <Clock className="w-3 h-3" /> {w.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -3525,9 +3752,123 @@ export default function UserDashboardPage() {
                 )}
               </div>
 
-              {/* Catalog Table */}
-              <div className={`${ROYALTY_CARD} overflow-hidden p-0 border border-white/20`}>
-                <div className="overflow-x-auto">
+              {/* Catalog Container */}
+              <div className={`${ROYALTY_CARD} p-3 sm:p-5 border border-white/20`}>
+                {/* Mobile Catalog Card List (< md) */}
+                <div className="md:hidden space-y-3">
+                  {catalogs.length === 0 ? (
+                    <div className="py-10 text-center text-white/60 text-xs">
+                      <ListMusic className="w-8 h-8 mx-auto text-white/20 mb-2" />
+                      <p className="font-semibold text-white/80">Katalog Musik Masih Kosong</p>
+                      <p className="text-white/50 text-[11px] mt-1">Lagu resmi yang diupload oleh label/admin akan tercantum di sini.</p>
+                    </div>
+                  ) : catalogs.filter(
+                    (item) =>
+                      !catalogSearch ||
+                      item.songId?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                      item.title?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                      item.artist?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                      item.publisher?.toLowerCase().includes(catalogSearch.toLowerCase())
+                  ).length === 0 ? (
+                    <div className="py-8 text-center text-white/60 text-xs">
+                      Tidak ada lagu di katalog yang sesuai dengan pencarian Anda.
+                    </div>
+                  ) : (
+                    catalogs
+                      .filter(
+                        (item) =>
+                          !catalogSearch ||
+                          item.songId?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                          item.title?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                          item.artist?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                          item.publisher?.toLowerCase().includes(catalogSearch.toLowerCase())
+                      )
+                      .map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5 text-xs"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/25 border border-white/15">
+                              <span className="text-[#c8f560] font-mono font-bold text-[11px]">{item.songId}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopySongId(item.songId)}
+                                title="Salin Song ID"
+                                className="text-white/60 hover:text-white"
+                              >
+                                {copiedSongId === item.songId ? (
+                                  <Check className="w-3 h-3 text-[#c8f560]" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
+
+                            {item.status.toLowerCase() === "aktif" ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#312042] animate-pulse" />
+                                Aktif
+                              </span>
+                            ) : item.status.toLowerCase() === "review" ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px]">
+                                Review
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-white font-medium text-[10px]">
+                                Nonaktif
+                              </span>
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-[#c8f560] shrink-0">
+                                <Music className="w-3 h-3" />
+                              </div>
+                              <h4 className="font-bold text-white text-xs truncate">{item.title}</h4>
+                            </div>
+                            <p className="text-white/80 text-[11px] truncate mt-1">
+                              Vokal / Artis: <strong className="text-white">{item.artist}</strong>
+                            </p>
+                            <p className="text-white/60 text-[10px] truncate mt-0.5">
+                              Publisher: <span className="text-white/85">{item.publisher}</span>
+                            </p>
+                          </div>
+
+                          {(item.youtubeLink || item.driveLink) && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                              {item.youtubeLink && (
+                                <a
+                                  href={item.youtubeLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex-1 py-1 px-2 rounded-lg bg-red-600/85 hover:bg-red-600 text-white font-bold text-[10px] flex items-center justify-center gap-1 shadow"
+                                >
+                                  <Youtube className="w-3 h-3" />
+                                  <span>YouTube</span>
+                                </a>
+                              )}
+                              {item.driveLink && (
+                                <a
+                                  href={item.driveLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex-1 py-1 px-2 rounded-lg bg-blue-600/85 hover:bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center gap-1 shadow"
+                                >
+                                  <HardDrive className="w-3 h-3" />
+                                  <span>Drive</span>
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                  )}
+                </div>
+
+                {/* Desktop Catalog Table (md:block) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs text-white">
                     <thead className="bg-[#312042]/60 border-b border-white/15 text-[11px] uppercase tracking-wider text-white/75">
                       <tr>

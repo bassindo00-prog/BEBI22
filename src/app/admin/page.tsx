@@ -1464,8 +1464,86 @@ export default function AdminDashboardPage() {
                   </button>
                 </div>
 
-                <div className="pt-3 flex-1 overflow-x-auto">
-                  <div className="min-w-[520px]">
+                {/* Overview Mobile Releases List (< md) */}
+                <div className="md:hidden space-y-3 pt-3">
+                  {releases.length === 0 ? (
+                    <div className="py-8 text-center text-white/70">
+                      <Disc3 className="w-8 h-8 mx-auto text-white/25 mb-1" />
+                      <p className="font-semibold text-xs text-white">Belum Ada Rilisan Masuk</p>
+                    </div>
+                  ) : (
+                    releases.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => setSelectedRelease(item)}
+                        className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer space-y-2.5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={item.coverUrl}
+                            alt={item.title}
+                            className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                  item.status === "Approved"
+                                    ? "bg-[#c8f560] text-[#312042]"
+                                    : item.status === "Rejected"
+                                    ? "bg-red-500/25 text-red-200"
+                                    : "bg-[#fde08d] text-[#312042]"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-white/70 truncate mt-0.5">
+                              {item.artist} • {item.genre}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          className="flex items-center justify-end gap-2 pt-2 border-t border-white/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRelease(item)}
+                            className="flex-1 py-1 px-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] font-medium flex items-center justify-center gap-1"
+                          >
+                            <Download className="w-3 h-3 text-[#c8f560]" />
+                            <span>Detail & MP3</span>
+                          </button>
+                          {item.status !== "Approved" && (
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStatus(item.id, "Approved")}
+                              className="py-1 px-3 rounded-lg bg-[#c8f560] text-[#312042] text-[11px] font-bold"
+                            >
+                              ACC
+                            </button>
+                          )}
+                          {item.status !== "Rejected" && (
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStatus(item.id, "Rejected")}
+                              className="py-1 px-2.5 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium"
+                            >
+                              Reject
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Overview Desktop Table (md:block) */}
+                <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
+                  <div className="min-w-[540px]">
                     <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
                       <div className="col-span-5 font-semibold">Track & Artist</div>
                       <div className="col-span-2 text-center font-semibold">Streams</div>
@@ -1675,15 +1753,113 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Clean, Aligned Releases Moderation Table */}
-              <div className="overflow-x-auto pt-2">
-                <div className="min-w-[760px]">
+              {/* MOBILE VIEW (< md): Clean Card List, No Horizontal Table Clutter, Zero Overlap */}
+              <div className="md:hidden space-y-3.5 pt-2">
+                {releases.length === 0 ? (
+                  <div className="py-10 text-center text-white/70">
+                    <Disc3 className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                    <p className="font-semibold text-sm text-white">Belum Ada Pengajuan Rilisan</p>
+                  </div>
+                ) : (
+                  releases.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => setSelectedRelease(r)}
+                      className="p-4 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 transition-all cursor-pointer space-y-3"
+                    >
+                      {/* Top Row: Cover + Info + Status */}
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={r.coverUrl}
+                          alt={r.title}
+                          className="w-14 h-14 rounded-xl object-cover border border-white/25 shrink-0 shadow"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-bold text-sm text-white truncate flex items-center gap-1.5">
+                              <span>{r.title}</span>
+                              <Eye className="w-3.5 h-3.5 text-[#c8f560] shrink-0" />
+                            </h4>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                r.status === "Approved"
+                                  ? "bg-[#c8f560] text-[#312042]"
+                                  : r.status === "Rejected"
+                                  ? "bg-red-500/25 border border-red-500/40 text-red-200"
+                                  : "bg-[#fde08d] text-[#312042]"
+                              }`}
+                            >
+                              {r.status === "Approved" ? "✓ Approved" : r.status === "Rejected" ? "✕ Rejected" : "⏳ Pending"}
+                            </span>
+                          </div>
+                          <p className="text-white/80 text-xs truncate mt-0.5">
+                            {r.artist} • <span className="text-white/60">{r.genre}</span>
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-white/60 mt-1 font-mono">
+                            <span>ISRC: <strong className="text-[#c8f560]">{r.isrc || "D-HRM-24-00109"}</strong></span>
+                            <span>UPC: <strong className="text-white/90">{r.upc || "899214578101"}</strong></span>
+                            <span>Rilis: <strong className="text-white/80">{r.releaseDate}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Actions */}
+                      <div
+                        className="flex items-center gap-2 pt-2.5 border-t border-white/10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRelease(r)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
+                          <span>Detail & Unduh</span>
+                        </button>
+
+                        {r.status !== "Approved" && (
+                          <button
+                            type="button"
+                            onClick={() => handleReleaseStatus(r.id, "Approved")}
+                            className="py-2 px-3.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#d8ff75] transition-colors shadow"
+                          >
+                            ACC
+                          </button>
+                        )}
+
+                        {r.status !== "Rejected" && (
+                          <button
+                            type="button"
+                            onClick={() => handleReleaseStatus(r.id, "Rejected")}
+                            className="py-2 px-3.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 border border-red-500/40 text-red-200 font-semibold text-xs transition-colors"
+                          >
+                            Reject
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRelease(r.id)}
+                          className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
+                          title="Hapus Rilisan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* DESKTOP VIEW (md:block): Spacious Table with Proper Column Widths */}
+              <div className="hidden md:block overflow-x-auto pt-2">
+                <div className="min-w-[840px]">
                   {/* Table Headers */}
                   <div className="grid grid-cols-12 text-xs font-semibold uppercase tracking-wider text-white/70 pb-3 border-b border-white/20 px-3">
-                    <div className="col-span-5">Track & Artis</div>
+                    <div className="col-span-4">Track & Artis</div>
                     <div className="col-span-2 text-center">UPC Barcode</div>
                     <div className="col-span-2 text-center">ISRC Code</div>
-                    <div className="col-span-1 text-center">Status</div>
+                    <div className="col-span-2 text-center">Status</div>
                     <div className="col-span-2 text-right">Aksi & Unduh</div>
                   </div>
 
@@ -1704,8 +1880,8 @@ export default function AdminDashboardPage() {
                         onClick={() => setSelectedRelease(r)}
                         className="grid grid-cols-12 items-center py-3.5 px-3 hover:bg-white/10 rounded-2xl transition-colors cursor-pointer group"
                       >
-                        {/* Col 1: Track & Artis (Tanpa Email, Tanpa Platform) */}
-                        <div className="col-span-5 flex items-center gap-3.5 min-w-0 pr-3">
+                        {/* Col 1: Track & Artis */}
+                        <div className="col-span-4 flex items-center gap-3.5 min-w-0 pr-3">
                           <img
                             src={r.coverUrl}
                             alt={r.title}
@@ -1732,27 +1908,27 @@ export default function AdminDashboardPage() {
 
                         {/* Col 3: ISRC Code */}
                         <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-xs whitespace-nowrap">
-                          {r.isrc || "ID-HRM-24-00101"}
+                          {r.isrc || "D-HRM-24-00109"}
                         </div>
 
-                        {/* Col 4: Status */}
-                        <div className="col-span-1 flex justify-center">
+                        {/* Col 4: Status (Spacious col-span-2, Never Overlaps) */}
+                        <div className="col-span-2 flex justify-center">
                           {r.status === "Approved" ? (
-                            <span className="px-2.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px] whitespace-nowrap">
+                            <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
                               ✓ Approved
                             </span>
                           ) : r.status === "Rejected" ? (
-                            <span className="px-2.5 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[10px] whitespace-nowrap">
+                            <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-xs whitespace-nowrap shadow-sm">
                               ✕ Rejected
                             </span>
                           ) : (
-                            <span className="px-2.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px] whitespace-nowrap">
+                            <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
                               ⏳ {r.status}
                             </span>
                           )}
                         </div>
 
-                        {/* Col 5: Aksi */}
+                        {/* Col 5: Aksi (Spacious col-span-2) */}
                         <div
                           className="col-span-2 flex items-center justify-end gap-1.5"
                           onClick={(e) => e.stopPropagation()}
@@ -1760,7 +1936,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedRelease(r)}
-                            className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-medium transition-colors"
+                            className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-semibold transition-colors"
                             title="Buka Detail Rilis Lengkap & Unduh MP3/Art"
                           >
                             <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
@@ -1771,7 +1947,7 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleReleaseStatus(r.id, "Approved")}
-                              className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:opacity-90 shadow"
+                              className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:bg-[#d8ff75] transition-colors shadow"
                               title="Setujui Rilis Ini (Approve)"
                             >
                               ACC
@@ -2422,22 +2598,22 @@ export default function AdminDashboardPage() {
                 {users.map((u) => (
                   <div
                     key={u.id}
-                    className="py-4 flex flex-wrap items-center justify-between gap-4"
+                    className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={
                           u.avatar ||
                           "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
                         }
                         alt={u.name}
-                        className="w-11 h-11 rounded-full object-cover border border-white/30"
+                        className="w-11 h-11 rounded-full object-cover border border-white/30 shrink-0"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-bold text-sm text-white">{u.name}</p>
+                          <p className="font-bold text-sm text-white truncate">{u.name}</p>
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
                               u.role === "ADMIN"
                                 ? "bg-[#312042] text-[#c8f560]"
                                 : "bg-white/20 text-white"
@@ -2446,33 +2622,34 @@ export default function AdminDashboardPage() {
                             {u.role}
                           </span>
                         </div>
-                        <p className="text-white/75">{u.email}</p>
+                        <p className="text-white/75 truncate text-[11px]">{u.email}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
                       <div>
-                        <p className="text-white/65 text-[11px]">Royalty Balance</p>
-                        <p className="font-bold text-sm text-[#c8f560]">
+                        <p className="text-white/65 text-[10px] sm:text-[11px]">Royalty Balance</p>
+                        <p className="font-bold text-xs sm:text-sm text-[#c8f560]">
                           Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-white/65 text-[11px]">Streams</p>
-                        <p className="font-semibold text-white">
+                        <p className="text-white/65 text-[10px] sm:text-[11px]">Streams</p>
+                        <p className="font-semibold text-white text-xs sm:text-sm">
                           {(Number(u.totalStreams || 0) / 1000).toFixed(0)}K
                         </p>
                       </div>
                       <div>
-                        <p className="text-white/65 text-[11px]">Withdrawn</p>
-                        <p className="font-semibold text-white">
+                        <p className="text-white/65 text-[10px] sm:text-[11px]">Withdrawn</p>
+                        <p className="font-semibold text-white text-xs sm:text-sm">
                           Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedUserForRoyalty(u.id);
                           setInputRoyaltyBalance(u.royaltyBalance || 0);
@@ -2480,16 +2657,17 @@ export default function AdminDashboardPage() {
                           setInputTotalStreams(u.totalStreams || 0);
                           setActiveTab("royalty-input");
                         }}
-                        className="px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold"
+                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-xs transition-colors"
                       >
                         Edit Royalty
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
                           setMsgTargetUser(u.id);
                           setActiveTab("inbox");
                         }}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-semibold"
+                        className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-semibold text-xs hover:bg-[#422c58] transition-colors"
                       >
                         Kirim Pesan
                       </button>
