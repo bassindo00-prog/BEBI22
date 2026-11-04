@@ -321,12 +321,17 @@ export async function verifyUploadedObject(key: string) {
 /**
  * Generate a presigned GET URL for streaming/downloading directly from R2
  */
-export async function getPresignedDownloadUrl(key: string, filename?: string) {
+export async function getPresignedDownloadUrl(
+  key: string,
+  filename?: string,
+  asAttachment: boolean = false
+) {
+  const dispositionType = asAttachment ? "attachment" : "inline";
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
     ResponseContentDisposition: filename
-      ? `inline; filename="${encodeURIComponent(filename)}"`
+      ? `${dispositionType}; filename="${encodeURIComponent(filename)}"`
       : undefined,
   });
 

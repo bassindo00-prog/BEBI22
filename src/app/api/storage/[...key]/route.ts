@@ -23,6 +23,8 @@ export async function GET(
 
     const { searchParams } = new URL(req.url);
     const filename = searchParams.get("filename") || key.split("/").pop();
+    const isDownload =
+      searchParams.get("download") === "1" || searchParams.get("download") === "true";
 
     // Verify object exists
     const verification = await verifyUploadedObject(key);
@@ -34,7 +36,7 @@ export async function GET(
     }
 
     // Generate signed GET URL with range request support (valid for 24h)
-    const presignedGetUrl = await getPresignedDownloadUrl(key, filename);
+    const presignedGetUrl = await getPresignedDownloadUrl(key, filename, isDownload);
 
     // Redirect client directly to R2
     return NextResponse.redirect(presignedGetUrl, { status: 307 });

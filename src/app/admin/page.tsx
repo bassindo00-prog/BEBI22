@@ -397,16 +397,44 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Trigger file download helper (for audio MP3/WAV and Cover Art)
-  const downloadAsset = (url: string, filename: string) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showNotice(`Mengunduh file: ${filename}`);
+  // Trigger file download directly without leaving page or opening new window
+  const downloadAsset = async (url: string, filename: string) => {
+    showNotice(`Sedang mengunduh file: ${filename}...`);
+    try {
+      const sep = url.includes("?") ? "&" : "?";
+      const downloadUrl = `${url}${sep}download=1&filename=${encodeURIComponent(filename)}`;
+
+      const res = await fetch(downloadUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 300);
+
+      showNotice(`✓ File ${filename} berhasil diunduh dan tersimpan di komputer.`);
+    } catch (err: any) {
+      console.warn("Blob fetch download failed, fallback to direct download URL:", err);
+      // Fallback: direct download link without target="_blank"
+      const sep = url.includes("?") ? "&" : "?";
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = `${url}${sep}download=1&filename=${encodeURIComponent(filename)}`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 300);
+      showNotice(`Mengunduh: ${filename}`);
+    }
   };
 
   const handleLogout = async () => {
@@ -651,14 +679,16 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Action Buttons: Approve / Hold / Close */}
-              <div className="flex items-center justify-between pt-2">
+              {/* Action Buttons: Approve / Reject / Hold */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-white/70">Status Sekarang:</span>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold ${
                       selectedRelease.status === "Approved"
                         ? "bg-[#c8f560] text-[#312042]"
+                        : selectedRelease.status === "Rejected"
+                        ? "bg-red-500/25 border border-red-500/40 text-red-200"
                         : "bg-[#fde08d] text-[#312042]"
                     }`}
                   >
@@ -666,16 +696,26 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       handleReleaseStatus(selectedRelease.id, "Approved");
                       setSelectedRelease({ ...selectedRelease, status: "Approved" });
                     }}
-                    className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] text-xs font-bold hover:opacity-90"
+                    className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] text-xs font-bold hover:opacity-90 shadow"
                   >
                     Setujui (Approve)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleReleaseStatus(selectedRelease.id, "Rejected");
+                      setSelectedRelease({ ...selectedRelease, status: "Rejected" });
+                    }}
+                    className="px-4 py-2 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 text-xs font-bold hover:bg-red-500/40 shadow transition-colors"
+                  >
+                    Tolak (Reject)
                   </button>
                   <button
                     type="button"
@@ -683,7 +723,7 @@ export default function AdminDashboardPage() {
                       handleReleaseStatus(selectedRelease.id, "Pending");
                       setSelectedRelease({ ...selectedRelease, status: "Pending" });
                     }}
-                    className="px-4 py-2 rounded-xl bg-white/20 text-white text-xs font-medium hover:bg-white/30"
+                    className="px-4 py-2 rounded-xl bg-white/15 text-white text-xs font-medium hover:bg-white/25"
                   >
                     Tahan (Hold)
                   </button>
@@ -1445,6 +1485,10 @@ export default function AdminDashboardPage() {
                                 <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
                                   <Check className="w-3 h-3" /> Approved
                                 </span>
+                              ) : item.status === "Rejected" ? (
+                                <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
+                                  ✕ Rejected
+                                </span>
                               ) : (
                                 <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-semibold text-[11px] flex items-center gap-1 whitespace-nowrap">
                                   <Clock className="w-3 h-3" /> {item.status}
@@ -1464,14 +1508,26 @@ export default function AdminDashboardPage() {
                               >
                                 <Download className="w-3.5 h-3.5 text-[#c8f560]" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleReleaseStatus(item.id, "Approved")}
-                                title="Approve Release"
-                                className="px-2.5 py-1 rounded-lg bg-[#312042] text-[#c8f560] text-[11px] font-medium hover:bg-[#422c58]"
-                              >
-                                Approve
-                              </button>
+                              {item.status !== "Approved" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleReleaseStatus(item.id, "Approved")}
+                                  title="Approve Release"
+                                  className="px-2.5 py-1 rounded-lg bg-[#312042] text-[#c8f560] text-[11px] font-medium hover:bg-[#422c58]"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                              {item.status !== "Rejected" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleReleaseStatus(item.id, "Rejected")}
+                                  title="Reject Release"
+                                  className="px-2.5 py-1 rounded-lg bg-red-500/25 border border-red-500/40 text-red-200 text-[11px] font-medium hover:bg-red-500/40"
+                                >
+                                  Reject
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))
@@ -1645,6 +1701,10 @@ export default function AdminDashboardPage() {
                             <span className="px-2.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-[10px] whitespace-nowrap">
                               ✓ Approved
                             </span>
+                          ) : r.status === "Rejected" ? (
+                            <span className="px-2.5 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[10px] whitespace-nowrap">
+                              ✕ Rejected
+                            </span>
                           ) : (
                             <span className="px-2.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-[10px] whitespace-nowrap">
                               ⏳ {r.status}
@@ -1672,9 +1732,20 @@ export default function AdminDashboardPage() {
                               type="button"
                               onClick={() => handleReleaseStatus(r.id, "Approved")}
                               className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:opacity-90 shadow"
-                              title="Setujui Rilis Ini"
+                              title="Setujui Rilis Ini (Approve)"
                             >
                               ACC
+                            </button>
+                          )}
+
+                          {r.status !== "Rejected" && (
+                            <button
+                              type="button"
+                              onClick={() => handleReleaseStatus(r.id, "Rejected")}
+                              className="px-2.5 py-1.5 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[11px] hover:bg-red-500/40 shadow transition-colors"
+                              title="Tolak Rilis Ini (Reject)"
+                            >
+                              Reject
                             </button>
                           )}
 
