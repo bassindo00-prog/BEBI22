@@ -43,9 +43,10 @@ import {
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 import AdminLandingCMS from "@/components/AdminLandingCMS";
+import { THEMES, type ThemeId } from "@/lib/theme";
 
 const ROYALTY_CARD =
-  "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
+  "theme-card bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg transition-colors duration-300";
 
 const formatNumberWithDots = (val: string | number) => {
   if (val === undefined || val === null || val === "") return "";
@@ -74,7 +75,21 @@ export default function AdminDashboardPage() {
     | "settings"
   >("overview");
   const [period, setPeriod] = useState<"Daily" | "Weekly" | "Monthly">("Daily");
-  const [themeMode, setThemeMode] = useState<"Light" | "Dark">("Light");
+  const [theme, setTheme] = useState<ThemeId>("purple");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("breakout_theme");
+    if (saved && ["dark", "white", "blue", "purple", "yellow"].includes(saved)) {
+      setTheme(saved as ThemeId);
+    }
+  }, []);
+
+  const changeTheme = (newTheme: ThemeId) => {
+    setTheme(newTheme);
+    localStorage.setItem("breakout_theme", newTheme);
+  };
+
+  const currentTheme = THEMES.find((t) => t.id === theme) || THEMES[3];
   const [users, setUsers] = useState<any[]>([]);
   const [releases, setReleases] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
@@ -528,11 +543,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div
-      className={`h-screen w-full overflow-hidden flex transition-colors duration-300 ${
-        themeMode === "Dark"
-          ? "bg-gradient-to-br from-[#54527a] via-[#676592] to-[#46446b]"
-          : "bg-gradient-to-br from-[#9493be] via-[#acabcf] to-[#8f8eb9]"
-      }`}
+      className={`h-screen w-full overflow-hidden flex transition-colors duration-300 theme-${theme} ${currentTheme.bgGradient}`}
     >
       {/* Toast Notice */}
       {toast && (
@@ -837,7 +848,7 @@ export default function AdminDashboardPage() {
               onClick={() => setMobileMenuOpen(false)}
             />
 
-            <aside className="relative w-72 max-w-[82vw] h-full bg-[#46385f] border-r border-white/20 z-50 flex flex-col justify-between p-5 text-white shadow-2xl overflow-y-auto">
+            <aside className="relative w-72 max-w-[82vw] h-full theme-sidebar border-r border-white/20 z-50 flex flex-col justify-between p-5 text-white shadow-2xl overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
                   <div className="flex items-center gap-3">
@@ -918,7 +929,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
-        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
+        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 theme-sidebar backdrop-blur-md">
           <div className="flex flex-col items-center gap-10">
             <button
               type="button"
@@ -1129,14 +1140,21 @@ export default function AdminDashboardPage() {
 
                 {/* Mobile Right Quick Actions */}
                 <div className="flex sm:hidden items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setThemeMode(themeMode === "Dark" ? "Light" : "Dark")}
-                    className="p-1.5 rounded-full bg-[#312042] text-[#c8f560] border border-white/20"
-                    title="Ganti Tema"
-                  >
-                    <Sun className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 p-1 rounded-full bg-black/20 backdrop-blur-md border border-white/15">
+                    {THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => changeTheme(t.id)}
+                        className={`w-4 h-4 rounded-full transition-transform ${t.dotBg} ${
+                          theme === t.id
+                            ? "ring-2 ring-white scale-110 shadow"
+                            : "opacity-60 hover:opacity-100"
+                        }`}
+                        title={t.name}
+                      />
+                    ))}
+                  </div>
                   <button
                     type="button"
                     onClick={fetchAdminData}
@@ -1196,28 +1214,23 @@ export default function AdminDashboardPage() {
 
               {/* Desktop Right Controls (hidden on mobile) */}
               <div className="hidden sm:flex items-center gap-3">
-                <div className="bg-[#8a88b5]/70 border border-white/20 p-1 rounded-full flex items-center text-xs">
-                  <button
-                    onClick={() => setThemeMode("Dark")}
-                    className={`px-3.5 py-1.5 rounded-full transition-all ${
-                      themeMode === "Dark"
-                        ? "bg-[#312042] text-white font-medium"
-                        : "text-white/85"
-                    }`}
-                  >
-                    Dark
-                  </button>
-                  <button
-                    onClick={() => setThemeMode("Light")}
-                    className={`px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${
-                      themeMode === "Light"
-                        ? "bg-[#312042] text-[#c8f560] font-semibold shadow-sm"
-                        : "text-white/85"
-                    }`}
-                  >
-                    <Sun className="w-3.5 h-3.5" />
-                    <span>Light</span>
-                  </button>
+                {/* 5-Theme Switcher Palette */}
+                <div className="bg-[#8a88b5]/70 border border-white/20 p-1 rounded-full flex items-center gap-1 backdrop-blur-md text-xs">
+                  {THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => changeTheme(t.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all ${
+                        theme === t.id
+                          ? "bg-[#312042] text-white font-semibold shadow-sm"
+                          : "text-white/80 hover:text-white"
+                      }`}
+                      title={t.name}
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-full ${t.dotBg} border ${t.dotBorder}`} />
+                      <span className="hidden xl:inline">{t.name.split(" ")[0]}</span>
+                    </button>
+                  ))}
                 </div>
 
                 <button
