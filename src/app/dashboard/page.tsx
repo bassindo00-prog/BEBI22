@@ -167,12 +167,12 @@ export default function UserDashboardPage() {
 
   // Settings Form State
   const [settingsName, setSettingsName] = useState("Abdul");
-  const [settingsEmail, setSettingsEmail] = useState("abdul@hermes.music");
+  const [settingsEmail, setSettingsEmail] = useState("abdul@breakout.id");
   const [settingsAvatar, setSettingsAvatar] = useState(
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
   );
   const [settingsPassword, setSettingsPassword] = useState("");
-  const [settingsLabelName, setSettingsLabelName] = useState("HERMES Music Distribution");
+  const [settingsLabelName, setSettingsLabelName] = useState("BREAKOUT Music Distribution");
   const [settingsIsrcPrefix, setSettingsIsrcPrefix] = useState("US-HRM-26");
   const [autoContentId, setAutoContentId] = useState(true);
   const [dolbyAtmos, setDolbyAtmos] = useState(true);
@@ -190,7 +190,7 @@ export default function UserDashboardPage() {
 
   // Upload Track Form State
   const [trackTitle, setTrackTitle] = useState("Midnight Serenade");
-  const [trackArtist, setTrackArtist] = useState("HERMES");
+  const [trackArtist, setTrackArtist] = useState("BREAKOUT");
   const [trackFeaturing, setTrackFeaturing] = useState("Luna Eclipse");
   const [trackComposer, setTrackComposer] = useState("Abdul • Avelin FX");
   const [trackProducer, setTrackProducer] = useState("Luxoa Mastering Lab");
@@ -539,7 +539,7 @@ export default function UserDashboardPage() {
       if (data.user) {
         setUser(data.user);
         setSettingsName(data.user.name || "Abdul");
-        setSettingsEmail(data.user.email || "abdul@hermes.music");
+        setSettingsEmail(data.user.email || "abdul@breakout.id");
         if (data.user.avatar) setSettingsAvatar(data.user.avatar);
       }
       // Also fetch messages for inbox
@@ -805,7 +805,7 @@ export default function UserDashboardPage() {
                       <div className="w-3.5 h-6 rounded-full border-2 border-white" />
                     </div>
                     <div>
-                      <span className="font-bold text-sm tracking-tight text-white block">HERMES</span>
+                      <span className="font-bold text-sm tracking-tight text-white block">BREAKOUT</span>
                       <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Artist Studio</span>
                     </div>
                   </div>
@@ -864,7 +864,7 @@ export default function UserDashboardPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-white truncate">{user?.name || "Abdul"}</p>
-                    <p className="text-[10px] text-white/70 truncate">{user?.email || "abdul@hermes.music"}</p>
+                    <p className="text-[10px] text-white/70 truncate">{user?.email || "abdul@breakout.id"}</p>
                   </div>
                 </div>
 
@@ -1047,9 +1047,7 @@ export default function UserDashboardPage() {
                     <Menu className="w-5 h-5" />
                   </button>
                   <span className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center gap-2">
-                    {activeTab === "analytics" || activeTab === "upload" || activeTab === "releases"
-                      ? "Luxoa"
-                      : "HERMES"}
+                    BREAKOUT
                     <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] uppercase tracking-wider">
                       Artist
                     </span>
@@ -1753,7 +1751,7 @@ export default function UserDashboardPage() {
                     Analytics & Streaming
                   </h1>
                   <p className="text-xs text-white/80 mt-1">
-                    Real-time performance for HERMES
+                    Real-time performance for BREAKOUT
                   </p>
                 </div>
 
@@ -2036,7 +2034,7 @@ export default function UserDashboardPage() {
                       {[
                         {
                           title: "Midnight Lights",
-                          sub: "Pop • HERMES",
+                          sub: "Pop • BREAKOUT",
                           country: "🇺🇸 United States",
                           streams: "1.2M",
                           royalty: "+12.4%",
@@ -2045,7 +2043,7 @@ export default function UserDashboardPage() {
                         },
                         {
                           title: "Neon Dawn",
-                          sub: "Electronic • HERMES",
+                          sub: "Electronic • BREAKOUT",
                           country: "🇬🇧 United Kingdom",
                           streams: "980K",
                           royalty: "+8.1%",
@@ -2054,7 +2052,7 @@ export default function UserDashboardPage() {
                         },
                         {
                           title: "City Pulse",
-                          sub: "Chill • HERMES",
+                          sub: "Chill • BREAKOUT",
                           country: "🇩🇪 Germany",
                           streams: "754K",
                           royalty: "+5.6%",
@@ -2097,7 +2095,7 @@ export default function UserDashboardPage() {
                         {[
                           {
                             title: "Midnight Lights",
-                            sub: "Pop • HERMES",
+                            sub: "Pop • BREAKOUT",
                             country: "🇺🇸 United States",
                             streams: "1.2M",
                             royalty: "+12.4%",
@@ -2106,7 +2104,7 @@ export default function UserDashboardPage() {
                           },
                           {
                             title: "Neon Dawn",
-                            sub: "Electronic • HERMES",
+                            sub: "Electronic • BREAKOUT",
                             country: "🇬🇧 United Kingdom",
                             streams: "980K",
                             royalty: "+8.1%",
@@ -2115,7 +2113,7 @@ export default function UserDashboardPage() {
                           },
                           {
                             title: "City Pulse",
-                            sub: "Chill • HERMES",
+                            sub: "Chill • BREAKOUT",
                             country: "🇩🇪 Germany",
                             streams: "754K",
                             royalty: "+5.6%",
@@ -2172,7 +2170,7 @@ export default function UserDashboardPage() {
                   New Release — Submit Track
                 </h1>
                 <p className="text-xs text-white/80 mt-1">
-                  HERMES Music Distribution • upload and distribute to all platforms
+                  BREAKOUT Music Distribution • upload and distribute to all platforms
                 </p>
               </div>
 
@@ -3311,7 +3309,7 @@ export default function UserDashboardPage() {
                   dotColor="bg-[#c8f560]"
                   valueColor="text-[#c8f560]"
                   cardNumber="4532 •••• •••• 8891"
-                  holderName={`${user?.name || "ARTIST"} • HERMES PAY`}
+                  holderName={`${user?.name || "ARTIST"} • BREAKOUT PAY`}
                   expiry="09/29"
                   tier="INFINITE"
                   variant="lime-tint"
@@ -3643,7 +3641,7 @@ export default function UserDashboardPage() {
                     Pesan Masuk (Inbox)
                   </h1>
                   <p className="text-xs text-white/80 mt-1">
-                    Pemberitahuan resmi dan pesan dari Label Admin HERMES
+                    Pemberitahuan resmi dan pesan dari Label Admin BREAKOUT
                   </p>
                 </div>
 
@@ -3675,11 +3673,11 @@ export default function UserDashboardPage() {
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/15 pb-2.5">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-[#312042] text-[#c8f560] flex items-center justify-center font-bold text-xs">
-                            H
+                            B
                           </div>
                           <div>
                             <span className="text-xs font-semibold text-[#c8f560]">
-                              {msg.sender || "Admin HERMES"}
+                              {msg.sender || "Admin BREAKOUT"}
                             </span>
                             <span className="text-[10px] text-white/60 ml-2">
                               {new Date(msg.createdAt).toLocaleString("id-ID")}

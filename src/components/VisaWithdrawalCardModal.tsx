@@ -213,7 +213,7 @@ export default function VisaWithdrawalCardModal({
                   {withdrawal.user?.name || "ARTIST ACCOUNT"}
                 </p>
                 <p className="text-[10px] text-white/70 lowercase font-mono">
-                  {withdrawal.user?.email || "artist@hermes.music"}
+                  {withdrawal.user?.email || "artist@breakout.id"}
                 </p>
               </div>
 

@@ -99,7 +99,7 @@ export default function AICoverArtGenerator({
   const [previewMode, setPreviewMode] = useState<"flat" | "vinyl" | "cd">("vinyl");
   const [includeTextOverlay, setIncludeTextOverlay] = useState(true);
   const [overlayTitle, setOverlayTitle] = useState("MIDNIGHT SERENADE");
-  const [overlayArtist, setOverlayArtist] = useState("HERMES");
+  const [overlayArtist, setOverlayArtist] = useState("BREAKOUT");
 
   const [generating, setGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);

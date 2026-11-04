@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Sliders,
   CheckCircle2,
+  XCircle,
   Mail,
   Send,
   Download,
@@ -59,7 +60,17 @@ const parseFormattedNumber = (val: string | number) => {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "releases" | "catalog" | "cms" | "withdrawals" | "users" | "inbox" | "royalty-input" | "settings"
+    | "overview"
+    | "releases"
+    | "my-releases"
+    | "my-reject"
+    | "catalog"
+    | "cms"
+    | "withdrawals"
+    | "users"
+    | "inbox"
+    | "royalty-input"
+    | "settings"
   >("overview");
   const [period, setPeriod] = useState<"Daily" | "Weekly" | "Monthly">("Daily");
   const [themeMode, setThemeMode] = useState<"Light" | "Dark">("Light");
@@ -76,7 +87,7 @@ export default function AdminDashboardPage() {
   const [catSongId, setCatSongId] = useState("HRM-ID-0106");
   const [catTitle, setCatTitle] = useState("");
   const [catArtist, setCatArtist] = useState("");
-  const [catPublisher, setCatPublisher] = useState("HERMES Publishing / Sony Music");
+  const [catPublisher, setCatPublisher] = useState("BREAKOUT Publishing / Sony Music");
   const [catStatus, setCatStatus] = useState("Aktif");
   const [catYoutube, setCatYoutube] = useState("");
   const [catDrive, setCatDrive] = useState("");
@@ -238,7 +249,7 @@ export default function AdminDashboardPage() {
           title: msgTitle,
           content: msgContent,
           userId: msgTargetUser === "ALL" ? null : msgTargetUser,
-          sender: "Admin HERMES Distribution",
+          sender: "Admin BREAKOUT Distribution",
         }),
       });
       if (res.ok) {
@@ -328,7 +339,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           songId: catSongId,
           title: catTitle,
-          artist: catArtist || "HERMES Artist",
+          artist: catArtist || "BREAKOUT Artist",
           publisher: catPublisher,
           status: catStatus,
           youtubeLink: catYoutube,
@@ -364,8 +375,8 @@ export default function AdminDashboardPage() {
           items.push({
             songId: parts[0],
             title: parts[1],
-            artist: parts[2] || "HERMES Artist",
-            publisher: parts[3] || "HERMES Publishing",
+            artist: parts[2] || "BREAKOUT Artist",
+            publisher: parts[3] || "BREAKOUT Publishing",
             status: parts[4] || "Aktif",
             youtubeLink: parts[5] || "",
             driveLink: parts[6] || "",
@@ -455,8 +466,11 @@ export default function AdminDashboardPage() {
     router.push("/login");
   };
 
-  const pendingReleases = releases.filter((r) => r.status === "Pending");
+  const pendingReleases = releases.filter(
+    (r) => r.status !== "Approved" && r.status !== "Rejected"
+  );
   const approvedReleases = releases.filter((r) => r.status === "Approved");
+  const rejectedReleases = releases.filter((r) => r.status === "Rejected");
   const pendingWithdrawals = withdrawals.filter((w) => w.status === "Pending");
   const totalPayoutAmount = withdrawals
     .filter((w) => w.status === "Approved")
@@ -608,7 +622,7 @@ export default function AdminDashboardPage() {
                 <div>
                   <span className="text-white/60 block text-[11px]">Composer (Pencipta):</span>
                   <span className="font-semibold text-white">
-                    {selectedRelease.composer || "Abdul • HERMES"}
+                    {selectedRelease.composer || "Abdul • BREAKOUT"}
                   </span>
                 </div>
                 <div>
@@ -791,7 +805,7 @@ export default function AdminDashboardPage() {
                       <div className="w-3.5 h-6 rounded-full border-2 border-white" />
                     </div>
                     <div>
-                      <span className="font-bold text-sm tracking-tight text-white block">HERMES ADMIN</span>
+                      <span className="font-bold text-sm tracking-tight text-white block">BREAKOUT ADMIN</span>
                       <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Command Center</span>
                     </div>
                   </div>
@@ -807,7 +821,9 @@ export default function AdminDashboardPage() {
                 <nav className="mt-5 space-y-1.5">
                   {[
                     { id: "overview", label: "Admin Overview", icon: Home },
-                    { id: "releases", label: `Moderate Releases (${releases.length})`, icon: Disc3 },
+                    { id: "releases", label: `Review Submissions (${pendingReleases.length})`, icon: Clock },
+                    { id: "my-releases", label: `My Releases — ACC (${approvedReleases.length})`, icon: CheckCircle2 },
+                    { id: "my-reject", label: `My Reject (${rejectedReleases.length})`, icon: XCircle },
                     { id: "catalog", label: `Daftar Katalog (${catalogs.length})`, icon: ListMusic },
                     { id: "cms", label: "Web CMS Landing Page", icon: Globe },
                     { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
@@ -878,16 +894,58 @@ export default function AdminDashboardPage() {
                 <Home className="w-4 h-4" />
               </button>
 
+              {/* Review Submissions (Pending) */}
               <button
                 onClick={() => setActiveTab("releases")}
-                title="Moderate Releases & Unduh Track"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                title={`Review Submissions (${pendingReleases.length} Lagu Menunggu ACC)`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
                   activeTab === "releases"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
+                    ? "bg-[#312042] text-[#fde08d] shadow-md scale-110 ring-2 ring-[#fde08d]/50"
                     : "bg-white/20 text-white hover:bg-white/30"
                 }`}
               >
-                <Disc3 className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
+                {pendingReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#fde08d] text-[#312042] rounded-full text-[9px] font-black flex items-center justify-center shadow">
+                    {pendingReleases.length}
+                  </span>
+                )}
+              </button>
+
+              {/* My Releases (Approved / ACC) */}
+              <button
+                onClick={() => setActiveTab("my-releases")}
+                title={`My Releases (${approvedReleases.length} Lagu Disetujui / Live)`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                  activeTab === "my-releases"
+                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/50"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {approvedReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#c8f560] text-[#312042] rounded-full text-[9px] font-black flex items-center justify-center shadow">
+                    {approvedReleases.length}
+                  </span>
+                )}
+              </button>
+
+              {/* My Reject (Rejected) */}
+              <button
+                onClick={() => setActiveTab("my-reject")}
+                title={`My Reject (${rejectedReleases.length} Lagu Ditolak)`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                  activeTab === "my-reject"
+                    ? "bg-[#312042] text-red-300 shadow-md scale-110 ring-2 ring-red-400/50"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                <XCircle className="w-4 h-4" />
+                {rejectedReleases.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[9px] font-black flex items-center justify-center shadow">
+                    {rejectedReleases.length}
+                  </span>
+                )}
               </button>
 
               {/* Dedicated Catalog Menu Button */}
@@ -1013,7 +1071,7 @@ export default function AdminDashboardPage() {
                     <Menu className="w-5 h-5" />
                   </button>
                   <span className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center gap-2">
-                    HERMES
+                    BREAKOUT
                     <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] uppercase tracking-wider flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" />
                       ADMIN
@@ -1045,7 +1103,9 @@ export default function AdminDashboardPage() {
                 <div className="hidden xl:flex items-center gap-1 ml-3 bg-[#8a88b5]/60 border border-white/20 p-1 rounded-full text-[11px]">
                   {[
                     { id: "overview", label: "Overview" },
-                    { id: "releases", label: `Releases (${releases.length})` },
+                    { id: "releases", label: `Review (${pendingReleases.length})` },
+                    { id: "my-releases", label: `My Releases (${approvedReleases.length})` },
+                    { id: "my-reject", label: `My Reject (${rejectedReleases.length})` },
                     { id: "catalog", label: `Katalog (${catalogs.length})` },
                     { id: "cms", label: "🌐 Web CMS" },
                     { id: "royalty-input", label: "Rp Input Royalty" },
@@ -1738,217 +1798,112 @@ export default function AdminDashboardPage() {
           )}
 
           {/* =========================================================
-              ADMIN VIEW 2: FULL RELEASES MANAGEMENT (DENGAN KLIK DETAIL & UNDUH)
+              ADMIN VIEWS: RELEASES MODERATION (REVIEW, MY RELEASES, MY REJECT)
              ========================================================= */}
-          {activeTab === "releases" && (
-            <div className={`${ROYALTY_CARD} animate-card-enter`}>
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/15">
-                <div>
-                  <h3 className="text-base font-semibold text-white">
-                    All Submitted Releases — Catalog Moderation
-                  </h3>
-                  <p className="text-xs text-white/75">
-                    Klik nama rilisan untuk melihat detail form submit user dan mengunduh MP3 / Artwork
-                  </p>
+          {(() => {
+            const renderReleaseSection = (
+              items: any[],
+              type: "review" | "my-releases" | "my-reject",
+              title: string,
+              subtitle: string,
+              emptyMessage: string
+            ) => (
+              <div className={`${ROYALTY_CARD} animate-card-enter`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/15">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      {type === "review" ? (
+                        <span className="p-1.5 rounded-lg bg-[#fde08d]/20 text-[#fde08d]">
+                          <Clock className="w-4 h-4" />
+                        </span>
+                      ) : type === "my-releases" ? (
+                        <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </span>
+                      ) : (
+                        <span className="p-1.5 rounded-lg bg-red-500/20 text-red-300">
+                          <XCircle className="w-4 h-4" />
+                        </span>
+                      )}
+                      <span>{title}</span>
+                    </h3>
+                    <p className="text-xs text-white/75 mt-0.5">{subtitle}</p>
+                  </div>
+
+                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-semibold text-white">
+                    Total: <strong className={type === "my-releases" ? "text-[#c8f560]" : type === "my-reject" ? "text-red-300" : "text-[#fde08d]"}>{items.length} Track</strong>
+                  </span>
                 </div>
-              </div>
 
-              {/* MOBILE VIEW (< md): Clean Card List, No Horizontal Table Clutter, Zero Overlap */}
-              <div className="md:hidden space-y-3.5 pt-2">
-                {releases.length === 0 ? (
-                  <div className="py-10 text-center text-white/70">
-                    <Disc3 className="w-10 h-10 mx-auto text-white/25 mb-2" />
-                    <p className="font-semibold text-sm text-white">Belum Ada Pengajuan Rilisan</p>
-                  </div>
-                ) : (
-                  releases.map((r) => (
-                    <div
-                      key={r.id}
-                      onClick={() => setSelectedRelease(r)}
-                      className="p-4 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 transition-all cursor-pointer space-y-3"
-                    >
-                      {/* Top Row: Cover + Info + Status */}
-                      <div className="flex items-start gap-3">
-                        <img
-                          src={r.coverUrl}
-                          alt={r.title}
-                          className="w-14 h-14 rounded-xl object-cover border border-white/25 shrink-0 shadow"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-bold text-sm text-white truncate flex items-center gap-1.5">
-                              <span>{r.title}</span>
-                              <Eye className="w-3.5 h-3.5 text-[#c8f560] shrink-0" />
-                            </h4>
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                                r.status === "Approved"
-                                  ? "bg-[#c8f560] text-[#312042]"
-                                  : r.status === "Rejected"
-                                  ? "bg-red-500/25 border border-red-500/40 text-red-200"
-                                  : "bg-[#fde08d] text-[#312042]"
-                              }`}
-                            >
-                              {r.status === "Approved" ? "✓ Approved" : r.status === "Rejected" ? "✕ Rejected" : "⏳ Pending"}
-                            </span>
-                          </div>
-                          <p className="text-white/80 text-xs truncate mt-0.5">
-                            {r.artist} • <span className="text-white/60">{r.genre}</span>
-                          </p>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-white/60 mt-1 font-mono">
-                            <span>ISRC: <strong className="text-[#c8f560]">{r.isrc || "D-HRM-24-00109"}</strong></span>
-                            <span>UPC: <strong className="text-white/90">{r.upc || "899214578101"}</strong></span>
-                            <span>Rilis: <strong className="text-white/80">{r.releaseDate}</strong></span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bottom Row: Actions */}
-                      <div
-                        className="flex items-center gap-2 pt-2.5 border-t border-white/10"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRelease(r)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
-                          <span>Detail & Unduh</span>
-                        </button>
-
-                        {r.status !== "Approved" && (
-                          <button
-                            type="button"
-                            onClick={() => handleReleaseStatus(r.id, "Approved")}
-                            className="py-2 px-3.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#d8ff75] transition-colors shadow"
-                          >
-                            ACC
-                          </button>
-                        )}
-
-                        {r.status !== "Rejected" && (
-                          <button
-                            type="button"
-                            onClick={() => handleReleaseStatus(r.id, "Rejected")}
-                            className="py-2 px-3.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 border border-red-500/40 text-red-200 font-semibold text-xs transition-colors"
-                          >
-                            Reject
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRelease(r.id)}
-                          className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
-                          title="Hapus Rilisan"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                {/* MOBILE VIEW (< md): Clean Card List, No Horizontal Table Clutter, Zero Overlap */}
+                <div className="md:hidden space-y-3.5 pt-2">
+                  {items.length === 0 ? (
+                    <div className="py-12 text-center text-white/70">
+                      <Disc3 className="w-10 h-10 mx-auto text-white/25 mb-2" />
+                      <p className="font-semibold text-sm text-white">{emptyMessage}</p>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {/* DESKTOP VIEW (md:block): Spacious Table with Proper Column Widths */}
-              <div className="hidden md:block overflow-x-auto pt-2">
-                <div className="min-w-[840px]">
-                  {/* Table Headers */}
-                  <div className="grid grid-cols-12 text-xs font-semibold uppercase tracking-wider text-white/70 pb-3 border-b border-white/20 px-3">
-                    <div className="col-span-4">Track & Artis</div>
-                    <div className="col-span-2 text-center">UPC Barcode</div>
-                    <div className="col-span-2 text-center">ISRC Code</div>
-                    <div className="col-span-2 text-center">Status</div>
-                    <div className="col-span-2 text-right">Aksi & Unduh</div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="divide-y divide-white/15">
-                    {releases.length === 0 ? (
-                      <div className="py-14 text-center text-white/70">
-                        <Disc3 className="w-12 h-12 mx-auto text-white/25 mb-2" />
-                        <p className="font-semibold text-base text-white">Belum Ada Pengajuan Rilisan</p>
-                        <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                          Rilisan lagu yang diajukan artis akan tampil di sini untuk Anda verifikasi, input ISRC/UPC, atau unduh MP3/artwork.
-                        </p>
-                      </div>
-                    ) : (
-                      releases.map((r) => (
+                  ) : (
+                    items.map((r) => (
                       <div
                         key={r.id}
                         onClick={() => setSelectedRelease(r)}
-                        className="grid grid-cols-12 items-center py-3.5 px-3 hover:bg-white/10 rounded-2xl transition-colors cursor-pointer group"
+                        className="p-4 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 transition-all cursor-pointer space-y-3"
                       >
-                        {/* Col 1: Track & Artis */}
-                        <div className="col-span-4 flex items-center gap-3.5 min-w-0 pr-3">
+                        {/* Top Row: Cover + Info + Status */}
+                        <div className="flex items-start gap-3">
                           <img
                             src={r.coverUrl}
                             alt={r.title}
-                            className="w-12 h-12 rounded-xl object-cover border border-white/25 shrink-0 group-hover:scale-105 transition-transform shadow"
+                            className="w-14 h-14 rounded-xl object-cover border border-white/25 shrink-0 shadow"
                           />
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate flex items-center gap-1.5">
-                              <span>{r.title}</span>
-                              <Eye className="w-3.5 h-3.5 text-[#c8f560] opacity-80" />
-                            </p>
-                            <p className="text-white/80 text-xs truncate">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-bold text-sm text-white truncate flex items-center gap-1.5">
+                                <span>{r.title}</span>
+                                <Eye className="w-3.5 h-3.5 text-[#c8f560] shrink-0" />
+                              </h4>
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                  r.status === "Approved"
+                                    ? "bg-[#c8f560] text-[#312042]"
+                                    : r.status === "Rejected"
+                                    ? "bg-red-500/25 border border-red-500/40 text-red-200"
+                                    : "bg-[#fde08d] text-[#312042]"
+                                }`}
+                              >
+                                {r.status === "Approved" ? "✓ Approved" : r.status === "Rejected" ? "✕ Rejected" : "⏳ Review"}
+                              </span>
+                            </div>
+                            <p className="text-white/80 text-xs truncate mt-0.5">
                               {r.artist} • <span className="text-white/60">{r.genre}</span>
                             </p>
-                            <span className="inline-block mt-0.5 text-[10px] text-[#c8f560] font-mono font-medium">
-                              Rilis: {r.releaseDate}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-white/60 mt-1 font-mono">
+                              <span>ISRC: <strong className="text-[#c8f560]">{r.isrc || "D-HRM-24-00109"}</strong></span>
+                              <span>UPC: <strong className="text-white/90">{r.upc || "899214578101"}</strong></span>
+                              <span>Rilis: <strong className="text-white/80">{r.releaseDate}</strong></span>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Col 2: UPC Barcode */}
-                        <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-xs whitespace-nowrap">
-                          {r.upc || "899214578101"}
-                        </div>
-
-                        {/* Col 3: ISRC Code */}
-                        <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-xs whitespace-nowrap">
-                          {r.isrc || "D-HRM-24-00109"}
-                        </div>
-
-                        {/* Col 4: Status (Spacious col-span-2, Never Overlaps) */}
-                        <div className="col-span-2 flex justify-center">
-                          {r.status === "Approved" ? (
-                            <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
-                              ✓ Approved
-                            </span>
-                          ) : r.status === "Rejected" ? (
-                            <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-xs whitespace-nowrap shadow-sm">
-                              ✕ Rejected
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
-                              ⏳ {r.status}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Col 5: Aksi (Spacious col-span-2) */}
+                        {/* Bottom Row: Actions */}
                         <div
-                          className="col-span-2 flex items-center justify-end gap-1.5"
+                          className="flex items-center gap-2 pt-2.5 border-t border-white/10"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
                             type="button"
                             onClick={() => setSelectedRelease(r)}
-                            className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-semibold transition-colors"
-                            title="Buka Detail Rilis Lengkap & Unduh MP3/Art"
+                            className="flex-1 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
-                            <span>Detail</span>
+                            <span>Detail & Unduh</span>
                           </button>
 
                           {r.status !== "Approved" && (
                             <button
                               type="button"
                               onClick={() => handleReleaseStatus(r.id, "Approved")}
-                              className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:bg-[#d8ff75] transition-colors shadow"
-                              title="Setujui Rilis Ini (Approve)"
+                              className="py-2 px-3.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#d8ff75] transition-colors shadow"
                             >
                               ACC
                             </button>
@@ -1958,8 +1913,7 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleReleaseStatus(r.id, "Rejected")}
-                              className="px-2.5 py-1.5 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[11px] hover:bg-red-500/40 shadow transition-colors"
-                              title="Tolak Rilis Ini (Reject)"
+                              className="py-2 px-3.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 border border-red-500/40 text-red-200 font-semibold text-xs transition-colors"
                             >
                               Reject
                             </button>
@@ -1968,19 +1922,178 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteRelease(r.id)}
-                            className="p-1.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 text-white transition-colors"
+                            className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
                             title="Hapus Rilisan"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                    )))}
+                    ))
+                  )}
+                </div>
+
+                {/* DESKTOP VIEW (md:block): Spacious Table with Proper Column Widths */}
+                <div className="hidden md:block overflow-x-auto pt-2">
+                  <div className="min-w-[840px]">
+                    {/* Table Headers */}
+                    <div className="grid grid-cols-12 text-xs font-semibold uppercase tracking-wider text-white/70 pb-3 border-b border-white/20 px-3">
+                      <div className="col-span-4">Track & Artis</div>
+                      <div className="col-span-2 text-center">UPC Barcode</div>
+                      <div className="col-span-2 text-center">ISRC Code</div>
+                      <div className="col-span-2 text-center">Status</div>
+                      <div className="col-span-2 text-right">Aksi & Unduh</div>
+                    </div>
+
+                    {/* Rows */}
+                    <div className="divide-y divide-white/15">
+                      {items.length === 0 ? (
+                        <div className="py-14 text-center text-white/70">
+                          <Disc3 className="w-12 h-12 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-base text-white">{emptyMessage}</p>
+                        </div>
+                      ) : (
+                        items.map((r) => (
+                          <div
+                            key={r.id}
+                            onClick={() => setSelectedRelease(r)}
+                            className="grid grid-cols-12 items-center py-3.5 px-3 hover:bg-white/10 rounded-2xl transition-colors cursor-pointer group"
+                          >
+                            {/* Col 1: Track & Artis */}
+                            <div className="col-span-4 flex items-center gap-3.5 min-w-0 pr-3">
+                              <img
+                                src={r.coverUrl}
+                                alt={r.title}
+                                className="w-12 h-12 rounded-xl object-cover border border-white/25 shrink-0 group-hover:scale-105 transition-transform shadow"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate flex items-center gap-1.5">
+                                  <span>{r.title}</span>
+                                  <Eye className="w-3.5 h-3.5 text-[#c8f560] opacity-80" />
+                                </p>
+                                <p className="text-white/80 text-xs truncate">
+                                  {r.artist} • <span className="text-white/60">{r.genre}</span>
+                                </p>
+                                <span className="inline-block mt-0.5 text-[10px] text-[#c8f560] font-mono font-medium">
+                                  Rilis: {r.releaseDate}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Col 2: UPC Barcode */}
+                            <div className="col-span-2 text-center font-mono font-semibold text-white/95 text-xs whitespace-nowrap">
+                              {r.upc || "899214578101"}
+                            </div>
+
+                            {/* Col 3: ISRC Code */}
+                            <div className="col-span-2 text-center font-mono font-bold text-[#c8f560] text-xs whitespace-nowrap">
+                              {r.isrc || "D-HRM-24-00109"}
+                            </div>
+
+                            {/* Col 4: Status */}
+                            <div className="col-span-2 flex justify-center">
+                              {r.status === "Approved" ? (
+                                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ✓ Approved
+                                </span>
+                              ) : r.status === "Rejected" ? (
+                                <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ✕ Rejected
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ⏳ Review
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Col 5: Aksi */}
+                            <div
+                              className="col-span-2 flex items-center justify-end gap-1.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRelease(r)}
+                                className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-semibold transition-colors"
+                                title="Buka Detail Rilis Lengkap & Unduh MP3/Art"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
+                                <span>Detail</span>
+                              </button>
+
+                              {r.status !== "Approved" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleReleaseStatus(r.id, "Approved")}
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:bg-[#d8ff75] transition-colors shadow"
+                                  title="Setujui Rilis Ini (ACC)"
+                                >
+                                  ACC
+                                </button>
+                              )}
+
+                              {r.status !== "Rejected" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleReleaseStatus(r.id, "Rejected")}
+                                  className="px-2.5 py-1.5 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[11px] hover:bg-red-500/40 shadow transition-colors"
+                                  title="Tolak Rilis Ini (Reject)"
+                                >
+                                  Reject
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRelease(r.id)}
+                                className="p-1.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 text-white transition-colors"
+                                title="Hapus Rilisan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+
+            if (activeTab === "releases") {
+              return renderReleaseSection(
+                pendingReleases,
+                "review",
+                "Review Submissions — Antrean Lagu Menunggu Moderasi",
+                "Daftar lagu yang baru disubmit user dan menunggu verifikasi / ACC sebelum dirilis ke DSP.",
+                "Tidak ada lagu yang sedang menunggu review. Semua sudah di-ACC atau ditolak."
+              );
+            }
+
+            if (activeTab === "my-releases") {
+              return renderReleaseSection(
+                approvedReleases,
+                "my-releases",
+                "My Releases — Lagu Terverifikasi & Live DSP",
+                "Daftar seluruh rilisan musik yang sudah disetujui (ACC) dan aktif terdistribusi ke Spotify, Apple Music, TikTok, dsb.",
+                "Belum ada rilisan yang di-ACC. Silakan tinjau lagu baru di menu Review Submissions."
+              );
+            }
+
+            if (activeTab === "my-reject") {
+              return renderReleaseSection(
+                rejectedReleases,
+                "my-reject",
+                "My Reject — Rilisan Ditolak / Perlu Revisi",
+                "Daftar lagu yang ditolak karena masalah hak cipta, metadata, atau audio. Anda dapat meng-ACC ulang jika user telah merevisi.",
+                "Tidak ada rilisan yang ditolak."
+              );
+            }
+
+            return null;
+          })()}
 
           {/* =========================================================
               ADMIN VIEW: UPLOAD & KELOLA KATALOG MUSIK (MUNCUL KE USER)
@@ -2693,7 +2806,7 @@ export default function AdminDashboardPage() {
                       Pengaturan Sistem & Kebijakan Distribusi Admin
                     </h3>
                     <p className="text-xs text-white/75">
-                      Konfigurasi moderasi otomatis, batas royalti, dan keamanan label HERMES
+                      Konfigurasi moderasi otomatis, batas royalti, dan keamanan label BREAKOUT
                     </p>
                   </div>
                 </div>
