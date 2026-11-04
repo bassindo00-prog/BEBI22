@@ -680,14 +680,7 @@ export default function UserDashboardPage() {
           </div>
 
           {/* Bottom Logout Icon */}
-          <div className="flex flex-col items-center gap-3">
-            <Link
-              href="/admin"
-              title="Switch to Separate Admin Dashboard"
-              className="w-10 h-10 rounded-full bg-[#312042]/70 text-[#c8f560] flex items-center justify-center hover:bg-[#312042] transition-all"
-            >
-              <Shield className="w-4 h-4" />
-            </Link>
+          <div className="flex flex-col items-center">
             <button
               onClick={handleLogout}
               title="Logout"

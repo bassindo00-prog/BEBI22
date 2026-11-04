@@ -3,12 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, Lock, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("avelinfx@gmail.com");
-  const [password, setPassword] = useState("1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="avelinfx@gmail.com"
+                  placeholder="nama@domain.com"
                   className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-white/35 bg-transparent text-xs text-white placeholder:text-white/45 focus:outline-none focus:border-[#c8f560] transition-colors"
                 />
               </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••"
+                  placeholder="••••••••"
                   className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-white/35 bg-transparent text-xs text-white placeholder:text-white/45 focus:outline-none focus:border-[#c8f560] transition-colors"
                 />
               </div>
@@ -137,51 +137,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Test Credentials Box — Full Transparent, No Blur */}
-          <div className="mt-6 pt-5 border-t border-white/20">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/70 mb-2.5">
-              Quick One-Click Test Credentials
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("avelinfx@gmail.com");
-                  setPassword("1234");
-                }}
-                className="p-2.5 rounded-xl border border-white/30 bg-transparent hover:border-[#c8f560] text-left transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-[#c8f560] uppercase">
-                    Admin Account
-                  </span>
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#c8f560]" />
-                </div>
-                <p className="text-[10px] text-white/90 truncate mt-1">avelinfx@gmail.com</p>
-                <p className="text-[9px] text-white/60">Pass: 1234</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail("abdul@hermes.music");
-                  setPassword("1234");
-                }}
-                className="p-2.5 rounded-xl border border-white/30 bg-transparent hover:border-white text-left transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-white uppercase">
-                    Artist (Abdul)
-                  </span>
-                  <UserCheck className="w-3.5 h-3.5 text-white/80" />
-                </div>
-                <p className="text-[10px] text-white/90 truncate mt-1">abdul@hermes.music</p>
-                <p className="text-[9px] text-white/60">Pass: 1234</p>
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-5 text-center">
+          <div className="mt-6 text-center">
             <p className="text-[11px] text-white/75">
               Don&apos;t have an artist account?{" "}
               <Link href="/register" className="text-[#c8f560] hover:underline">

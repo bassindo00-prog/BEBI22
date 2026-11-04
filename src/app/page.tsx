@@ -102,11 +102,8 @@ export default function LandingPage() {
             <a href="#royalties" className="hover:text-[#c8f560] transition-colors">
               Royalties
             </a>
-            <Link href="/dashboard" className="hover:text-[#c8f560] transition-colors">
-              User Portal
-            </Link>
-            <Link href="/admin" className="hover:text-[#c8f560] transition-colors">
-              Admin Console
+            <Link href="/login" className="hover:text-[#c8f560] transition-colors">
+              Portal Access
             </Link>
           </nav>
 
@@ -162,16 +159,10 @@ export default function LandingPage() {
               <ArrowUpRight className="w-4 h-4 text-[#c8f560]" />
             </Link>
             <Link
-              href="/dashboard"
+              href="/register"
               className="px-6 py-3 rounded-full border border-white/50 bg-white/10 text-white text-sm font-semibold tracking-wide hover:border-[#c8f560] hover:text-[#c8f560] transition-all"
             >
-              Live User Dashboard
-            </Link>
-            <Link
-              href="/admin"
-              className="px-6 py-3 rounded-full border border-white/40 bg-white/5 text-white/95 text-sm font-semibold tracking-wide hover:border-white transition-all"
-            >
-              Admin Console
+              Create Account
             </Link>
           </div>
 
@@ -371,7 +362,7 @@ export default function LandingPage() {
                 href="/login"
                 className="px-5 py-2.5 rounded-full border border-white/40 bg-white/10 text-xs sm:text-sm font-semibold tracking-wide hover:border-[#c8f560] hover:text-[#c8f560] transition-all"
               >
-                Test Admin Login (avelinfx@gmail.com)
+                Sign In to Platform
               </Link>
             </div>
           </div>
@@ -382,7 +373,7 @@ export default function LandingPage() {
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="px-3 py-1 rounded-full border border-[#c8f560]/60 bg-[#312042] text-[#c8f560] text-xs font-bold uppercase tracking-wider">
-                    Artist Workspace • /dashboard
+                    Artist Workspace
                   </span>
                   <span className="text-xs font-medium text-white/75">Interactive Views</span>
                 </div>
@@ -396,12 +387,12 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-white/15">
-                <span className="text-xs text-white/80">Demo: <strong>abdul@hermes.music</strong> / 1234</span>
+                <span className="text-xs text-white/80">Artist Distribution Workspace</span>
                 <Link
-                  href="/dashboard"
+                  href="/login"
                   className="text-sm font-bold text-[#c8f560] hover:underline flex items-center gap-1.5"
                 >
-                  <span>Open User Dashboard</span>
+                  <span>Artist Sign In</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -412,9 +403,9 @@ export default function LandingPage() {
               <div>
                 <div className="flex items-center justify-between mb-3.5">
                   <span className="px-3 py-1 rounded-full border border-white/50 bg-[#312042] text-[#c8f560] text-xs font-bold uppercase tracking-wider">
-                    Admin Console • /admin
+                    Admin Console
                   </span>
-                  <span className="text-xs font-bold text-[#c8f560]">Full Prisma CRUD</span>
+                  <span className="text-xs font-bold text-[#c8f560]">Full Label Control</span>
                 </div>
                 <h4 className="text-lg font-bold text-white mb-2.5">
                   HERMES Executive Admin Dashboard
@@ -427,13 +418,13 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-white/15">
                 <span className="text-xs text-[#c8f560] font-semibold">
-                  Admin: avelinfx@gmail.com / Pass: 1234
+                  Executive Label Control Center
                 </span>
                 <Link
-                  href="/admin"
+                  href="/login"
                   className="text-sm font-bold text-white hover:text-[#c8f560] flex items-center gap-1.5"
                 >
-                  <span>Open Admin Console</span>
+                  <span>Admin Sign In</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -450,17 +441,17 @@ export default function LandingPage() {
             <span className="font-semibold text-white">HERMES • LUXOA MUSIC DISTRIBUTION © 2026</span>
           </div>
           <div className="flex items-center gap-6">
+            <a href="#platforms" className="hover:text-[#c8f560] transition-colors">
+              Platforms
+            </a>
+            <a href="#architecture" className="hover:text-[#c8f560] transition-colors">
+              Telemetry
+            </a>
             <Link href="/login" className="hover:text-[#c8f560] transition-colors">
-              Login
+              Sign In
             </Link>
             <Link href="/register" className="hover:text-[#c8f560] transition-colors">
               Register
-            </Link>
-            <Link href="/dashboard" className="hover:text-[#c8f560] transition-colors">
-              User Dashboard
-            </Link>
-            <Link href="/admin" className="hover:text-[#c8f560] transition-colors">
-              Admin Dashboard
             </Link>
           </div>
         </div>

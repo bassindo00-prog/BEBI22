@@ -767,16 +767,7 @@ export default function AdminDashboardPage() {
                 </nav>
               </div>
 
-              <div className="pt-4 border-t border-white/15 space-y-2.5">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 text-[#c8f560] text-xs font-semibold hover:bg-white/25 transition-colors"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  <span>Lihat User View</span>
-                </Link>
-
+              <div className="pt-4 border-t border-white/15">
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/30 text-white text-xs font-medium transition-colors"
@@ -907,14 +898,7 @@ export default function AdminDashboardPage() {
             </nav>
           </div>
 
-          <div className="flex flex-col items-center gap-3">
-            <Link
-              href="/dashboard"
-              title="Switch to User Dashboard"
-              className="w-10 h-10 rounded-full bg-white/20 text-[#c8f560] hover:bg-white/30 flex items-center justify-center transition-all"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
+          <div className="flex flex-col items-center">
             <button
               onClick={handleLogout}
               title="Logout"
@@ -968,12 +952,6 @@ export default function AdminDashboardPage() {
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                   </button>
-                  <Link
-                    href="/dashboard"
-                    className="px-2.5 py-1 rounded-full bg-white/15 text-[#c8f560] text-[10px] font-bold"
-                  >
-                    User ↗
-                  </Link>
                 </div>
 
                 {/* Quick View Switcher Bar (Desktop XL) */}
@@ -1053,14 +1031,6 @@ export default function AdminDashboardPage() {
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 </button>
-
-                <Link
-                  href="/dashboard"
-                  className="px-3.5 py-2 rounded-full bg-[#8a88b5]/70 border border-white/20 hover:bg-white/25 text-white text-xs font-medium flex items-center gap-1"
-                >
-                  <span>User View</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-[#c8f560]" />
-                </Link>
               </div>
             </div>
           </header>
@@ -1503,14 +1473,11 @@ export default function AdminDashboardPage() {
                 <div className="mt-5 p-4 rounded-2xl bg-white/15 border border-white/20 text-xs flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-white">Admin Session Active</p>
-                    <p className="text-[11px] text-white/75">avelinfx@gmail.com • Pass: 1234</p>
+                    <p className="text-[11px] text-[#c8f560] font-medium">Verified Master Administrator</p>
                   </div>
-                  <Link
-                    href="/dashboard"
-                    className="px-3.5 py-1.5 rounded-full bg-[#312042] text-[#c8f560] text-[11px] font-medium"
-                  >
-                    Open User Dashboard
-                  </Link>
+                  <span className="px-3.5 py-1.5 rounded-full bg-[#312042] text-[#c8f560] text-[11px] font-medium border border-[#c8f560]/30">
+                    Console Secure
+                  </span>
                 </div>
               </div>
             </div>
