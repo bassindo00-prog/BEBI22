@@ -43,6 +43,7 @@ import {
   Copy,
   ExternalLink,
   Menu,
+  Loader2,
   X,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
@@ -189,6 +190,10 @@ export default function UserDashboardPage() {
   const [trackUpc, setTrackUpc] = useState("899214578109");
   const [trackIsrc, setTrackIsrc] = useState("ID-HRM-24-00109");
   const [audioFileName, setAudioFileName] = useState("audio_preview_final.wav");
+  const [audioFileUrl, setAudioFileUrl] = useState<string>("");
+  const [audioFileSize, setAudioFileSize] = useState<string>("");
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
     "Spotify",
     "Apple Music",
@@ -196,6 +201,68 @@ export default function UserDashboardPage() {
     "YouTube",
   ]);
   const [submittingTrack, setSubmittingTrack] = useState(false);
+
+  // Handle uploading audio file directly to Cloudflare S3
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAudio(true);
+    setAudioFileName(file.name);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    setAudioFileSize(sizeMB);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Gagal mengupload audio ke S3");
+      }
+
+      setAudioFileUrl(data.url);
+      showNotice(`✓ Master Audio berhasil disimpan di S3 Cloud Storage (${sizeMB})`);
+    } catch (err: any) {
+      console.error("Audio upload error:", err);
+      showNotice(`Upload gagal: ${err.message}`);
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  // Handle uploading cover art directly to Cloudflare S3
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Gagal mengupload cover art ke S3");
+      }
+
+      setUploadCoverUrl(data.url);
+      showNotice("✓ Cover Artwork berhasil disimpan di S3 Storage!");
+    } catch (err: any) {
+      console.error("Cover upload error:", err);
+      showNotice(`Upload cover gagal: ${err.message}`);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   // Format seconds to MM:SS for TikTok Clip
   const formatSec = (s: number) => {
@@ -358,7 +425,7 @@ export default function UserDashboardPage() {
           upc: trackUpc,
           isrc: trackIsrc,
           coverUrl: uploadCoverUrl,
-          audioFile: audioFileName,
+          audioFile: audioFileUrl || audioFileName,
           platforms: selectedPlatforms.join(","),
           status: "Pending",
         }),
@@ -500,7 +567,7 @@ export default function UserDashboardPage() {
       <div className="w-full h-full flex overflow-hidden">
         {/* MOBILE SLIDE-OUT MENU DRAWER — Muncul saat tombol menu HP diklik */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
+          <div className="fixed inset-0 z-50 lg:hidden flex animate-fade-in">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
@@ -590,7 +657,7 @@ export default function UserDashboardPage() {
         )}
 
         {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
-        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
+        <aside className="hidden lg:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
           {/* Top Logo Circle */}
           <div className="flex flex-col items-center gap-10">
             <Link
@@ -750,7 +817,7 @@ export default function UserDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="md:hidden p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
+                    className="lg:hidden p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
                     title="Buka Menu Navigasi"
                   >
                     <Menu className="w-5 h-5" />
@@ -1233,7 +1300,7 @@ export default function UserDashboardPage() {
                                 className="w-2 sm:w-2.5 rounded-full bg-white/25 transition-all duration-1000 ease-out"
                               />
                             </div>
-                            <span className="text-[9px] sm:text-[10px] text-white/80 truncate w-full text-center group-hover:text-[#c8f560] transition-all">
+                            <span className="text-[8px] xs:text-[9px] sm:text-[10px] font-medium text-white/80 text-center group-hover:text-[#c8f560] transition-all px-0.5 leading-tight">
                               {bar.label}
                             </span>
                           </div>
@@ -1844,32 +1911,56 @@ export default function UserDashboardPage() {
                       ))}
                     </div>
 
-                    <label className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium cursor-pointer transition-colors">
-                      <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
-                      <span>Select Audio File</span>
+                    <label className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium cursor-pointer transition-colors shadow">
+                      {uploadingAudio ? (
+                        <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
+                      )}
+                      <span>{uploadingAudio ? "Mengupload ke S3..." : "Pilih File Audio (MP3/WAV)"}</span>
                       <input
                         type="file"
                         accept="audio/*"
+                        disabled={uploadingAudio}
                         className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            setAudioFileName(e.target.files[0].name);
-                          }
-                        }}
+                        onChange={handleAudioUpload}
                       />
                     </label>
                   </div>
 
-                  {/* Uploaded File Status Bar */}
-                  <div className="px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 font-medium text-white">
-                      <Volume2 className="w-4 h-4 text-[#c8f560]" />
-                      <span>{audioFileName} • 3:42 • 24-bit / 44.1kHz</span>
+                  {/* Uploaded File Status Bar with S3 info & Real-time Player */}
+                  <div className="px-4 py-3 rounded-xl bg-white/15 border border-white/20 flex flex-col gap-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-medium text-white min-w-0 pr-2">
+                        <Volume2 className="w-4 h-4 text-[#c8f560] shrink-0" />
+                        <span className="truncate">{audioFileName} {audioFileSize ? `• ${audioFileSize}` : ""}</span>
+                      </div>
+                      {uploadingAudio ? (
+                        <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Mengupload ke S3...
+                        </span>
+                      ) : audioFileUrl ? (
+                        <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
+                          <Check className="w-3.5 h-3.5" />
+                          Tersimpan di S3 Cloud
+                        </span>
+                      ) : (
+                        <span className="text-white/60 font-medium shrink-0">
+                          Siap diupload ke S3
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[#c8f560] font-medium flex items-center gap-1">
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Ready to upload
-                    </span>
+
+                    {audioFileUrl && (
+                      <div className="pt-2 border-t border-white/10 flex flex-col gap-1">
+                        <span className="text-[11px] text-[#c8f560] font-medium flex items-center gap-1">
+                          <Volume2 className="w-3 h-3" />
+                          <span>Preview Audio yang Diupload:</span>
+                        </span>
+                        <audio controls src={audioFileUrl} className="w-full h-8 rounded bg-black/20" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Track Details Form */}
@@ -2178,7 +2269,7 @@ export default function UserDashboardPage() {
                     </div>
 
                     <p className="text-xs font-medium text-white/90">
-                      cover_art_3000x3000.jpg • 3000 × 3000 px • Ready
+                      {uploadingCover ? "Mengupload ke S3 Storage..." : "3000 × 3000 px • JPG / PNG"}
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
                       <button
@@ -2189,13 +2280,22 @@ export default function UserDashboardPage() {
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Generate Cover (AI)</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => showNotice("Cover artwork validated (3000x3000px)!")}
-                        className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-medium text-white hover:bg-white/25"
-                      >
-                        + Upload Manual
-                      </button>
+
+                      <label className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-medium text-white hover:bg-white/25 cursor-pointer flex items-center gap-1.5 transition-colors">
+                        {uploadingCover ? (
+                          <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
+                        ) : (
+                          <FolderOpen className="w-3.5 h-3.5 text-[#c8f560]" />
+                        )}
+                        <span>{uploadingCover ? "Mengupload..." : "+ Upload Manual (JPG/PNG)"}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingCover}
+                          className="hidden"
+                          onChange={handleCoverUpload}
+                        />
+                      </label>
                     </div>
                     <p className="text-[11px] text-white/65 mt-2">
                       Recommended: 3000×3000px, JPG/PNG, under 10MB
