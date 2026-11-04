@@ -36,6 +36,7 @@ import {
   FileSpreadsheet,
   Copy,
   Menu,
+  Volume2,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 
@@ -523,7 +524,7 @@ export default function AdminDashboardPage() {
                       type="button"
                       onClick={() =>
                         downloadAsset(
-                          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                          selectedRelease.audioFile || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
                           `${selectedRelease.title}-master.mp3`
                         )
                       }
@@ -533,6 +534,21 @@ export default function AdminDashboardPage() {
                       <span>Unduh Master Audio (MP3/WAV)</span>
                     </button>
                   </div>
+
+                  {/* Inline Audio Player for Admin Listening */}
+                  {selectedRelease.audioFile && (
+                    <div className="pt-2">
+                      <p className="text-[11px] text-white/70 mb-1 flex items-center gap-1 font-medium">
+                        <Volume2 className="w-3.5 h-3.5 text-[#c8f560]" />
+                        <span>Putar Preview Audio Rilis:</span>
+                      </p>
+                      <audio
+                        controls
+                        src={selectedRelease.audioFile}
+                        className="w-full h-8 rounded-lg bg-black/40 border border-white/15"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

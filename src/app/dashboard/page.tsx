@@ -44,6 +44,7 @@ import {
   ExternalLink,
   Menu,
   X,
+  Loader2,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -189,6 +190,12 @@ export default function UserDashboardPage() {
   const [trackUpc, setTrackUpc] = useState("899214578109");
   const [trackIsrc, setTrackIsrc] = useState("ID-HRM-24-00109");
   const [audioFileName, setAudioFileName] = useState("audio_preview_final.wav");
+  const [audioFileKey, setAudioFileKey] = useState<string>("");
+  const [audioFileUrl, setAudioFileUrl] = useState<string>("");
+  const [audioFileSize, setAudioFileSize] = useState<string>("");
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [uploadCoverKey, setUploadCoverKey] = useState<string>("");
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([
     "Spotify",
     "Apple Music",
@@ -196,6 +203,159 @@ export default function UserDashboardPage() {
     "YouTube",
   ]);
   const [submittingTrack, setSubmittingTrack] = useState(false);
+
+  // Safe JSON response parser to prevent crashing on plain text or HTML errors
+  const safeParseJson = async (res: Response) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: text || `HTTP ${res.status}: ${res.statusText}` };
+    }
+  };
+
+  // Direct S3/R2 presigned audio upload (bypasses Vercel 4.5MB limit completely)
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAudio(true);
+    setAudioFileName(file.name);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    setAudioFileSize(sizeMB);
+
+    try {
+      showNotice(`Menyiapkan presigned upload URL untuk ${file.name} (${sizeMB})...`);
+
+      // 1. Request presigned upload URL from server
+      const presignRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "audio/mpeg",
+          fileSize: file.size,
+          fileType: "audio",
+        }),
+      });
+
+      const presignData = await safeParseJson(presignRes);
+      if (!presignRes.ok || !presignData.ok || !presignData.uploadUrl) {
+        throw new Error(presignData.error || "Gagal mendapatkan presigned upload URL");
+      }
+
+      // 2. Upload file binary directly to Cloudflare R2 via presigned PUT URL
+      showNotice(`Mengunggah ${file.name} (${sizeMB}) langsung ke Cloudflare R2...`);
+      const uploadRes = await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "audio/mpeg",
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text().catch(() => "");
+        throw new Error(
+          `Gagal mengunggah file langsung ke R2 (${uploadRes.status}): ${
+            errText || uploadRes.statusText
+          }`
+        );
+      }
+
+      // 3. Backend verifies the object in R2 and records it
+      const verifyRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify",
+          key: presignData.key,
+        }),
+      });
+
+      const verifyData = await safeParseJson(verifyRes);
+      if (!verifyRes.ok || !verifyData.ok || !verifyData.verified) {
+        throw new Error(verifyData.error || "Verifikasi file audio di R2 gagal.");
+      }
+
+      setAudioFileKey(presignData.key);
+      const streamUrl = `/api/storage/${presignData.key}`;
+      setAudioFileUrl(streamUrl);
+      showNotice(`✓ Master Audio berhasil disimpan di Cloudflare R2 (${sizeMB})!`);
+    } catch (err: any) {
+      console.error("Audio upload error:", err);
+      showNotice(`Upload audio gagal: ${err.message}`);
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  // Direct S3/R2 presigned cover artwork upload
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCover(true);
+    try {
+      showNotice("Menyiapkan presigned upload URL untuk cover artwork...");
+
+      // 1. Request presigned upload URL
+      const presignRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "image/jpeg",
+          fileSize: file.size,
+          fileType: "cover",
+        }),
+      });
+
+      const presignData = await safeParseJson(presignRes);
+      if (!presignRes.ok || !presignData.ok || !presignData.uploadUrl) {
+        throw new Error(presignData.error || "Gagal mendapatkan upload URL cover art");
+      }
+
+      // 2. Upload file directly to R2
+      const uploadRes = await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text().catch(() => "");
+        throw new Error(`Upload cover ke R2 gagal (${uploadRes.status}): ${errText}`);
+      }
+
+      // 3. Verify object in R2
+      const verifyRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify",
+          key: presignData.key,
+        }),
+      });
+
+      const verifyData = await safeParseJson(verifyRes);
+      if (!verifyRes.ok || !verifyData.ok || !verifyData.verified) {
+        throw new Error(verifyData.error || "Verifikasi cover artwork di R2 gagal.");
+      }
+
+      setUploadCoverKey(presignData.key);
+      const streamUrl = `/api/storage/${presignData.key}`;
+      setUploadCoverUrl(streamUrl);
+      showNotice("✓ Cover Artwork berhasil disimpan di Cloudflare R2!");
+    } catch (err: any) {
+      console.error("Cover upload error:", err);
+      showNotice(`Upload cover gagal: ${err.message}`);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
 
   // Format seconds to MM:SS for TikTok Clip
   const formatSec = (s: number) => {
@@ -358,12 +518,16 @@ export default function UserDashboardPage() {
           upc: trackUpc,
           isrc: trackIsrc,
           coverUrl: uploadCoverUrl,
-          audioFile: audioFileName,
+          coverKey: uploadCoverKey,
+          audioFile: audioFileUrl || audioFileName,
+          audioKey: audioFileKey,
           platforms: selectedPlatforms.join(","),
           status: "Pending",
         }),
       });
-      if (res.ok) {
+
+      const data = await safeParseJson(res);
+      if (res.ok && data.ok !== false) {
         await fetchUserData();
         showNotice(
           statusType === "Draft"
@@ -371,7 +535,12 @@ export default function UserDashboardPage() {
             : `Track submitted! TikTok Clip (${formattedTiktokClip}) & Release Date (${formattedReleaseDate}) saved.`
         );
         setActiveTab("releases");
+      } else {
+        throw new Error(data.error || "Gagal membuat rilis");
       }
+    } catch (err: any) {
+      console.error("Submit release error:", err);
+      showNotice(`Gagal submit track: ${err.message}`);
     } finally {
       setSubmittingTrack(false);
     }
@@ -1844,32 +2013,63 @@ export default function UserDashboardPage() {
                       ))}
                     </div>
 
-                    <label className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium cursor-pointer transition-colors">
-                      <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
-                      <span>Select Audio File</span>
+                    <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium cursor-pointer transition-colors shadow">
+                      {uploadingAudio ? (
+                        <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 text-[#c8f560]" />
+                      )}
+                      <span>{uploadingAudio ? "Mengunggah langsung ke R2..." : "Select Audio File (.wav, .mp3, .flac)"}</span>
                       <input
                         type="file"
-                        accept="audio/*"
+                        accept="audio/*,.wav,.mp3,.flac,.m4a,.aac,.ogg"
+                        disabled={uploadingAudio}
                         className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            setAudioFileName(e.target.files[0].name);
-                          }
-                        }}
+                        onChange={handleAudioUpload}
                       />
                     </label>
                   </div>
 
-                  {/* Uploaded File Status Bar */}
-                  <div className="px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 font-medium text-white">
-                      <Volume2 className="w-4 h-4 text-[#c8f560]" />
-                      <span>{audioFileName} • 3:42 • 24-bit / 44.1kHz</span>
+                  {/* Uploaded File Status Bar with S3 / Cloudflare R2 Player */}
+                  <div className="px-4 py-3 rounded-xl bg-white/15 border border-white/20 flex flex-col gap-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-medium text-white min-w-0 pr-2">
+                        <Volume2 className="w-4 h-4 text-[#c8f560] shrink-0" />
+                        <span className="truncate">
+                          {audioFileName} {audioFileSize ? `• ${audioFileSize}` : ""}
+                        </span>
+                      </div>
+                      {uploadingAudio ? (
+                        <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Mengupload ke R2 (Direct)...
+                        </span>
+                      ) : audioFileUrl ? (
+                        <span className="text-[#c8f560] font-medium flex items-center gap-1 shrink-0">
+                          <Check className="w-3.5 h-3.5" />
+                          Tersimpan di Cloudflare R2
+                        </span>
+                      ) : (
+                        <span className="text-white/60 font-medium shrink-0">
+                          Siap diunggah ke R2
+                        </span>
+                      )}
                     </div>
-                    <span className="text-[#c8f560] font-medium flex items-center gap-1">
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Ready to upload
-                    </span>
+
+                    {/* Live Audio Preview Player */}
+                    {audioFileUrl && (
+                      <div className="pt-2 border-t border-white/10 flex flex-col gap-1.5">
+                        <span className="text-[11px] text-[#c8f560] font-medium flex items-center gap-1">
+                          <Volume2 className="w-3 h-3" />
+                          <span>Preview Master Audio (Cloudflare R2 Direct Stream):</span>
+                        </span>
+                        <audio
+                          controls
+                          src={audioFileUrl}
+                          className="w-full h-8 rounded-lg bg-black/30 border border-white/10"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Track Details Form */}
@@ -2178,7 +2378,7 @@ export default function UserDashboardPage() {
                     </div>
 
                     <p className="text-xs font-medium text-white/90">
-                      cover_art_3000x3000.jpg • 3000 × 3000 px • Ready
+                      {uploadingCover ? "Mengunggah cover ke Cloudflare R2..." : "3000 × 3000 px • JPG / PNG / WEBP"}
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
                       <button
@@ -2189,16 +2389,25 @@ export default function UserDashboardPage() {
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Generate Cover (AI)</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => showNotice("Cover artwork validated (3000x3000px)!")}
-                        className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-medium text-white hover:bg-white/25"
-                      >
-                        + Upload Manual
-                      </button>
+
+                      <label className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/30 text-xs font-medium text-white hover:bg-white/25 cursor-pointer flex items-center gap-1.5 transition-colors">
+                        {uploadingCover ? (
+                          <Loader2 className="w-3.5 h-3.5 text-[#c8f560] animate-spin" />
+                        ) : (
+                          <FolderOpen className="w-3.5 h-3.5 text-[#c8f560]" />
+                        )}
+                        <span>{uploadingCover ? "Mengunggah..." : "+ Upload Manual"}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          disabled={uploadingCover}
+                          className="hidden"
+                          onChange={handleCoverUpload}
+                        />
+                      </label>
                     </div>
                     <p className="text-[11px] text-white/65 mt-2">
-                      Recommended: 3000×3000px, JPG/PNG, under 10MB
+                      Recommended: 3000×3000px, JPG/PNG, under 20MB
                     </p>
                   </div>
 

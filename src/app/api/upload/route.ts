@@ -1,32 +1,152 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadToStorage } from "@/lib/s3";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import {
+  generatePresignedUploadUrl,
+  verifyUploadedObject,
+  getPresignedDownloadUrl,
+} from "@/lib/s3";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Helper to authenticate user from cookie or fallback
+ */
+async function getAuthenticatedUser() {
+  const cookieStore = cookies();
+  const userId = cookieStore.get("hermes_user_id")?.value;
+
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (user) return user;
+  }
+
+  // Fallback to primary test artist
+  const fallback = await prisma.user.findFirst({
+    where: { email: "abdul@hermes.music" },
+    select: { id: true, email: true, name: true, role: true },
+  });
+
+  return fallback;
+}
+
+/**
+ * POST /api/upload
+ * Workflow:
+ * 1. Client sends { fileName, contentType, fileSize, fileType }
+ * 2. Server validates auth, content type, and file size
+ * 3. Server generates S3 presigned PUT URL
+ * 4. Client uploads binary directly to S3/R2 (bypassing Vercel 4.5MB limit)
+ * 5. Client or Server verifies object via { action: "verify", key }
+ */
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized: Silakan login terlebih dahulu." },
+        { status: 401 }
+      );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const contentTypeHeader = req.headers.get("content-type") || "";
 
-    const fileUrl = await uploadToStorage(buffer, file.name, file.type || "application/octet-stream");
+    // Action 1: JSON payload for Presigning or Verification
+    if (contentTypeHeader.includes("application/json")) {
+      const body = await req.json().catch(() => ({}));
 
-    return NextResponse.json({
-      ok: true,
-      url: fileUrl,
-      fileName: file.name,
-      size: file.size,
-    });
-  } catch (error: any) {
-    console.error("Storage upload error:", error);
+      // Sub-action: Verification of uploaded object
+      if (body.action === "verify" || body.key && !body.uploadUrl) {
+        if (!body.key || typeof body.key !== "string") {
+          return NextResponse.json(
+            { ok: false, error: "Key objek penyimpanan diperlukan untuk verifikasi." },
+            { status: 400 }
+          );
+        }
+
+        const verification = await verifyUploadedObject(body.key);
+        if (!verification.exists) {
+          return NextResponse.json(
+            {
+              ok: false,
+              verified: false,
+              error: "File belum terunggah ke Cloudflare R2 atau tidak ditemukan.",
+            },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({
+          ok: true,
+          verified: true,
+          ...verification,
+        });
+      }
+
+      // Sub-action: Generate Presigned Download/Stream URL
+      if (body.action === "download_url" && body.key) {
+        const downloadUrl = await getPresignedDownloadUrl(body.key, body.filename);
+        return NextResponse.json({
+          ok: true,
+          downloadUrl,
+          key: body.key,
+        });
+      }
+
+      // Default: Generate Presigned Upload PUT URL
+      const { fileName, contentType, fileSize, fileType } = body;
+
+      if (!fileName || typeof fileName !== "string") {
+        return NextResponse.json(
+          { ok: false, error: "Nama file (fileName) wajib disertakan." },
+          { status: 400 }
+        );
+      }
+
+      const presignResult = await generatePresignedUploadUrl({
+        fileName,
+        contentType: contentType || "application/octet-stream",
+        fileSize: fileSize ? Number(fileSize) : undefined,
+        userId: user.id,
+        fileType: fileType as any,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        ...presignResult,
+      });
+    }
+
+    // Reject raw multipart uploads that would fail on Vercel with 413
     return NextResponse.json(
-      { error: error?.message || "Failed to upload to storage" },
+      {
+        ok: false,
+        error:
+          "Unggahan multipart langsung tidak didukung untuk mencegah error Vercel 413. Gunakan presigned URL.",
+      },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error("Presigned upload API error:", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error?.message || "Terjadi kesalahan saat membuat presigned upload URL.",
+      },
       { status: 500 }
     );
   }
 }
 
+export async function GET() {
+  return NextResponse.json({
+    status: "online",
+    storage: "Cloudflare R2 (S3-Compatible)",
+    maxAudioSize: "250MB",
+    maxCoverSize: "20MB",
+    method: "Presigned PUT",
+  });
+}
