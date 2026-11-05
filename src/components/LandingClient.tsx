@@ -614,22 +614,6 @@ export default function LandingClient({
         </Link>
       </div>
 
-      {/* Floating Nav Pojok Kanan Atas (Masuk & Daftar) */}
-      <div className="fixed top-6 right-6 md:top-10 md:right-12 z-[100] flex items-center gap-3">
-        <Link
-          href="/login"
-          className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all uppercase tracking-wider"
-        >
-          Masuk
-        </Link>
-        <Link
-          href="/register"
-          className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-[#ff0055] hover:bg-[#ff1a66] shadow-[0_0_20px_rgba(255,0,85,0.4)] transition-all uppercase tracking-wider"
-        >
-          Daftar
-        </Link>
-      </div>
-
       <main>
         <div
           className="slider-wrapper"
