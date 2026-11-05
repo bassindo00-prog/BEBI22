@@ -307,10 +307,24 @@ export default function LandingClient({
   const faqSectionIndex = 7;
   const totalPlatformSlides = 5;
 
+  // Real-time synchronization state with Web CMS
+  const [data, setData] = useState<LandingPageData>(initialData);
+
+  useEffect(() => {
+    fetch("/api/cms/landing")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data) {
+          setData(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch fresh live landing data:", err));
+  }, []);
+
   // Sync artists data from CMS/DB with fallback
   const testimonials: LandingArtist[] =
-    initialData?.artists && initialData.artists.length > 0
-      ? initialData.artists.map((a: any, i: number) => ({
+    data?.artists && data.artists.length > 0
+      ? data.artists.map((a: any, i: number) => ({
           id: a.id || i + 1,
           name: a.name || "Artis",
           genre: a.genre || "Pop",
@@ -624,7 +638,7 @@ export default function LandingClient({
           {/* Frame 1: Hero dengan Foto Karakter Samurai Merah */}
           <section className={`snap-section ${activeSection === 0 ? "active" : ""}`}>
             <img
-              src={normalizeImageUrl(initialData?.heroBgImage) || "/6293920186406475512_121.jpg"}
+              src={normalizeImageUrl(data?.heroBgImage) || "/6293920186406475512_121.jpg"}
               alt="Hero Anime Masked Girl"
               className="bg-img"
               style={{ filter: "brightness(0.55) contrast(1.15)" }}
@@ -641,13 +655,13 @@ export default function LandingClient({
             />
             <div className="content text-center">
               <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter uppercase text-white drop-shadow-2xl">
-                {initialData?.heroTitle1 || "Breakout"}{" "}
-                <span className="text-[#ff0055]">{initialData?.heroTitle2 || "ID"}</span>
+                {data?.heroTitle1 || "Breakout"}{" "}
+                <span className="text-[#ff0055]">{data?.heroTitle2 || "ID"}</span>
               </h1>
               <div className="text-xl md:text-2xl font-light mb-8 text-white max-w-2xl mx-auto min-h-[60px] md:min-h-[80px] drop-shadow">
                 <TypewriterText
                   text={
-                    initialData?.heroSubtitle ||
+                    data?.heroSubtitle ||
                     "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas."
                   }
                   isActive={activeSection === 0}
