@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 export function normalizeImageUrl(url?: string | null): string {
@@ -242,11 +242,11 @@ const faqData = [
 // Komponen Efek Mengetik
 const TypewriterText = ({
   text,
-  isActive,
+  isActive = true,
   delay = 35,
 }: {
   text: string;
-  isActive: boolean;
+  isActive?: boolean;
   delay?: number;
 }) => {
   const [displayedText, setDisplayedText] = useState("");
@@ -265,7 +265,7 @@ const TypewriterText = ({
         if (i >= text.length) clearInterval(intervalId);
       }, delay);
       return () => clearInterval(intervalId);
-    }, 600);
+    }, 400);
 
     return () => clearTimeout(startTimeout);
   }, [text, isActive, delay]);
@@ -287,24 +287,13 @@ export default function LandingClient({
 }: {
   initialData?: LandingPageData;
 }) {
-  const [activeSection, setActiveSection] = useState(0);
-  const [activeHIndex, setActiveHIndex] = useState(0);
+  // Horizontal Slider Indexes
   const [activePlatformIndex, setActivePlatformIndex] = useState(0);
+  const [activeHIndex, setActiveHIndex] = useState(0);
   const [activeFaqIndex, setActiveFaqIndex] = useState(0);
   const [openFaqItem, setOpenFaqItem] = useState<string | null>("01-0");
   const [hMoveAmount, setHMoveAmount] = useState(384);
 
-  const sectionRef = useRef(0);
-  const hIndexRef = useRef(0);
-  const platformIndexRef = useRef(0);
-  const faqIndexRef = useRef(0);
-  const isScrolling = useRef(false);
-  const touchStartY = useRef(0);
-
-  const totalSections = 9;
-  const platformSectionIndex = 2;
-  const testimonialSectionIndex = 6;
-  const faqSectionIndex = 7;
   const totalPlatformSlides = 5;
 
   // Real-time synchronization state with Web CMS
@@ -338,15 +327,6 @@ export default function LandingClient({
       : DEFAULT_PRISMA_TESTIMONIALS;
 
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "none";
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.overscrollBehavior = "";
-    };
-  }, []);
-
-  useEffect(() => {
     const updateWidth = () => {
       const w = window.innerWidth < 768 ? 300 : 360;
       const gap = 24;
@@ -357,256 +337,108 @@ export default function LandingClient({
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = (direction: number) => {
-      const currentSec = sectionRef.current;
-      const currentH = hIndexRef.current;
-      const currentP = platformIndexRef.current;
-      const currentF = faqIndexRef.current;
-
-      // Platform Scroll Intercept (Frame 3)
-      if (currentSec === platformSectionIndex) {
-        if (direction === 1 && currentP < totalPlatformSlides - 1) {
-          isScrolling.current = true;
-          platformIndexRef.current = currentP + 1;
-          setActivePlatformIndex(platformIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        } else if (direction === -1 && currentP > 0) {
-          isScrolling.current = true;
-          platformIndexRef.current = currentP - 1;
-          setActivePlatformIndex(platformIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        }
-      }
-
-      // Testimonial Scroll Intercept (Frame 7)
-      if (currentSec === testimonialSectionIndex) {
-        if (direction === 1 && currentH < testimonials.length - 1) {
-          isScrolling.current = true;
-          hIndexRef.current = currentH + 1;
-          setActiveHIndex(hIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        } else if (direction === -1 && currentH > 0) {
-          isScrolling.current = true;
-          hIndexRef.current = currentH - 1;
-          setActiveHIndex(hIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        }
-      }
-
-      // FAQ Scroll Intercept (Frame 8)
-      if (currentSec === faqSectionIndex) {
-        if (direction === 1 && currentF < faqData.length - 1) {
-          isScrolling.current = true;
-          faqIndexRef.current = currentF + 1;
-          setActiveFaqIndex(faqIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        } else if (direction === -1 && currentF > 0) {
-          isScrolling.current = true;
-          faqIndexRef.current = currentF - 1;
-          setActiveFaqIndex(faqIndexRef.current);
-          setTimeout(() => {
-            isScrolling.current = false;
-          }, 350);
-          return;
-        }
-      }
-
-      // Vertikal Normal Scroll
-      const nextSec = currentSec + direction;
-      if (nextSec >= 0 && nextSec < totalSections) {
-        isScrolling.current = true;
-        sectionRef.current = nextSec;
-        setActiveSection(sectionRef.current);
-        setTimeout(() => {
-          isScrolling.current = false;
-        }, 700);
-      }
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-      if (isScrolling.current) return;
-      handleScroll(e.deltaY > 0 ? 1 : -1);
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isScrolling.current) return;
-      const diff = touchStartY.current - e.changedTouches[0].clientY;
-      if (diff > 50) handleScroll(1);
-      else if (diff < -50) handleScroll(-1);
-    };
-
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("touchstart", handleTouchStart, { passive: false });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("touchend", handleTouchEnd);
-
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [testimonials.length]);
-
   return (
     <>
       <style
         dangerouslySetInnerHTML={{
           __html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        html {
+          scroll-behavior: smooth;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #050505;
-            color: white;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            overscroll-behavior: none;
+          font-family: 'Inter', sans-serif;
+          background-color: #050505;
+          color: white;
+          margin: 0;
+          padding: 0;
+          overflow-x: clip;
         }
-        main {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
+
+        /* STICKY STACKING SECTIONS ENGINE */
+        .sticky-stack-container {
+          position: relative;
+          width: 100%;
         }
-        .slider-wrapper {
-            width: 100vw;
-            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
-            will-change: transform;
+
+        .sticky-stack-bar {
+          position: sticky;
+          top: 0;
+          width: 100%;
+          min-height: 100vh;
+          min-height: 100svh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          background-color: #050505;
+          box-shadow: 0 -25px 50px -10px rgba(0, 0, 0, 0.95);
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          will-change: transform;
         }
-        .snap-section {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+
         .bg-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -2;
-            transform: scale(1.15);
-            transition: transform 2.5s cubic-bezier(0.25, 1, 0.5, 1);
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          z-index: -2;
         }
+
         .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(5,5,5,0.4) 0%, rgba(5,5,5,0.88) 100%);
-            z-index: -1;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(to bottom, rgba(5,5,5,0.4) 0%, rgba(5,5,5,0.88) 100%);
+          z-index: -1;
         }
-        .snap-section.active .bg-img {
-            transform: scale(1);
-        }
+
         .content {
-            opacity: 0;
-            transform: translateY(50px);
-            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-            transition-delay: 0.25s;
-            z-index: 10;
-            width: 100%;
-            max-width: 1200px;
-            padding: 0 24px;
-            position: relative;
+          z-index: 10;
+          width: 100%;
+          max-width: 1200px;
+          padding: 0 24px;
+          position: relative;
         }
-        .snap-section.active .content {
-            opacity: 1;
-            transform: translateY(0);
-        }
+
         .h-track {
-            display: flex;
-            width: max-content;
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: transform;
+          display: flex;
+          width: max-content;
+          transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+          will-change: transform;
         }
+
         .btn-glow {
-            box-shadow: 0 0 20px rgba(255,0,85,0.4);
-            transition: all 0.4s ease;
+          box-shadow: 0 0 20px rgba(255,0,85,0.4);
+          transition: all 0.4s ease;
         }
+
         .btn-glow:hover {
-            box-shadow: 0 0 40px rgba(255,0,85,0.8);
-            transform: translateY(-3px);
-            background-color: #ff1a66;
+          box-shadow: 0 0 40px rgba(255,0,85,0.8);
+          transform: translateY(-3px);
+          background-color: #ff1a66;
         }
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: opacity 0.5s;
-            pointer-events: none;
-        }
-        .mouse {
-            width: 26px;
-            height: 40px;
-            border: 2px solid rgba(255,255,255,0.6);
-            border-radius: 13px;
-            position: relative;
-        }
-        .wheel {
-            width: 4px;
-            height: 8px;
-            background: #ff0055;
-            border-radius: 2px;
-            position: absolute;
-            top: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: scroll 1.5s infinite;
-        }
-        @keyframes scroll {
-            0% { transform: translate(-50%, 0); opacity: 1; }
-            100% { transform: translate(-50%, 15px); opacity: 0; }
-        }
+
         .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
+          width: 4px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #ff0055;
-            border-radius: 4px;
+          background: #ff0055;
+          border-radius: 4px;
         }
       `,
         }}
       />
 
       {/* Floating Logo Pojok Kiri Atas */}
-      <div className="fixed top-6 left-6 md:top-10 md:left-12 z-[100]">
+      <div className="fixed top-6 left-6 md:top-10 md:left-12 z-[100] pointer-events-auto">
         <Link href="/" className="inline-block group">
           <h2 className="text-xl md:text-2xl font-black tracking-widest text-white uppercase drop-shadow-lg group-hover:opacity-90 transition-opacity">
             BREAKOUT<span className="text-[#ff0055]">.ID</span>
@@ -614,493 +446,568 @@ export default function LandingClient({
         </Link>
       </div>
 
-      <main>
-        <div
-          className="slider-wrapper"
-          style={{ transform: `translateY(-${activeSection * 100}vh)` }}
+      <main className="sticky-stack-container">
+        {/* =========================================================================
+            BAR 1: HERO DENGAN FOTO KARAKTER SAMURAI MERAH
+           ========================================================================= */}
+        <section
+          id="bar-1"
+          className="sticky-stack-bar z-10"
+          style={{ borderTop: "none" }}
         >
-          {/* Frame 1: Hero dengan Foto Karakter Samurai Merah */}
-          <section className={`snap-section ${activeSection === 0 ? "active" : ""}`}>
-            <img
-              src={normalizeImageUrl(data?.heroBgImage) || "/6293920186406475512_121.jpg"}
-              alt="Hero Anime Masked Girl"
-              className="bg-img"
-              style={{ filter: "brightness(0.55) contrast(1.15)" }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
-              }}
-            />
+          <img
+            src={normalizeImageUrl(data?.heroBgImage) || "/6293920186406475512_121.jpg"}
+            alt="Hero Anime Masked Girl"
+            className="bg-img"
+            style={{ filter: "brightness(0.55) contrast(1.15)" }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
+            }}
+          />
+          <div
+            className="overlay"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(5,5,5,0.2) 0%, rgba(5,5,5,0.85) 100%)",
+            }}
+          />
+          <div className="content text-center">
+            <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter uppercase text-white drop-shadow-2xl">
+              {data?.heroTitle1 || "Breakout"}{" "}
+              <span className="text-[#ff0055]">{data?.heroTitle2 || "ID"}</span>
+            </h1>
+            <div className="text-xl md:text-2xl font-light mb-8 text-white max-w-2xl mx-auto min-h-[60px] md:min-h-[80px] drop-shadow">
+              <TypewriterText
+                text={
+                  data?.heroSubtitle ||
+                  "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas."
+                }
+              />
+            </div>
+            <Link
+              href="/register"
+              className="inline-block bg-[#ff0055] text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest text-sm btn-glow"
+            >
+              Mulai Rilis Sekarang
+            </Link>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 2: SPEED / DJ (MENUTUPI BAR 1)
+           ========================================================================= */}
+        <section id="bar-2" className="sticky-stack-bar z-20">
+          <img
+            src="https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=2000&auto=format&fit=crop"
+            alt="DJ Speed"
+            className="bg-img"
+            style={{ filter: "brightness(0.3) contrast(1.1)" }}
+          />
+          <div className="overlay" />
+          <div className="content text-center">
+            <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
+              Rilis Lebih <span className="text-[#ff0055]">Cepat</span>
+            </h2>
+            <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
+              Kapan Saja.
+            </h2>
+            <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+              Sistem canggih kami memproses lagu Anda ke platform streaming raksasa hanya dalam
+              hitungan hari, bukan minggu.
+            </p>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 3: 150+ PLATFORM DIGITAL (MENUTUPI BAR 2)
+           ========================================================================= */}
+        <section
+          id="bar-3"
+          className="sticky-stack-bar z-30 flex-col items-start justify-center"
+        >
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+            <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
+              150+ Platform
+            </h2>
+            <h2 className="text-3xl md:text-5xl font-black tracking-widest text-[#ff0055] drop-shadow-lg uppercase mt-2">
+              Digital.
+            </h2>
+          </div>
+
+          <div className="w-full mt-24 md:mt-40">
             <div
-              className="overlay"
+              className="h-track px-8 md:px-[10vw] gap-6"
               style={{
-                background:
-                  "linear-gradient(to bottom, rgba(5,5,5,0.2) 0%, rgba(5,5,5,0.85) 100%)",
+                transform: `translateX(-${activePlatformIndex * hMoveAmount}px)`,
               }}
-            />
-            <div className="content text-center">
-              <h1 className="text-6xl md:text-8xl font-black mb-4 tracking-tighter uppercase text-white drop-shadow-2xl">
-                {data?.heroTitle1 || "Breakout"}{" "}
-                <span className="text-[#ff0055]">{data?.heroTitle2 || "ID"}</span>
-              </h1>
-              <div className="text-xl md:text-2xl font-light mb-8 text-white max-w-2xl mx-auto min-h-[60px] md:min-h-[80px] drop-shadow">
-                <TypewriterText
-                  text={
-                    data?.heroSubtitle ||
-                    "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas."
-                  }
-                  isActive={activeSection === 0}
-                />
-              </div>
-              <Link
-                href="/register"
-                className="inline-block bg-[#ff0055] text-white px-8 py-4 rounded-full font-bold uppercase tracking-widest text-sm btn-glow"
-              >
-                Mulai Rilis Sekarang
-              </Link>
-            </div>
-          </section>
-
-          {/* Frame 2: Speed / DJ */}
-          <section className={`snap-section ${activeSection === 1 ? "active" : ""}`}>
-            <img
-              src="https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=2000&auto=format&fit=crop"
-              alt="DJ Speed"
-              className="bg-img"
-              style={{ filter: "brightness(0.3) contrast(1.1)" }}
-            />
-            <div className="overlay" />
-            <div className="content text-center">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
-                Rilis Lebih <span className="text-[#ff0055]">Cepat</span>
-              </h2>
-              <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
-                Kapan Saja.
-              </h2>
-              <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-                Sistem canggih kami memproses lagu Anda ke platform streaming raksasa hanya dalam
-                hitungan hari, bukan minggu.
-              </p>
-            </div>
-          </section>
-
-          {/* Frame 3: 150+ Platform Horizontal Slider */}
-          <section
-            className={`snap-section bg-[#050505] flex-col items-start justify-center relative overflow-hidden ${
-              activeSection === 2 ? "active" : ""
-            }`}
-          >
-            <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
-              <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
-                150+ Platform
-              </h2>
-              <h2 className="text-3xl md:text-5xl font-black tracking-widest text-[#ff0055] drop-shadow-lg uppercase mt-2">
-                Digital.
-              </h2>
-            </div>
-
-            <div className="w-full mt-24 md:mt-40">
-              <div
-                className="h-track px-8 md:px-[10vw] gap-6"
-                style={{
-                  transform: `translateX(-${activePlatformIndex * hMoveAmount}px)`,
-                }}
-              >
-                {/* Slide 1 - Top Tier Platforms */}
-                <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
-                  <div className="grid grid-cols-2 gap-4 w-full h-full">
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#1DB954] font-black text-lg tracking-tighter">
-                        Spotify
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#FA243C] font-black text-lg tracking-tighter">
-                        Apple Music
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">TikTok</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#FF0000] font-black text-lg tracking-tighter">
-                        YouTube
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#E1306C] font-black text-lg tracking-tighter">
-                        Instagram
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#00A8E1] font-black text-lg tracking-tighter">
-                        Amazon
-                      </span>
-                    </div>
+            >
+              {/* Slide 1 - Top Tier Platforms */}
+              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+                <div className="grid grid-cols-2 gap-4 w-full h-full">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#1DB954] font-black text-lg tracking-tighter">
+                      Spotify
+                    </span>
                   </div>
-                </div>
-
-                {/* Slide 2 - Global Majors */}
-                <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
-                  <div className="grid grid-cols-2 gap-4 w-full h-full">
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">Deezer</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">TIDAL</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#FF5500] font-black text-lg tracking-tighter">
-                        SoundCloud
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#0055FF] font-black text-lg tracking-tighter">
-                        Pandora
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#00D2FF] font-black text-lg tracking-tighter">
-                        Shazam
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">Napster</span>
-                    </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#FA243C] font-black text-lg tracking-tighter">
+                      Apple Music
+                    </span>
                   </div>
-                </div>
-
-                {/* Slide 3 - Asia & Regional */}
-                <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
-                  <div className="grid grid-cols-2 gap-4 w-full h-full">
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">Tencent</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#E60026] font-black text-lg tracking-tighter">
-                        NetEase
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#00B900] font-black text-lg tracking-tighter">JOOX</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#FFD500] font-black text-lg tracking-tighter">
-                        Boomplay
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#8923FF] font-black text-lg tracking-tighter">
-                        Anghami
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#E52D27] font-black text-lg tracking-tighter">Claro</span>
-                    </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">TikTok</span>
                   </div>
-                </div>
-
-                {/* Slide 4 - Electronic & High Fidelity */}
-                <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
-                  <div className="grid grid-cols-2 gap-4 w-full h-full">
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#C6002B] font-black text-lg tracking-tighter">
-                        iHeart
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-white font-black text-lg tracking-tighter">Qobuz</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#9146FF] font-black text-lg tracking-tighter">Twitch</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#E60000] font-black text-lg tracking-tighter">Vevo</span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#01FF95] font-black text-lg tracking-tighter">
-                        Beatport
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
-                      <span className="text-[#FFCC00] font-black text-lg tracking-tighter">
-                        Yandex
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#FF0000] font-black text-lg tracking-tighter">
+                      YouTube
+                    </span>
                   </div>
-                </div>
-
-                {/* Slide 5 - 120+ Lainnya */}
-                <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-gradient-to-br from-[#ff0055] to-[#88002e] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(255,0,85,0.4)] h-[400px]">
-                  <h3 className="text-5xl md:text-6xl font-black text-white mb-3">+120</h3>
-                  <p className="text-lg md:text-xl font-bold tracking-widest uppercase text-white mb-2">
-                    Platform Lainnya
-                  </p>
-                  <p className="text-xs md:text-sm text-pink-100 font-medium leading-relaxed">
-                    Musik Anda didistribusikan ke setiap jaringan digital dunia secara komprehensif.
-                  </p>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#E1306C] font-black text-lg tracking-tighter">
+                      Instagram
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#00A8E1] font-black text-lg tracking-tighter">
+                      Amazon
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 text-white font-bold tracking-[0.3em] text-sm md:text-lg">
+              {/* Slide 2 - Global Majors */}
+              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+                <div className="grid grid-cols-2 gap-4 w-full h-full">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">Deezer</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">TIDAL</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#FF5500] font-black text-lg tracking-tighter">
+                      SoundCloud
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#0055FF] font-black text-lg tracking-tighter">
+                      Pandora
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#00D2FF] font-black text-lg tracking-tighter">
+                      Shazam
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">Napster</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide 3 - Asia & Regional */}
+              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+                <div className="grid grid-cols-2 gap-4 w-full h-full">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">Tencent</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#E60026] font-black text-lg tracking-tighter">
+                      NetEase
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#00B900] font-black text-lg tracking-tighter">JOOX</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#FFD500] font-black text-lg tracking-tighter">
+                      Boomplay
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#8923FF] font-black text-lg tracking-tighter">
+                      Anghami
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#E52D27] font-black text-lg tracking-tighter">Claro</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide 4 - Electronic & High Fidelity */}
+              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+                <div className="grid grid-cols-2 gap-4 w-full h-full">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#C6002B] font-black text-lg tracking-tighter">
+                      iHeart
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-white font-black text-lg tracking-tighter">Qobuz</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#9146FF] font-black text-lg tracking-tighter">Twitch</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#E60000] font-black text-lg tracking-tighter">Vevo</span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#01FF95] font-black text-lg tracking-tighter">
+                      Beatport
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                    <span className="text-[#FFCC00] font-black text-lg tracking-tighter">
+                      Yandex
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide 5 - 120+ Lainnya */}
+              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-gradient-to-br from-[#ff0055] to-[#88002e] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(255,0,85,0.4)] h-[400px]">
+                <h3 className="text-5xl md:text-6xl font-black text-white mb-3">+120</h3>
+                <p className="text-lg md:text-xl font-bold tracking-widest uppercase text-white mb-2">
+                  Platform Lainnya
+                </p>
+                <p className="text-xs md:text-sm text-pink-100 font-medium leading-relaxed">
+                  Musik Anda didistribusikan ke setiap jaringan digital dunia secara komprehensif.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Slider Controls */}
+          <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
+            <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
               {`0${activePlatformIndex + 1}`.slice(-2)} / {totalPlatformSlides}
             </div>
-          </section>
-
-          {/* Frame 4: Analytics */}
-          <section className={`snap-section ${activeSection === 3 ? "active" : ""}`}>
-            <img
-              src="https://images.unsplash.com/photo-1520872024865-3ff2805d8bb3?q=80&w=2000&auto=format&fit=crop"
-              alt="Data Analitik"
-              className="bg-img"
-              style={{ filter: "brightness(0.3) contrast(1.1)" }}
-            />
-            <div className="overlay" />
-            <div className="content text-center">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
-                Pantau <span className="text-[#ff0055]">Statistik</span>
-              </h2>
-              <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
-                Kapanpun.
-              </h2>
-              <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-                Ketahui siapa pendengar Anda, di mana mereka berada, dan lacak pendapatan royalti
-                harian dengan dashboard pintar kami.
-              </p>
-            </div>
-          </section>
-
-          {/* Frame 5: Royalty */}
-          <section className={`snap-section ${activeSection === 4 ? "active" : ""}`}>
-            <img
-              src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=2000&auto=format&fit=crop"
-              alt="100% Hak Milik"
-              className="bg-img"
-              style={{ filter: "brightness(0.3) contrast(1.1)" }}
-            />
-            <div className="overlay" />
-            <div className="content text-center">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
-                <span className="text-[#ff0055]">100%</span> Hak Anda
-              </h2>
-              <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed mt-6">
-                Kami tidak mengambil potongan sepeser pun dari royalti Anda. Anda berkarya, Anda
-                yang berhak menerima segalanya.
-              </p>
-            </div>
-          </section>
-
-          {/* Frame 6: Community */}
-          <section className={`snap-section ${activeSection === 5 ? "active" : ""}`}>
-            <img
-              src="https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?q=80&w=2000&auto=format&fit=crop"
-              alt="Gitaris Wanita"
-              className="bg-img"
-              style={{ filter: "brightness(0.3) contrast(1.1)" }}
-            />
-            <div className="overlay" />
-            <div className="content text-center">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
-                Dibuat Oleh <span className="text-[#ff0055]">Musisi</span>
-              </h2>
-              <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
-                Untuk Musisi.
-              </h2>
-              <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-                Tim support kami siaga 24/7. Karena kami sangat mengerti betapa berharganya setiap
-                karya yang Anda ciptakan.
-              </p>
-            </div>
-          </section>
-
-          {/* Frame 7: Testimonials (Artis Horizontal Slider - Sinkron dengan Web CMS) */}
-          <section
-            className={`snap-section bg-[#050505] flex-col items-start justify-center relative overflow-hidden ${
-              activeSection === 6 ? "active" : ""
-            }`}
-          >
-            <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
-              <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
-                Testimoni
-              </h2>
-            </div>
-
-            <div className="w-full mt-24 md:mt-40">
-              <div
-                className="h-track px-8 md:px-[10vw] gap-6"
-                style={{ transform: `translateX(-${activeHIndex * hMoveAmount}px)` }}
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                type="button"
+                onClick={() => setActivePlatformIndex((prev) => Math.max(0, prev - 1))}
+                disabled={activePlatformIndex === 0}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Previous Slide"
               >
-                {testimonials.map((t) => (
-                  <div
-                    key={t.id}
-                    className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col items-center text-center shadow-xl"
-                  >
-                    <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden mb-5 border-4 border-gray-800 shadow-[0_0_15px_rgba(255,0,85,0.25)] bg-[#121212]">
-                      <img
-                        src={t.imageUrl || "/6293920186406475218_120.jpg"}
-                        alt={t.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop";
-                        }}
-                      />
-                    </div>
-                    <p className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white mb-1">
-                      {t.genre}
-                    </p>
-                    <h3 className="text-xl md:text-2xl font-black text-white mb-4">{t.name}</h3>
-                    <p className="text-sm md:text-base text-white font-medium italic flex-grow mb-6 leading-relaxed">
-                      "{t.quote}"
-                    </p>
-                    <div className="w-full flex justify-between items-center text-[10px] md:text-xs text-white font-bold border-t border-gray-800 pt-5">
-                      <div className="flex items-center gap-1.5 text-[#ff0055]">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-                          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-                        </svg>
-                        {t.listeners} Monthly Listeners
-                      </div>
-                      <span className="text-white">
-                        {t.isVerified !== false ? "Verified Artist" : "Artist"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActivePlatformIndex((prev) => Math.min(totalPlatformSlides - 1, prev + 1))
+                }
+                disabled={activePlatformIndex === totalPlatformSlides - 1}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Next Slide"
+              >
+                ›
+              </button>
             </div>
+          </div>
+        </section>
 
-            <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 text-white font-bold tracking-[0.3em] text-sm md:text-lg">
+        {/* =========================================================================
+            BAR 4: PANTAU STATISTIK (MENUTUPI BAR 3)
+           ========================================================================= */}
+        <section id="bar-4" className="sticky-stack-bar z-40">
+          <img
+            src="https://images.unsplash.com/photo-1520872024865-3ff2805d8bb3?q=80&w=2000&auto=format&fit=crop"
+            alt="Data Analitik"
+            className="bg-img"
+            style={{ filter: "brightness(0.3) contrast(1.1)" }}
+          />
+          <div className="overlay" />
+          <div className="content text-center">
+            <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
+              Pantau <span className="text-[#ff0055]">Statistik</span>
+            </h2>
+            <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
+              Kapanpun.
+            </h2>
+            <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+              Ketahui siapa pendengar Anda, di mana mereka berada, dan lacak pendapatan royalti
+              harian dengan dashboard pintar kami.
+            </p>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 5: 100% HAK ANDA (MENUTUPI BAR 4)
+           ========================================================================= */}
+        <section id="bar-5" className="sticky-stack-bar z-50">
+          <img
+            src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=2000&auto=format&fit=crop"
+            alt="100% Hak Milik"
+            className="bg-img"
+            style={{ filter: "brightness(0.3) contrast(1.1)" }}
+          />
+          <div className="overlay" />
+          <div className="content text-center">
+            <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
+              <span className="text-[#ff0055]">100%</span> Hak Anda
+            </h2>
+            <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed mt-6">
+              Kami tidak mengambil potongan sepeser pun dari royalti Anda. Anda berkarya, Anda
+              yang berhak menerima segalanya.
+            </p>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 6: DIBUAT OLEH MUSISI (MENUTUPI BAR 5)
+           ========================================================================= */}
+        <section id="bar-6" className="sticky-stack-bar z-60">
+          <img
+            src="https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?q=80&w=2000&auto=format&fit=crop"
+            alt="Gitaris Wanita"
+            className="bg-img"
+            style={{ filter: "brightness(0.3) contrast(1.1)" }}
+          />
+          <div className="overlay" />
+          <div className="content text-center">
+            <h2 className="text-4xl md:text-6xl font-black mb-4 uppercase text-white">
+              Dibuat Oleh <span className="text-[#ff0055]">Musisi</span>
+            </h2>
+            <h2 className="text-4xl md:text-6xl font-black mb-8 uppercase text-white">
+              Untuk Musisi.
+            </h2>
+            <p className="text-white text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+              Tim support kami siaga 24/7. Karena kami sangat mengerti betapa berharganya setiap
+              karya yang Anda ciptakan.
+            </p>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 7: TESTIMONI ARTIS (MENUTUPI BAR 6)
+           ========================================================================= */}
+        <section
+          id="bar-7"
+          className="sticky-stack-bar z-70 flex-col items-start justify-center"
+        >
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+            <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
+              Testimoni
+            </h2>
+          </div>
+
+          <div className="w-full mt-24 md:mt-40">
+            <div
+              className="h-track px-8 md:px-[10vw] gap-6"
+              style={{ transform: `translateX(-${activeHIndex * hMoveAmount}px)` }}
+            >
+              {testimonials.map((t) => (
+                <div
+                  key={t.id}
+                  className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col items-center text-center shadow-xl"
+                >
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden mb-5 border-4 border-gray-800 shadow-[0_0_15px_rgba(255,0,85,0.25)] bg-[#121212]">
+                    <img
+                      src={t.imageUrl || "/6293920186406475218_120.jpg"}
+                      alt={t.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop";
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] md:text-xs font-bold tracking-widest uppercase text-white mb-1">
+                    {t.genre}
+                  </p>
+                  <h3 className="text-xl md:text-2xl font-black text-white mb-4">{t.name}</h3>
+                  <p className="text-sm md:text-base text-white font-medium italic flex-grow mb-6 leading-relaxed">
+                    "{t.quote}"
+                  </p>
+                  <div className="w-full flex justify-between items-center text-[10px] md:text-xs text-white font-bold border-t border-gray-800 pt-5">
+                    <div className="flex items-center gap-1.5 text-[#ff0055]">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                      </svg>
+                      {t.listeners} Monthly Listeners
+                    </div>
+                    <span className="text-white">
+                      {t.isVerified !== false ? "Verified Artist" : "Artist"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Slider Controls */}
+          <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
+            <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
               {`0${activeHIndex + 1}`.slice(-2)} / {testimonials.length}
             </div>
-          </section>
-
-          {/* Frame 8: FAQ */}
-          <section
-            className={`snap-section bg-[#050505] flex-col items-start justify-center relative overflow-hidden ${
-              activeSection === faqSectionIndex ? "active" : ""
-            }`}
-          >
-            <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
-              <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
-                FAQ
-              </h2>
-            </div>
-
-            <div className="w-full mt-24 md:mt-32">
-              <div
-                className="h-track px-8 md:px-[10vw] gap-6"
-                style={{ transform: `translateX(-${activeFaqIndex * hMoveAmount}px)` }}
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                type="button"
+                onClick={() => setActiveHIndex((prev) => Math.max(0, prev - 1))}
+                disabled={activeHIndex === 0}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Previous Artist"
               >
-                {faqData.map((faq, idx) => (
-                  <div
-                    key={idx}
-                    className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#121118] rounded-[32px] p-6 md:p-8 flex flex-col shadow-2xl h-[470px] overflow-y-auto custom-scrollbar"
-                  >
-                    <div className="flex justify-between items-center mb-6">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg flex-shrink-0 shadow-lg ${faq.color}`}
-                      >
-                        {faq.id}
-                      </div>
-                      <h3 className="text-2xl font-bold text-white text-right tracking-tight">
-                        {faq.title}
-                      </h3>
-                    </div>
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveHIndex((prev) => Math.min(testimonials.length - 1, prev + 1))
+                }
+                disabled={activeHIndex === testimonials.length - 1}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Next Artist"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        </section>
 
-                    <div className="flex flex-col gap-3.5">
-                      {faq.items.map((item, itemIdx) => {
-                        const itemId = `${faq.id}-${itemIdx}`;
-                        const isOpen = openFaqItem === itemId;
-                        return (
-                          <div
-                            key={itemIdx}
-                            className="bg-[#1f1e27] border border-gray-800 rounded-[22px] p-5 cursor-pointer transition-all duration-300 hover:border-gray-700"
-                            onClick={() => setOpenFaqItem(isOpen ? null : itemId)}
-                          >
-                            <div className="flex justify-between items-center gap-4">
-                              <h4 className="text-white font-bold text-sm md:text-base leading-snug">
-                                {item.q}
-                              </h4>
-                              <div className="w-8 h-8 rounded-full border border-gray-600 flex-shrink-0 flex items-center justify-center text-white text-sm font-bold bg-[#282733]">
-                                {isOpen ? "—" : "+"}
-                              </div>
-                            </div>
-                            <div
-                              className={`overflow-hidden transition-all duration-300 ${
-                                isOpen ? "max-h-40 mt-3.5 opacity-100" : "max-h-0 opacity-0"
-                              }`}
-                            >
-                              <p className="text-gray-300 text-sm leading-relaxed border-t border-gray-800 pt-3">
-                                {item.a}
-                              </p>
+        {/* =========================================================================
+            BAR 8: FAQ ACCORDION (MENUTUPI BAR 7)
+           ========================================================================= */}
+        <section
+          id="bar-8"
+          className="sticky-stack-bar z-80 flex-col items-start justify-center"
+        >
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+            <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
+              FAQ
+            </h2>
+          </div>
+
+          <div className="w-full mt-24 md:mt-32">
+            <div
+              className="h-track px-8 md:px-[10vw] gap-6"
+              style={{ transform: `translateX(-${activeFaqIndex * hMoveAmount}px)` }}
+            >
+              {faqData.map((faq, idx) => (
+                <div
+                  key={idx}
+                  className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#121118] rounded-[32px] p-6 md:p-8 flex flex-col shadow-2xl h-[470px] overflow-y-auto custom-scrollbar"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white text-lg flex-shrink-0 shadow-lg ${faq.color}`}
+                    >
+                      {faq.id}
+                    </div>
+                    <h3 className="text-2xl font-bold text-white text-right tracking-tight">
+                      {faq.title}
+                    </h3>
+                  </div>
+
+                  <div className="flex flex-col gap-3.5">
+                    {faq.items.map((item, itemIdx) => {
+                      const itemId = `${faq.id}-${itemIdx}`;
+                      const isOpen = openFaqItem === itemId;
+                      return (
+                        <div
+                          key={itemIdx}
+                          className="bg-[#1f1e27] border border-gray-800 rounded-[22px] p-5 cursor-pointer transition-all duration-300 hover:border-gray-700"
+                          onClick={() => setOpenFaqItem(isOpen ? null : itemId)}
+                        >
+                          <div className="flex justify-between items-center gap-4">
+                            <h4 className="text-white font-bold text-sm md:text-base leading-snug">
+                              {item.q}
+                            </h4>
+                            <div className="w-8 h-8 rounded-full border border-gray-600 flex-shrink-0 flex items-center justify-center text-white text-sm font-bold bg-[#282733]">
+                              {isOpen ? "—" : "+"}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ${
+                              isOpen ? "max-h-40 mt-3.5 opacity-100" : "max-h-0 opacity-0"
+                            }`}
+                          >
+                            <p className="text-gray-300 text-sm leading-relaxed border-t border-gray-800 pt-3">
+                              {item.a}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 text-white font-bold tracking-[0.3em] text-sm md:text-lg">
+          {/* FAQ Controls */}
+          <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
+            <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
               {`0${activeFaqIndex + 1}`.slice(-2)} / {faqData.length}
             </div>
-          </section>
-
-          {/* Frame 9: Final CTA */}
-          <section className={`snap-section ${activeSection === 8 ? "active" : ""}`}>
-            <img
-              src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2000&auto=format&fit=crop"
-              alt="Konser"
-              className="bg-img"
-              style={{ filter: "brightness(0.3) contrast(1.1)" }}
-            />
-            <div className="overlay" />
-            <div className="content text-center">
-              <h2 className="text-5xl md:text-7xl font-black mb-6 uppercase tracking-tighter text-white">
-                Waktunya <span className="text-[#ff0055]">Bersinar</span>
-              </h2>
-              <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
-                Bergabunglah dengan ribuan musisi lainnya yang telah mempercayakan karyanya pada
-                BREAKOUT ID.
-              </p>
-              <Link
-                href="/register"
-                className="inline-block bg-white text-black px-10 py-4 rounded-full font-black uppercase tracking-widest text-sm hover:bg-[#ff0055] hover:text-white transition-all duration-300"
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                type="button"
+                onClick={() => setActiveFaqIndex((prev) => Math.max(0, prev - 1))}
+                disabled={activeFaqIndex === 0}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Previous FAQ"
               >
-                Daftar Gratis
-              </Link>
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveFaqIndex((prev) => Math.min(faqData.length - 1, prev + 1))
+                }
+                disabled={activeFaqIndex === faqData.length - 1}
+                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                title="Next FAQ"
+              >
+                ›
+              </button>
             </div>
-
-            <footer className="absolute bottom-6 left-0 w-full text-center text-xs text-gray-500 tracking-widest uppercase">
-              &copy; 2026 BREAKOUT ID. All Rights Reserved.
-            </footer>
-          </section>
-        </div>
-
-        {/* Mouse Scroll Indicator */}
-        <div
-          className="scroll-indicator"
-          style={{ opacity: activeSection === totalSections - 1 ? 0 : 0.8 }}
-        >
-          <div className="mouse">
-            <div className="wheel" />
           </div>
-          <span className="text-[10px] mt-2 tracking-widest text-gray-400 uppercase font-bold">
-            Scroll
-          </span>
-        </div>
+        </section>
+
+        {/* =========================================================================
+            BAR 9: FINAL CTA & FOOTER (MENUTUPI BAR 8)
+           ========================================================================= */}
+        <section id="bar-9" className="sticky-stack-bar z-90">
+          <img
+            src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2000&auto=format&fit=crop"
+            alt="Konser"
+            className="bg-img"
+            style={{ filter: "brightness(0.3) contrast(1.1)" }}
+          />
+          <div className="overlay" />
+          <div className="content text-center">
+            <h2 className="text-5xl md:text-7xl font-black mb-6 uppercase tracking-tighter text-white">
+              Waktunya <span className="text-[#ff0055]">Bersinar</span>
+            </h2>
+            <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
+              Bergabunglah dengan ribuan musisi lainnya yang telah mempercayakan karyanya pada
+              BREAKOUT ID.
+            </p>
+            <Link
+              href="/register"
+              className="inline-block bg-white text-black px-10 py-4 rounded-full font-black uppercase tracking-widest text-sm hover:bg-[#ff0055] hover:text-white transition-all duration-300 shadow-2xl"
+            >
+              Daftar Gratis
+            </Link>
+          </div>
+
+          <footer className="absolute bottom-6 left-0 w-full text-center text-xs text-gray-500 tracking-widest uppercase">
+            &copy; 2026 BREAKOUT ID. All Rights Reserved.
+          </footer>
+        </section>
       </main>
     </>
   );
