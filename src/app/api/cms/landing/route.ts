@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_PRISMA_TESTIMONIALS } from "@/components/LandingClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,91 +10,15 @@ function cleanUrl(url: any): string {
   return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
 }
 
-const DEFAULT_ARTISTS = [
-  {
-    id: "art-1",
-    name: "Basstrack Indo",
-    genre: "Phonk / Bass Nusantara",
-    photo: "/6293920186406475218_120.jpg",
-    bio: "Pelopor sound bassboosted nusantara dengan 20M+ streams global di DSP.",
-    monthlyListeners: "1.8M",
-    topTrack: "Midnight Drift Vol. 2",
-    spotifyUrl: "https://open.spotify.com",
-  },
-  {
-    id: "art-2",
-    name: "Sarah Viola",
-    genre: "Indie Pop / Cinematic",
-    photo: "/header-bg.jpg",
-    bio: "Vokalis & produser independen, rilis multi-platform global via BREAKOUT.ID.",
-    monthlyListeners: "920K",
-    topTrack: "Lavendera Sky",
-    spotifyUrl: "https://open.spotify.com",
-  },
-  {
-    id: "art-3",
-    name: "Krowdy Pulse",
-    genre: "Cyberpunk Hip-Hop",
-    photo: "/6293920186406475229_121.jpg",
-    bio: "Menggabungkan beat industrial modern dengan lirik jalanan Jakarta.",
-    monthlyListeners: "640K",
-    topTrack: "Neon Rebellion",
-    spotifyUrl: "https://open.spotify.com",
-  },
-];
-
-const DEFAULT_TESTIMONIALS = [
-  {
-    id: "testi-1",
-    name: "Rian Ardiansyah",
-    artistName: "Basstrack Indo",
-    role: "Electronic Music Producer",
-    quote:
-      "Distribusi lewat BREAKOUT.ID royalti 100% transparan, cair tepat waktu langsung ke rekening BCA tanpa potongan siluman.",
-    avatar: "/6293920186406475218_120.jpg",
-    streams: "15.4M Streams",
-  },
-  {
-    id: "testi-2",
-    name: "Maya Clarissa",
-    artistName: "Sarah Viola",
-    role: "Solo Artist & Songwriter",
-    quote:
-      "Bikin lagu di kamar malam hari, upload master pagi, dalam 48 jam udah live di Spotify, Apple Music & TikTok. Dashboard super clean!",
-    avatar: "/header-bg.jpg",
-    streams: "4.2M Streams",
-  },
-  {
-    id: "testi-3",
-    name: "Denny 'Krowdy'",
-    artistName: "Krowdy Pulse",
-    role: "Hip-Hop / Beatmaker",
-    quote:
-      "Dukungan agregator lokal dengan standar internasional. Fitur analitik DSP dan split royaltinya ngebantu banget kolaborasi tim.",
-    avatar: "/6293920186406475229_121.jpg",
-    streams: "2.8M Streams",
-  },
-];
-
 const DEFAULT_LANDING_CONTENT = {
   id: "default",
-  heroSubtitle: "Global Reach By BREAKOUT.ID",
-  heroTitle1: "BREAKOUT",
-  heroTitle2: "",
-  heroBgImage: "/api/storage/releases/anonymous/covers/1793783563730-he543j3-Cat.jpg",
-  navBgImage: "/api/storage/releases/anonymous/covers/1793782330345-bn6suo3-backgorund-hitam.jpg",
+  heroSubtitle:
+    "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas.",
+  heroTitle1: "Breakout",
+  heroTitle2: "ID",
+  heroBgImage: "/6293920186406475512_121.jpg",
   storesCount: 150,
-  card1Text:
-    "We reshape the future of music distribution and artist services as a platform (MaaS).",
-  card1Image: "/6293920186406475218_120.jpg",
-  card2Title: "Driven By A Passion.",
-  card2Desc: "Pushing the boundaries of what's possible in the global audio realm.",
-  card2Image: "/6293920186406475218_120.jpg",
-  card3Title: "Distribution Solutions.",
-  card3Desc: "Tailored to your unique sound crafting new sonic landscapes.",
-  card3Image: "/6293920186406475218_120.jpg",
-  artists: DEFAULT_ARTISTS,
-  testimonials: DEFAULT_TESTIMONIALS,
+  artists: DEFAULT_PRISMA_TESTIMONIALS,
 };
 
 export async function GET() {
@@ -109,25 +34,31 @@ export async function GET() {
       });
     }
 
-    let parsedArtists = DEFAULT_ARTISTS;
+    let parsedArtists: any[] = DEFAULT_PRISMA_TESTIMONIALS;
     try {
       if (content.artistsJson) {
         const arr = JSON.parse(content.artistsJson);
+        if (Array.isArray(arr) && arr.length > 0) parsedArtists = arr;
+      } else if (content.testimonialsJson) {
+        const arr = JSON.parse(content.testimonialsJson);
         if (Array.isArray(arr) && arr.length > 0) parsedArtists = arr;
       }
     } catch (e) {
       console.error("Failed to parse artistsJson:", e);
     }
 
-    let parsedTestimonials = DEFAULT_TESTIMONIALS;
-    try {
-      if (content.testimonialsJson) {
-        const arr = JSON.parse(content.testimonialsJson);
-        if (Array.isArray(arr) && arr.length > 0) parsedTestimonials = arr;
-      }
-    } catch (e) {
-      console.error("Failed to parse testimonialsJson:", e);
-    }
+    const sanitizedArtists = (parsedArtists || []).map((a: any, idx: number) => ({
+      id: a.id || idx + 1,
+      name: a.name || "Artis",
+      genre: a.genre || "Pop",
+      imageUrl: cleanUrl(a.imageUrl || a.photo || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
+      photo: cleanUrl(a.photo || a.imageUrl || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
+      listeners: a.listeners || a.monthlyListeners || "1M+",
+      monthlyListeners: a.monthlyListeners || a.listeners || "1M+",
+      quote: a.quote || a.bio || "Platform terbaik untuk musisi independen.",
+      bio: a.bio || a.quote || "Platform terbaik untuk musisi independen.",
+      isVerified: a.isVerified !== undefined ? Boolean(a.isVerified) : true,
+    }));
 
     return NextResponse.json({
       ok: true,
@@ -137,18 +68,8 @@ export async function GET() {
         heroTitle1: content.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
         heroTitle2: content.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
         heroBgImage: cleanUrl(content.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
-        navBgImage: cleanUrl(content.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage),
         storesCount: Number(content.storesCount) || 150,
-        card1Text: content.card1Text || DEFAULT_LANDING_CONTENT.card1Text,
-        card1Image: cleanUrl(content.card1Image || DEFAULT_LANDING_CONTENT.card1Image),
-        card2Title: content.card2Title || DEFAULT_LANDING_CONTENT.card2Title,
-        card2Desc: content.card2Desc || DEFAULT_LANDING_CONTENT.card2Desc,
-        card2Image: cleanUrl(content.card2Image || DEFAULT_LANDING_CONTENT.card2Image),
-        card3Title: content.card3Title || DEFAULT_LANDING_CONTENT.card3Title,
-        card3Desc: content.card3Desc || DEFAULT_LANDING_CONTENT.card3Desc,
-        card3Image: cleanUrl(content.card3Image || DEFAULT_LANDING_CONTENT.card3Image),
-        artists: (parsedArtists || []).map((a: any) => ({ ...a, photo: cleanUrl(a.photo) })),
-        testimonials: (parsedTestimonials || []).map((t: any) => ({ ...t, avatar: cleanUrl(t.avatar) })),
+        artists: sanitizedArtists,
       },
     });
   } catch (error) {
@@ -164,17 +85,22 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const sanitizedArtists = (body.artists || DEFAULT_ARTISTS).map((a: any) => ({
-      ...a,
-      photo: cleanUrl(a.photo),
-    }));
-    const sanitizedTestimonials = (body.testimonials || DEFAULT_TESTIMONIALS).map((t: any) => ({
-      ...t,
-      avatar: cleanUrl(t.avatar),
+    const incomingArtists = Array.isArray(body.artists) ? body.artists : DEFAULT_PRISMA_TESTIMONIALS;
+
+    const sanitizedArtists = incomingArtists.map((a: any, idx: number) => ({
+      id: a.id || idx + 1,
+      name: a.name || "Artis",
+      genre: a.genre || "Pop",
+      imageUrl: cleanUrl(a.imageUrl || a.photo || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
+      photo: cleanUrl(a.photo || a.imageUrl || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
+      listeners: a.listeners || a.monthlyListeners || "1M+",
+      monthlyListeners: a.monthlyListeners || a.listeners || "1M+",
+      quote: a.quote || a.bio || "Platform terbaik untuk musisi independen.",
+      bio: a.bio || a.quote || "Platform terbaik untuk musisi independen.",
+      isVerified: a.isVerified !== undefined ? Boolean(a.isVerified) : true,
     }));
 
     const artistsJson = JSON.stringify(sanitizedArtists);
-    const testimonialsJson = JSON.stringify(sanitizedTestimonials);
 
     const updated = await prisma.landingContent.upsert({
       where: { id: "default" },
@@ -184,36 +110,18 @@ export async function POST(req: Request) {
         heroTitle1: body.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
         heroTitle2: body.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
         heroBgImage: cleanUrl(body.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
-        navBgImage: cleanUrl(body.navBgImage || DEFAULT_LANDING_CONTENT.navBgImage),
         storesCount: Number(body.storesCount) || 150,
-        card1Text: body.card1Text || DEFAULT_LANDING_CONTENT.card1Text,
-        card1Image: cleanUrl(body.card1Image || DEFAULT_LANDING_CONTENT.card1Image),
-        card2Title: body.card2Title || DEFAULT_LANDING_CONTENT.card2Title,
-        card2Desc: body.card2Desc || DEFAULT_LANDING_CONTENT.card2Desc,
-        card2Image: cleanUrl(body.card2Image || DEFAULT_LANDING_CONTENT.card2Image),
-        card3Title: body.card3Title || DEFAULT_LANDING_CONTENT.card3Title,
-        card3Desc: body.card3Desc || DEFAULT_LANDING_CONTENT.card3Desc,
-        card3Image: cleanUrl(body.card3Image || DEFAULT_LANDING_CONTENT.card3Image),
         artistsJson,
-        testimonialsJson,
+        testimonialsJson: artistsJson,
       },
       update: {
         heroSubtitle: body.heroSubtitle,
         heroTitle1: body.heroTitle1,
         heroTitle2: body.heroTitle2,
         heroBgImage: cleanUrl(body.heroBgImage),
-        navBgImage: cleanUrl(body.navBgImage),
         storesCount: Number(body.storesCount) || 150,
-        card1Text: body.card1Text,
-        card1Image: cleanUrl(body.card1Image),
-        card2Title: body.card2Title,
-        card2Desc: body.card2Desc,
-        card2Image: cleanUrl(body.card2Image),
-        card3Title: body.card3Title,
-        card3Desc: body.card3Desc,
-        card3Image: cleanUrl(body.card3Image),
         artistsJson,
-        testimonialsJson,
+        testimonialsJson: artistsJson,
       },
     });
 

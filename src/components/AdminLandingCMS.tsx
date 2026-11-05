@@ -13,80 +13,52 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Users,
-  MessageSquare,
   Sparkles,
-  Layers,
   CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
-import type { ArtistItem, TestimonialItem, LandingPageData } from "@/app/page";
+import {
+  DEFAULT_PRISMA_TESTIMONIALS,
+  normalizeImageUrl,
+  type LandingArtist,
+  type LandingPageData,
+} from "@/components/LandingClient";
 
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
-
-export function normalizeImageUrl(url?: string | null): string {
-  if (!url) return "";
-  return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
-}
 
 interface AdminLandingCMSProps {
   showNotice: (msg: string) => void;
 }
 
 export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
-  const [activeSubTab, setActiveSubTab] = useState<
-    "hero" | "cards" | "artists" | "testimonials"
-  >("hero");
+  const [activeSubTab, setActiveSubTab] = useState<"artists" | "hero">("artists");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
   // Form State
-  const [heroSubtitle, setHeroSubtitle] = useState("");
-  const [heroTitle1, setHeroTitle1] = useState("");
-  const [heroTitle2, setHeroTitle2] = useState("");
-  const [storesCount, setStoresCount] = useState(150);
-  const [heroBgImage, setHeroBgImage] = useState("");
-  const [navBgImage, setNavBgImage] = useState("");
+  const [heroSubtitle, setHeroSubtitle] = useState(
+    "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas."
+  );
+  const [heroTitle1, setHeroTitle1] = useState("Breakout");
+  const [heroTitle2, setHeroTitle2] = useState("ID");
+  const [heroBgImage, setHeroBgImage] = useState("/6293920186406475512_121.jpg");
 
-  // Cards State
-  const [card1Text, setCard1Text] = useState("");
-  const [card1Image, setCard1Image] = useState("");
-  const [card2Title, setCard2Title] = useState("");
-  const [card2Desc, setCard2Desc] = useState("");
-  const [card2Image, setCard2Image] = useState("");
-  const [card3Title, setCard3Title] = useState("");
-  const [card3Desc, setCard3Desc] = useState("");
-  const [card3Image, setCard3Image] = useState("");
-
-  // Artists & Testimonials State
-  const [artists, setArtists] = useState<ArtistItem[]>([]);
-  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
+  // Artists State
+  const [artists, setArtists] = useState<LandingArtist[]>(DEFAULT_PRISMA_TESTIMONIALS);
 
   // Artist Modal
   const [artistModalOpen, setArtistModalOpen] = useState(false);
-  const [editingArtistId, setEditingArtistId] = useState<string | null>(null);
-  const [artistForm, setArtistForm] = useState<ArtistItem>({
+  const [editingArtistId, setEditingArtistId] = useState<string | number | null>(null);
+  const [artistForm, setArtistForm] = useState<LandingArtist>({
     id: "",
     name: "",
-    genre: "",
-    photo: "",
-    bio: "",
-    monthlyListeners: "",
-    topTrack: "",
-    spotifyUrl: "",
-  });
-
-  // Testimonial Modal
-  const [testimonialModalOpen, setTestimonialModalOpen] = useState(false);
-  const [editingTestimonialId, setEditingTestimonialId] = useState<string | null>(null);
-  const [testimonialForm, setTestimonialForm] = useState<TestimonialItem>({
-    id: "",
-    name: "",
-    artistName: "",
-    role: "",
-    quote: "",
-    avatar: "",
-    streams: "",
+    genre: "INDIE POP",
+    imageUrl: "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop",
+    listeners: "1.2M+",
+    quote: "Distribusi sangat cepat dan royalti 100% transparan langsung ke rekening.",
+    isVerified: true,
   });
 
   // Fetch CMS Data
@@ -101,34 +73,28 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
       const json = await res.json();
       if (json?.data) {
         const d: LandingPageData = json.data;
-        setHeroSubtitle(d.heroSubtitle || "");
-        setHeroTitle1(d.heroTitle1 || "");
-        setHeroTitle2(d.heroTitle2 || "");
-        setStoresCount(d.storesCount || 150);
-        setHeroBgImage(normalizeImageUrl(d.heroBgImage) || "");
-        setNavBgImage(normalizeImageUrl(d.navBgImage) || "");
+        if (d.heroSubtitle) setHeroSubtitle(d.heroSubtitle);
+        if (d.heroTitle1) setHeroTitle1(d.heroTitle1);
+        if (d.heroTitle2) setHeroTitle2(d.heroTitle2);
+        if (d.heroBgImage) setHeroBgImage(normalizeImageUrl(d.heroBgImage));
 
-        setCard1Text(d.card1Text || "");
-        setCard1Image(normalizeImageUrl(d.card1Image) || "");
-        setCard2Title(d.card2Title || "");
-        setCard2Desc(d.card2Desc || "");
-        setCard2Image(normalizeImageUrl(d.card2Image) || "");
-        setCard3Title(d.card3Title || "");
-        setCard3Desc(d.card3Desc || "");
-        setCard3Image(normalizeImageUrl(d.card3Image) || "");
-
-        setArtists(
-          (d.artists || []).map((a) => ({
-            ...a,
-            photo: normalizeImageUrl(a.photo),
-          }))
-        );
-        setTestimonials(
-          (d.testimonials || []).map((t) => ({
-            ...t,
-            avatar: normalizeImageUrl(t.avatar),
-          }))
-        );
+        if (Array.isArray(d.artists) && d.artists.length > 0) {
+          setArtists(
+            d.artists.map((a: any, idx: number) => ({
+              id: a.id || idx + 1,
+              name: a.name || "Artis",
+              genre: a.genre || "Pop",
+              imageUrl:
+                normalizeImageUrl(a.imageUrl || a.photo) ||
+                DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl,
+              listeners: a.listeners || a.monthlyListeners || "1M+",
+              quote: a.quote || a.bio || "Platform terbaik untuk musisi independen.",
+              isVerified: a.isVerified !== undefined ? Boolean(a.isVerified) : true,
+            }))
+          );
+        } else {
+          setArtists(DEFAULT_PRISMA_TESTIMONIALS);
+        }
       }
     } catch (err) {
       console.error("Fetch CMS error:", err);
@@ -138,7 +104,7 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     }
   };
 
-  // Upload Image Handler with Dual Pipeline (R2 Server Upload + Instant Client DataURL Fallback)
+  // Upload Image Handler
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     fieldKey: string,
@@ -154,7 +120,6 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
 
     setUploadingField(fieldKey);
 
-    // Read client-side first so preview & fallback is 100% guaranteed
     const reader = new FileReader();
     reader.onload = async (readEvt) => {
       const clientDataUrl = readEvt.target?.result as string;
@@ -189,7 +154,7 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
         }
       } finally {
         setUploadingField(null);
-        e.target.value = ""; // Reset file input so re-selecting same file works
+        e.target.value = "";
       }
     };
 
@@ -206,22 +171,11 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     setSaving(true);
     try {
       const payload: Partial<LandingPageData> = {
-        heroSubtitle: heroSubtitle || "Global Reach By BREAKOUT.ID",
-        heroTitle1: heroTitle1 || "BREAKOUT",
-        heroTitle2: heroTitle2 || "ID",
-        storesCount: Number(storesCount) || 150,
-        heroBgImage: heroBgImage || "/6293920186406475229_121.jpg",
-        navBgImage: navBgImage || "/header-bg.jpg",
-        card1Text,
-        card1Image,
-        card2Title,
-        card2Desc,
-        card2Image,
-        card3Title,
-        card3Desc,
-        card3Image,
+        heroSubtitle,
+        heroTitle1,
+        heroTitle2,
+        heroBgImage: heroBgImage || "/6293920186406475512_121.jpg",
         artists,
-        testimonials,
       };
 
       const res = await fetch("/api/cms/landing", {
@@ -232,7 +186,7 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
 
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) {
-        showNotice("✅ Seluruh perubahan teks & gambar berhasil disimpan ke database!");
+        showNotice("✅ Seluruh perubahan foto & teks artis berhasil disimpan ke landing page!");
       } else {
         showNotice(json?.error || "Gagal menyimpan perubahan ke database.");
       }
@@ -250,155 +204,126 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     setArtistForm({
       id: `art-${Date.now()}`,
       name: "",
-      genre: "Phonk / Bass Nusantara",
-      photo: "/6293920186406475218_120.jpg",
-      bio: "",
-      monthlyListeners: "1.0M",
-      topTrack: "Track Rilisan Terbaru",
-      spotifyUrl: "https://open.spotify.com",
+      genre: "INDIE POP",
+      imageUrl: "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop",
+      listeners: "500K+",
+      quote: "Lagu baruku langsung terdistribusi ke Spotify & Apple Music tanpa ribet!",
+      isVerified: true,
     });
     setArtistModalOpen(true);
   };
 
-  const openEditArtist = (artist: ArtistItem) => {
+  const openEditArtist = (artist: LandingArtist) => {
     setEditingArtistId(artist.id);
-    setArtistForm({ ...artist });
+    setArtistForm({
+      id: artist.id,
+      name: artist.name,
+      genre: artist.genre,
+      imageUrl: artist.imageUrl,
+      listeners: artist.listeners,
+      quote: artist.quote,
+      isVerified: artist.isVerified !== undefined ? artist.isVerified : true,
+    });
     setArtistModalOpen(true);
   };
 
-  const saveArtistForm = () => {
-    if (!artistForm.name) {
+  const handleSaveArtistModal = () => {
+    if (!artistForm.name.trim()) {
       showNotice("Nama artis wajib diisi!");
       return;
     }
 
     if (editingArtistId) {
-      setArtists((prev) =>
-        prev.map((a) => (a.id === editingArtistId ? { ...artistForm } : a))
+      setArtists(
+        artists.map((a) => (a.id === editingArtistId ? { ...artistForm } : a))
       );
-      showNotice(`Profil artis "${artistForm.name}" diperbarui.`);
+      showNotice(`✅ Data artis "${artistForm.name}" berhasil diperbarui.`);
     } else {
-      setArtists((prev) => [...prev, { ...artistForm, id: `art-${Date.now()}` }]);
-      showNotice(`Artis baru "${artistForm.name}" ditambahkan.`);
+      setArtists([...artists, { ...artistForm, id: `art-${Date.now()}` }]);
+      showNotice(`✅ Artis "${artistForm.name}" berhasil ditambahkan ke landing page.`);
     }
+
     setArtistModalOpen(false);
   };
 
-  const deleteArtist = (id: string, name: string) => {
-    if (confirm(`Yakin ingin menghapus profil artis "${name}" dari landing page?`)) {
-      setArtists((prev) => prev.filter((a) => a.id !== id));
-      showNotice(`Artis "${name}" dihapus.`);
+  const deleteArtist = (id: string | number, name: string) => {
+    if (confirm(`Hapus artis "${name}" dari tampilan landing page?`)) {
+      setArtists(artists.filter((a) => a.id !== id));
+      showNotice(`🗑️ Artis "${name}" berhasil dihapus.`);
     }
   };
 
-  // Testimonials CRUD
-  const openAddTestimonial = () => {
-    setEditingTestimonialId(null);
-    setTestimonialForm({
-      id: `testi-${Date.now()}`,
-      name: "",
-      artistName: "",
-      role: "Music Producer",
-      quote: "",
-      avatar: "/6293920186406475218_120.jpg",
-      streams: "5.0M Streams",
-    });
-    setTestimonialModalOpen(true);
-  };
-
-  const openEditTestimonial = (testi: TestimonialItem) => {
-    setEditingTestimonialId(testi.id);
-    setTestimonialForm({ ...testi });
-    setTestimonialModalOpen(true);
-  };
-
-  const saveTestimonialForm = () => {
-    if (!testimonialForm.name || !testimonialForm.quote) {
-      showNotice("Nama musisi dan teks kutipan wajib diisi!");
-      return;
-    }
-
-    if (editingTestimonialId) {
-      setTestimonials((prev) =>
-        prev.map((t) => (t.id === editingTestimonialId ? { ...testimonialForm } : t))
-      );
-      showNotice(`Testimoni dari "${testimonialForm.name}" diperbarui.`);
-    } else {
-      setTestimonials((prev) => [
-        ...prev,
-        { ...testimonialForm, id: `testi-${Date.now()}` },
-      ]);
-      showNotice(`Testimoni baru dari "${testimonialForm.name}" ditambahkan.`);
-    }
-    setTestimonialModalOpen(false);
-  };
-
-  const deleteTestimonial = (id: string, name: string) => {
-    if (confirm(`Yakin ingin menghapus testimoni dari "${name}"?`)) {
-      setTestimonials((prev) => prev.filter((t) => t.id !== id));
-      showNotice(`Testimoni "${name}" dihapus.`);
+  const resetToDefaultArtists = () => {
+    if (confirm("Kembalikan daftar ke 13 artis bawaan lengkap?")) {
+      setArtists(DEFAULT_PRISMA_TESTIMONIALS);
+      showNotice("Daftar direset ke 13 artis bawaan. Klik Simpan untuk memperbarui database.");
     }
   };
 
   if (loading) {
     return (
-      <div className={`${ROYALTY_CARD} text-center py-16`}>
-        <div className="w-8 h-8 border-2 border-white/20 border-t-[#c8f560] rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-sm text-white/70">Memuat data Web CMS Landing Page...</p>
+      <div className={`${ROYALTY_CARD} flex flex-col items-center justify-center py-20 text-center animate-card-enter`}>
+        <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-[#c8f560] animate-spin mb-4" />
+        <p className="text-sm font-semibold text-white">Memuat Sistem Web CMS Landing Page...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-card-enter">
-      {/* Top Header & Action Bar */}
-      <div className={`${ROYALTY_CARD} flex flex-wrap items-center justify-between gap-4`}>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#c8f560]/20 border border-[#c8f560]/40 flex items-center justify-center text-[#c8f560]">
-            <Globe className="w-6 h-6" />
+      {/* Top Banner & Quick Actions */}
+      <div className={`${ROYALTY_CARD} flex flex-col md:flex-row items-start md:items-center justify-between gap-4`}>
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560] animate-ping" />
+            <span className="text-[11px] font-bold tracking-wider uppercase text-[#c8f560]">
+              LIVE LANDING PAGE CMS
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              Web CMS Landing Page Manager
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c8f560] text-[#312042] font-black uppercase">
-                Live Editor
-              </span>
-            </h2>
-            <p className="text-xs text-white/70">
-              Ubah teks, ganti gambar hero/navbar, kelola roster artis, dan perbarui testimoni musisi secara mandiri.
-            </p>
-          </div>
+          <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+            Editor Foto & Teks Artis Landing Page
+          </h2>
+          <p className="text-xs text-white/70 mt-1 max-w-2xl">
+            Sinkronisasi otomatis antara Admin dan tampilan depan Landing Page. Ubah foto artis, nama, genre musik, jumlah monthly listeners, dan kutipan testimoni secara real-time.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <a
             href="/"
             target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-2 transition-all border border-white/15"
+            rel="noreferrer"
+            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center gap-2 border border-white/20 transition-all"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-4 h-4" />
             <span>Lihat Landing Page</span>
           </a>
 
           <button
             onClick={handleSaveAll}
             disabled={saving}
-            className="px-6 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-black text-xs flex items-center gap-2 shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+            className="px-6 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-black text-xs flex items-center gap-2 shadow-lg transition-all scale-100 hover:scale-105 disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
-            <span>{saving ? "Menyimpan ke DB..." : "Simpan Semua Perubahan"}</span>
+            {saving ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-[#312042] border-t-transparent animate-spin" />
+                <span>Menyimpan ke DB...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>SIMPAN PERUBAHAN KE DATABASE</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Sub Tabs Selector */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Sub Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-white/15 pb-2 overflow-x-auto">
         {[
-          { id: "hero", label: "1. Hero & Navbar Background", icon: Sparkles },
-          { id: "cards", label: "2. 3 Glass Feature Cards", icon: Layers },
-          { id: "artists", label: `3. Roster & Profil Artis (${artists.length})`, icon: Users },
-          { id: "testimonials", label: `4. Testimoni Musisi (${testimonials.length})`, icon: MessageSquare },
+          { id: "artists", label: `Artis & Testimoni (${artists.length})`, icon: Users },
+          { id: "hero", label: "Hero & Teks Banner Utama", icon: Globe },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -406,11 +331,10 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                isActive
-                  ? "bg-[#312042] text-[#c8f560] shadow-md ring-2 ring-[#c8f560]/40 scale-105"
-                  : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${isActive
+                  ? "bg-[#312042] text-[#c8f560] shadow-md border border-[#c8f560]/40"
+                  : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+                }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
@@ -419,462 +343,96 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
         })}
       </div>
 
-      {/* SECTION 1: HERO & NAVBAR BACKGROUND */}
-      {activeSubTab === "hero" && (
-        <div className={`${ROYALTY_CARD} space-y-6`}>
-          <div className="border-b border-white/15 pb-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#c8f560]" />
-              Pengaturan Teks & Gambar Hero Section
-            </h3>
-            <p className="text-xs text-white/65">
-              Edit judul animasi typewriter, subtitle, jumlah platform store, serta background gambar anime/studio.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Subtitle */}
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1">
-                Hero Subtitle (Animasi Pertama)
-              </label>
-              <input
-                type="text"
-                value={heroSubtitle}
-                onChange={(e) => setHeroSubtitle(e.target.value)}
-                placeholder="Global Reach By BREAKOUT.ID"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-              />
-            </div>
-
-            {/* Stores Count */}
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1">
-                Jumlah DSP Stores (Counter Marquee)
-              </label>
-              <input
-                type="number"
-                value={storesCount}
-                onChange={(e) => setStoresCount(Number(e.target.value) || 0)}
-                placeholder="150"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-              />
-            </div>
-
-            {/* Hero Title 1 */}
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1">
-                Hero Title (Judul Utama Hero, misal: BREAKOUT)
-              </label>
-              <input
-                type="text"
-                value={heroTitle1}
-                onChange={(e) => setHeroTitle1(e.target.value)}
-                placeholder="BREAKOUT"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-mono uppercase focus:outline-none focus:border-[#c8f560]"
-              />
-            </div>
-
-            {/* Hero Title 2 */}
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1">
-                Hero Title 2 (Opsional / Kosongkan jika tanpa ekstensi)
-              </label>
-              <input
-                type="text"
-                value={heroTitle2}
-                onChange={(e) => setHeroTitle2(e.target.value)}
-                placeholder="Kosongkan jika hanya BREAKOUT"
-                className="w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-mono uppercase focus:outline-none focus:border-[#c8f560]"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/15">
-            {/* Navbar Background Image */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#c8f560]">
-                  Background Bar Atas (Navbar)
-                </span>
-                {navBgImage && (
-                  <span className="text-[10px] text-white/60">Aktif Digunakan</span>
-                )}
-              </div>
-
-              {/* Preview */}
-              <div className="w-full h-24 rounded-xl overflow-hidden border border-white/20 relative bg-black/40">
-                {navBgImage ? (
-                  <img
-                    src={normalizeImageUrl(navBgImage)}
-                    alt="Navbar BG"
-                    className="w-full h-full object-cover object-center"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails
-                      (e.currentTarget as HTMLImageElement).src = "/header-bg.jpg";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
-                    Belum ada gambar navbar
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={navBgImage}
-                  onChange={(e) => setNavBgImage(e.target.value)}
-                  placeholder="/header-bg.jpg atau URL online"
-                  className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                />
-                <label className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>
-                    {uploadingField === "navBg" ? "Uploading..." : "Upload"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      handleFileUpload(e, "navBg", (url) => setNavBgImage(url))
-                    }
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Hero Main Background Image */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#c8f560]">
-                  Background Utama Hero Section
-                </span>
-                {heroBgImage && (
-                  <span className="text-[10px] text-white/60">Aktif Digunakan</span>
-                )}
-              </div>
-
-              {/* Preview */}
-              <div className="w-full h-24 rounded-xl overflow-hidden border border-white/20 relative bg-black/40">
-                {heroBgImage ? (
-                  <img
-                    src={normalizeImageUrl(heroBgImage)}
-                    alt="Hero BG"
-                    className="w-full h-full object-cover object-center"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs text-white/40">
-                    Belum ada gambar hero
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={heroBgImage}
-                  onChange={(e) => setHeroBgImage(e.target.value)}
-                  placeholder="/6293920186406475229_121.jpg atau URL online"
-                  className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                />
-                <label className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>
-                    {uploadingField === "heroBg" ? "Uploading..." : "Upload"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      handleFileUpload(e, "heroBg", (url) => setHeroBgImage(url))
-                    }
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 2: 3 GLASS FEATURE CARDS */}
-      {activeSubTab === "cards" && (
-        <div className={`${ROYALTY_CARD} space-y-6`}>
-          <div className="border-b border-white/15 pb-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#c8f560]" />
-              Pengaturan 3 Kartu Kaca Transparan (Feature Cards)
-            </h3>
-            <p className="text-xs text-white/65">
-              Edit teks, judul, dan gambar bundar artis di ketiga kartu transparan bawah hero.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Card 1 (Green Glow) */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/15 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#8fff00]" />
-                <span className="text-xs font-bold text-white">Kartu 1 (Glow Green)</span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-white/70 mb-1">
-                  Teks Animasi Card 1
-                </label>
-                <textarea
-                  rows={3}
-                  value={card1Text}
-                  onChange={(e) => setCard1Text(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              {/* Image Preview & Upload */}
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#8fff00] shrink-0 bg-black">
-                  <img
-                    src={normalizeImageUrl(card1Image) || "/6293920186406475218_120.jpg"}
-                    alt="Card 1"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                    }}
-                  />
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <input
-                    type="text"
-                    value={card1Image}
-                    onChange={(e) => setCard1Image(e.target.value)}
-                    placeholder="URL Gambar..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-[11px]"
-                  />
-                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] cursor-pointer">
-                    <Upload className="w-3 h-3" />
-                    <span>Upload Foto</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(e, "c1", (url) => setCard1Image(url))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2 (Orange Glow) */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/15 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#ff5722]" />
-                <span className="text-xs font-bold text-white">Kartu 2 (Glow Orange)</span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-white/70 mb-1">
-                  Judul Tebal Card 2
-                </label>
-                <input
-                  type="text"
-                  value={card2Title}
-                  onChange={(e) => setCard2Title(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-semibold focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-white/70 mb-1">
-                  Deskripsi Card 2
-                </label>
-                <textarea
-                  rows={2}
-                  value={card2Desc}
-                  onChange={(e) => setCard2Desc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              {/* Image Preview & Upload */}
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#ff5722] shrink-0 bg-black">
-                  <img
-                    src={normalizeImageUrl(card2Image) || "/6293920186406475218_120.jpg"}
-                    alt="Card 2"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                    }}
-                  />
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <input
-                    type="text"
-                    value={card2Image}
-                    onChange={(e) => setCard2Image(e.target.value)}
-                    placeholder="URL Gambar..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-[11px]"
-                  />
-                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] cursor-pointer">
-                    <Upload className="w-3 h-3" />
-                    <span>Upload Foto</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(e, "c2", (url) => setCard2Image(url))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3 (Blue Glow) */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/15 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#2196f3]" />
-                <span className="text-xs font-bold text-white">Kartu 3 (Glow Blue)</span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-white/70 mb-1">
-                  Judul Tebal Card 3
-                </label>
-                <input
-                  type="text"
-                  value={card3Title}
-                  onChange={(e) => setCard3Title(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs font-semibold focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] text-white/70 mb-1">
-                  Deskripsi Card 3
-                </label>
-                <textarea
-                  rows={2}
-                  value={card3Desc}
-                  onChange={(e) => setCard3Desc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              {/* Image Preview & Upload */}
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#2196f3] shrink-0 bg-black">
-                  <img
-                    src={normalizeImageUrl(card3Image) || "/6293920186406475218_120.jpg"}
-                    alt="Card 3"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                    }}
-                  />
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <input
-                    type="text"
-                    value={card3Image}
-                    onChange={(e) => setCard3Image(e.target.value)}
-                    placeholder="URL Gambar..."
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-[11px]"
-                  />
-                  <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] cursor-pointer">
-                    <Upload className="w-3 h-3" />
-                    <span>Upload Foto</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(e, "c3", (url) => setCard3Image(url))
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 3: ROSTER & PROFIL ARTIS */}
+      {/* SECTION 1: MANAJEMEN ARTIS LANDING PAGE */}
       {activeSubTab === "artists" && (
         <div className={`${ROYALTY_CARD} space-y-6`}>
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#c8f560]" />
-                Manajemen Roster & Profil Artis di Landing Page
+                Daftar Artis & Testimoni di Frame 7 Landing Page
               </h3>
-              <p className="text-xs text-white/65">
-                Tambahkan musisi unggulan, ubah bio, atur monthly listeners, link profil DSP, dan unggah foto profil.
+              <p className="text-xs text-white/65 mt-0.5">
+                Setiap perubahan foto, nama, genre, dan testimoni di sini akan langsung tampil pada slider testimoni landing page.
               </p>
             </div>
 
-            <button
-              onClick={openAddArtist}
-              className="px-4 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-bold text-xs flex items-center gap-2 shadow-md transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Profil Artis Baru</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={resetToDefaultArtists}
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition-all"
+                title="Pulihkan 13 artis bawaan"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset 13 Artis Default</span>
+              </button>
+
+              <button
+                onClick={openAddArtist}
+                className="px-4 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Tambah Artis Baru</span>
+              </button>
+            </div>
           </div>
 
           {/* Grid Artis Saat Ini */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {artists.map((artist) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {artists.map((artist, idx) => (
               <div
                 key={artist.id}
-                className="p-4 rounded-2xl bg-white/5 border border-white/15 flex flex-col justify-between group hover:border-[#c8f560]/50 transition-all"
+                className="p-5 rounded-3xl bg-[#0a0a0a]/90 border border-gray-800 flex flex-col justify-between group hover:border-[#ff0055]/50 transition-all shadow-xl"
               >
                 <div>
-                  <div className="w-full h-36 rounded-xl overflow-hidden mb-3 relative bg-black/40">
-                    <img
-                      src={normalizeImageUrl(artist.photo) || "/6293920186406475218_120.jpg"}
-                      alt={artist.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                      }}
-                    />
-                    <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-[10px] text-[#c8f560] font-semibold border border-white/20">
-                      {artist.genre}
-                    </span>
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-700 shrink-0 bg-black shadow-[0_0_12px_rgba(255,0,85,0.2)]">
+                      <img
+                        src={artist.imageUrl || "/6293920186406475218_120.jpg"}
+                        alt={artist.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop";
+                        }}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-[#ff0055] font-black uppercase tracking-wider block w-max mb-1">
+                        {artist.genre}
+                      </span>
+                      <h4 className="font-black text-white text-base truncate flex items-center gap-1.5">
+                        {artist.name}
+                        {artist.isVerified !== false && (
+                          <span className="text-[#ff0055] text-xs" title="Verified Artist">
+                            ●
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-[11px] text-gray-400 font-semibold">
+                        {artist.listeners} Listeners
+                      </p>
+                    </div>
                   </div>
 
-                  <h4 className="font-bold text-white text-sm mb-1">{artist.name}</h4>
-                  <p className="text-[11px] text-white/60 line-clamp-2 mb-3">
-                    {artist.bio}
-                  </p>
-                  <div className="flex items-center justify-between text-[11px] text-white/80 py-1.5 border-t border-white/10">
-                    <span>Listeners: <strong>{artist.monthlyListeners}</strong></span>
-                    <span className="text-[#c8f560]">{artist.topTrack}</span>
+                  <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 mb-4 min-h-[64px] flex items-center">
+                    <p className="text-xs text-gray-300 italic leading-relaxed line-clamp-3">
+                      "{artist.quote}"
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-3 border-t border-white/10 mt-3">
+                <div className="flex items-center gap-2 pt-3 border-t border-gray-800">
                   <button
                     onClick={() => openEditArtist(artist)}
-                    className="flex-1 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                    className="flex-1 py-2 rounded-xl bg-white/15 hover:bg-[#ff0055] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                   >
-                    <Edit2 className="w-3 h-3" />
-                    <span>Ubah Profil</span>
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Ubah Foto & Teks</span>
                   </button>
                   <button
                     onClick={() => deleteArtist(artist.id, artist.name)}
-                    className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
+                    className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
                     title="Hapus Artis"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -885,123 +443,151 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
           </div>
 
           {artists.length === 0 && (
-            <div className="text-center py-12 border border-dashed border-white/20 rounded-2xl">
-              <p className="text-sm text-white/60 mb-3">Belum ada artis terdaftar di roster.</p>
+            <div className="text-center py-16 border border-dashed border-white/20 rounded-3xl bg-black/20">
+              <p className="text-sm text-white/60 mb-3">Belum ada artis terdaftar di landing page.</p>
               <button
-                onClick={openAddArtist}
-                className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs"
+                onClick={resetToDefaultArtists}
+                className="px-5 py-2.5 rounded-xl bg-[#c8f560] text-[#312042] font-black text-xs"
               >
-                + Tambah Artis Pertama
+                Muat 13 Artis Default
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* SECTION 4: TESTIMONI MUSISI */}
-      {activeSubTab === "testimonials" && (
+      {/* SECTION 2: HERO BANNER SETTINGS */}
+      {activeSubTab === "hero" && (
         <div className={`${ROYALTY_CARD} space-y-6`}>
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#c8f560]" />
-                Manajemen Testimoni & Kata Musisi
-              </h3>
-              <p className="text-xs text-white/65">
-                Tambahkan review musisi, rating bintang, kutipan autentik royalti, dan foto avatar.
-              </p>
-            </div>
-
-            <button
-              onClick={openAddTestimonial}
-              className="px-4 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-bold text-xs flex items-center gap-2 shadow-md transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Testimoni Baru</span>
-            </button>
+          <div className="border-b border-white/15 pb-3">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Globe className="w-4 h-4 text-[#c8f560]" />
+              Pengaturan Frame 1 (Hero Banner & Samurai Image)
+            </h3>
+            <p className="text-xs text-white/65">
+              Ubah teks judul utama, teks animasi mesin ketik (typewriter), dan foto karakter background hero.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {testimonials.map((testi) => (
-              <div
-                key={testi.id}
-                className="p-5 rounded-2xl bg-white/5 border border-white/15 flex flex-col justify-between group hover:border-[#c8f560]/40 transition-all"
-              >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c8f560]/20 text-[#c8f560] border border-[#c8f560]/40 font-mono font-bold">
-                      {testi.streams}
-                    </span>
-                    <span className="text-xs text-[#c8f560]">★★★★★</span>
-                  </div>
-
-                  <p className="text-xs text-white/80 italic leading-relaxed mb-4">
-                    "{testi.quote}"
-                  </p>
+                  <label className="block text-xs font-semibold text-white/80 mb-1">
+                    Judul 1 (Putih)
+                  </label>
+                  <input
+                    type="text"
+                    value={heroTitle1}
+                    onChange={(e) => setHeroTitle1(e.target.value)}
+                    placeholder="Breakout"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
+                  />
                 </div>
-
                 <div>
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/10 mb-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#c8f560]/60 shrink-0 bg-black">
-                      <img
-                        src={normalizeImageUrl(testi.avatar) || "/6293920186406475218_120.jpg"}
-                        alt={testi.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                        }}
-                      />
-                    </div>
-                    <div className="leading-tight">
-                      <p className="font-bold text-white text-xs">{testi.name}</p>
-                      <p className="text-[11px] text-[#c8f560]">{testi.artistName}</p>
-                      <p className="text-[10px] text-white/50">{testi.role}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => openEditTestimonial(testi)}
-                      className="flex-1 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                      <span>Ubah</span>
-                    </button>
-                    <button
-                      onClick={() => deleteTestimonial(testi.id, testi.name)}
-                      className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
-                      title="Hapus Testimoni"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <label className="block text-xs font-semibold text-white/80 mb-1">
+                    Judul 2 (Merah/Pink Accent)
+                  </label>
+                  <input
+                    type="text"
+                    value={heroTitle2}
+                    onChange={(e) => setHeroTitle2(e.target.value)}
+                    placeholder="ID"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
 
-          {testimonials.length === 0 && (
-            <div className="text-center py-12 border border-dashed border-white/20 rounded-2xl">
-              <p className="text-sm text-white/60 mb-3">Belum ada testimoni musisi.</p>
-              <button
-                onClick={openAddTestimonial}
-                className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs"
-              >
-                + Tambah Testimoni Pertama
-              </button>
+              <div>
+                <label className="block text-xs font-semibold text-white/80 mb-1">
+                  Teks Animasi Mesin Ketik (Typewriter Text)
+                </label>
+                <textarea
+                  rows={3}
+                  value={heroSubtitle}
+                  onChange={(e) => setHeroSubtitle(e.target.value)}
+                  placeholder="Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/80 mb-1">
+                  URL Foto Hero Background
+                </label>
+                <input
+                  type="text"
+                  value={heroBgImage}
+                  onChange={(e) => setHeroBgImage(e.target.value)}
+                  placeholder="/6293920186406475512_121.jpg"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560] font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/80 mb-1.5">
+                  Unggah Gambar Karakter Hero Baru
+                </label>
+                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/30 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors text-xs text-white">
+                  <Upload className="w-4 h-4 text-[#c8f560]" />
+                  <span>
+                    {uploadingField === "heroBgImage"
+                      ? "Mengunggah..."
+                      : "Pilih File Foto Hero dari Komputer / HP"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingField === "heroBgImage"}
+                    onChange={(e) =>
+                      handleFileUpload(e, "heroBgImage", (url) => setHeroBgImage(url))
+                    }
+                  />
+                </label>
+              </div>
             </div>
-          )}
+
+            {/* Preview Box */}
+            <div className="flex flex-col">
+              <label className="block text-xs font-semibold text-white/80 mb-1">
+                Live Preview Hero Frame 1
+              </label>
+              <div className="relative w-full flex-1 min-h-[260px] rounded-2xl overflow-hidden border border-white/20 bg-black flex items-center justify-center text-center p-6 shadow-2xl">
+                <img
+                  src={heroBgImage || "/6293920186406475512_121.jpg"}
+                  alt="Hero Preview"
+                  className="absolute inset-0 w-full h-full object-cover opacity-60"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/6293920186406475229_121.jpg";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
+                <div className="relative z-10 max-w-sm">
+                  <h3 className="text-3xl font-black uppercase text-white tracking-tight mb-2">
+                    {heroTitle1} <span className="text-[#ff0055]">{heroTitle2}</span>
+                  </h3>
+                  <p className="text-xs text-gray-200 mb-4 line-clamp-3">
+                    {heroSubtitle}
+                  </p>
+                  <span className="inline-block px-5 py-2 rounded-full bg-[#ff0055] text-white text-[11px] font-bold uppercase tracking-wider shadow-lg">
+                    Mulai Rilis Sekarang
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* MODAL ARTIS (ADD / EDIT) */}
+      {/* MODAL: FORM TAMBAH / UBAH ARTIS */}
       {artistModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-[#312042] border border-white/20 rounded-3xl p-6 text-white space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/15 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg bg-[#141419] border border-gray-700 rounded-3xl p-6 text-white space-y-4 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-3">
               <h4 className="font-bold text-base text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#c8f560]" />
-                {editingArtistId ? "Ubah Profil Artis" : "Tambah Artis Baru ke Roster"}
+                <Users className="w-5 h-5 text-[#ff0055]" />
+                {editingArtistId ? "Ubah Foto & Data Artis" : "Tambah Artis Baru ke Landing Page"}
               </h4>
               <button
                 onClick={() => setArtistModalOpen(false)}
@@ -1012,299 +598,143 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
             </div>
 
             <div className="space-y-3.5 text-xs">
+              {/* Photo Preview & Upload */}
+              <div>
+                <label className="block text-white/70 mb-1.5 font-semibold">
+                  Foto Artis (Muncul Bulat di Testimoni)
+                </label>
+                <div className="flex items-center gap-4 p-3 rounded-2xl bg-black/40 border border-gray-800">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#ff0055] shrink-0 bg-black shadow-lg">
+                    <img
+                      src={artistForm.imageUrl || "/6293920186406475218_120.jpg"}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1516280440502-6c2e8e986ef6?q=80&w=600&auto=format&fit=crop";
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#ff0055] hover:bg-[#ff1a66] text-white font-bold cursor-pointer transition-all shadow-md">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>
+                        {uploadingField === "artistPhoto" ? "Mengunggah..." : "Unggah Foto dari HP / PC"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingField === "artistPhoto"}
+                        onChange={(e) =>
+                          handleFileUpload(e, "artistPhoto", (url) =>
+                            setArtistForm({ ...artistForm, imageUrl: url })
+                          )
+                        }
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={artistForm.imageUrl}
+                      onChange={(e) =>
+                        setArtistForm({ ...artistForm, imageUrl: e.target.value })
+                      }
+                      placeholder="Atau tempel link URL foto..."
+                      className="w-full px-3 py-1.5 rounded-lg bg-white/10 border border-gray-700 text-white text-[11px] focus:outline-none focus:border-[#ff0055]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Name & Genre */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-white/70 mb-1">Nama Musisi / Band *</label>
+                  <label className="block text-white/70 mb-1 font-semibold">Nama Artis *</label>
                   <input
                     type="text"
                     value={artistForm.name}
-                    onChange={(e) =>
-                      setArtistForm({ ...artistForm, name: e.target.value })
-                    }
-                    placeholder="Contoh: Basstrack Indo"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
+                    onChange={(e) => setArtistForm({ ...artistForm, name: e.target.value })}
+                    placeholder="Contoh: Shinta Dewi"
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-gray-700 text-white focus:outline-none focus:border-[#ff0055]"
                   />
                 </div>
                 <div>
-                  <label className="block text-white/70 mb-1">Genre / Tag Musik</label>
+                  <label className="block text-white/70 mb-1 font-semibold">Genre Musik *</label>
                   <input
                     type="text"
                     value={artistForm.genre}
                     onChange={(e) =>
-                      setArtistForm({ ...artistForm, genre: e.target.value })
+                      setArtistForm({ ...artistForm, genre: e.target.value.toUpperCase() })
                     }
-                    placeholder="Contoh: Phonk / Electronic"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
+                    placeholder="Contoh: HIP-HOP / URBAN"
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-gray-700 text-white focus:outline-none focus:border-[#ff0055]"
                   />
                 </div>
               </div>
 
+              {/* Listeners & Verified */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-white/70 mb-1">Monthly Listeners</label>
+                  <label className="block text-white/70 mb-1 font-semibold">
+                    Monthly Listeners *
+                  </label>
                   <input
                     type="text"
-                    value={artistForm.monthlyListeners}
+                    value={artistForm.listeners}
                     onChange={(e) =>
-                      setArtistForm({
-                        ...artistForm,
-                        monthlyListeners: e.target.value,
-                      })
+                      setArtistForm({ ...artistForm, listeners: e.target.value })
                     }
-                    placeholder="1.8M"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
+                    placeholder="Contoh: 3.4M+"
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-gray-700 text-white focus:outline-none focus:border-[#ff0055]"
                   />
                 </div>
                 <div>
-                  <label className="block text-white/70 mb-1">Top Track Hit</label>
-                  <input
-                    type="text"
-                    value={artistForm.topTrack}
-                    onChange={(e) =>
-                      setArtistForm({ ...artistForm, topTrack: e.target.value })
+                  <label className="block text-white/70 mb-1 font-semibold">Status Badge</label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setArtistForm({ ...artistForm, isVerified: !artistForm.isVerified })
                     }
-                    placeholder="Midnight Drift Vol. 2"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                  />
+                    className={`w-full py-2 px-3 rounded-xl border flex items-center justify-center gap-1.5 font-bold transition-all ${artistForm.isVerified
+                        ? "bg-[#ff0055]/20 border-[#ff0055] text-white"
+                        : "bg-white/5 border-gray-700 text-gray-400"
+                      }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-[#ff0055]" />
+                    <span>{artistForm.isVerified ? "Verified Artist" : "Biasa (No Badge)"}</span>
+                  </button>
                 </div>
               </div>
 
+              {/* Quote / Testimoni */}
               <div>
-                <label className="block text-white/70 mb-1">Link Spotify / DSP Profile</label>
-                <input
-                  type="text"
-                  value={artistForm.spotifyUrl}
-                  onChange={(e) =>
-                    setArtistForm({ ...artistForm, spotifyUrl: e.target.value })
-                  }
-                  placeholder="https://open.spotify.com/artist/..."
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white/70 mb-1">Bio Singkat</label>
+                <label className="block text-white/70 mb-1 font-semibold">
+                  Kutipan Testimoni Musisi *
+                </label>
                 <textarea
-                  rows={2}
-                  value={artistForm.bio}
-                  onChange={(e) =>
-                    setArtistForm({ ...artistForm, bio: e.target.value })
-                  }
-                  placeholder="Ceritakan profil singkat artis..."
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
+                  rows={3}
+                  value={artistForm.quote}
+                  onChange={(e) => setArtistForm({ ...artistForm, quote: e.target.value })}
+                  placeholder="Kutipan pengalaman distribusi, pembayaran royalti, atau rilis musik..."
+                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-gray-700 text-white focus:outline-none focus:border-[#ff0055]"
                 />
-              </div>
-
-              {/* Photo & Upload */}
-              <div>
-                <label className="block text-white/70 mb-1">Foto Artis / Cover</label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/20 bg-black shrink-0">
-                    <img
-                      src={normalizeImageUrl(artistForm.photo) || "/6293920186406475218_120.jpg"}
-                      alt="Artist Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                      }}
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={artistForm.photo}
-                    onChange={(e) =>
-                      setArtistForm({ ...artistForm, photo: e.target.value })
-                    }
-                    placeholder="URL gambar..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                  />
-                  <label className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold cursor-pointer shrink-0">
-                    <Upload className="w-3.5 h-3.5 inline mr-1" />
-                    <span>Upload</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(e, "artistPhoto", (url) =>
-                          setArtistForm((prev) => ({ ...prev, photo: url }))
-                        )
-                      }
-                    />
-                  </label>
-                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/15">
+            <div className="flex items-center gap-3 pt-3 border-t border-gray-800">
               <button
                 type="button"
                 onClick={() => setArtistModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs"
+                className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors"
               >
                 Batal
               </button>
               <button
                 type="button"
-                onClick={saveArtistForm}
-                className="px-5 py-2 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-bold text-xs shadow-md"
+                onClick={handleSaveArtistModal}
+                className="flex-1 py-2.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] text-xs font-black shadow-lg transition-all"
               >
-                Simpan Profil Artis
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL TESTIMONI (ADD / EDIT) */}
-      {testimonialModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-[#312042] border border-white/20 rounded-3xl p-6 text-white space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/15 pb-3">
-              <h4 className="font-bold text-base text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#c8f560]" />
-                {editingTestimonialId ? "Ubah Testimoni" : "Tambah Testimoni Musisi Baru"}
-              </h4>
-              <button
-                onClick={() => setTestimonialModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-white/70 mb-1">Nama Musisi *</label>
-                  <input
-                    type="text"
-                    value={testimonialForm.name}
-                    onChange={(e) =>
-                      setTestimonialForm({ ...testimonialForm, name: e.target.value })
-                    }
-                    placeholder="Contoh: Rian Ardiansyah"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/70 mb-1">Nama Project / Alias</label>
-                  <input
-                    type="text"
-                    value={testimonialForm.artistName}
-                    onChange={(e) =>
-                      setTestimonialForm({
-                        ...testimonialForm,
-                        artistName: e.target.value,
-                      })
-                    }
-                    placeholder="Contoh: Basstrack Indo"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-white/70 mb-1">Peran / Profesi</label>
-                  <input
-                    type="text"
-                    value={testimonialForm.role}
-                    onChange={(e) =>
-                      setTestimonialForm({ ...testimonialForm, role: e.target.value })
-                    }
-                    placeholder="Electronic Producer"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/70 mb-1">Badge Streams</label>
-                  <input
-                    type="text"
-                    value={testimonialForm.streams}
-                    onChange={(e) =>
-                      setTestimonialForm({
-                        ...testimonialForm,
-                        streams: e.target.value,
-                      })
-                    }
-                    placeholder="15.4M Streams"
-                    className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white/70 mb-1">Teks Kutipan / Review *</label>
-                <textarea
-                  rows={3}
-                  value={testimonialForm.quote}
-                  onChange={(e) =>
-                    setTestimonialForm({ ...testimonialForm, quote: e.target.value })
-                  }
-                  placeholder="Tuliskan pengalaman rilis atau pencairan royalti..."
-                  className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-[#c8f560]"
-                />
-              </div>
-
-              {/* Avatar & Upload */}
-              <div>
-                <label className="block text-white/70 mb-1">Foto Avatar Musisi</label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20 bg-black shrink-0">
-                    <img
-                      src={normalizeImageUrl(testimonialForm.avatar) || "/6293920186406475218_120.jpg"}
-                      alt="Avatar Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = "/6293920186406475218_120.jpg";
-                      }}
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    value={testimonialForm.avatar}
-                    onChange={(e) =>
-                      setTestimonialForm({
-                        ...testimonialForm,
-                        avatar: e.target.value,
-                      })
-                    }
-                    placeholder="URL gambar..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#c8f560]"
-                  />
-                  <label className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold cursor-pointer shrink-0">
-                    <Upload className="w-3.5 h-3.5 inline mr-1" />
-                    <span>Upload</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(e, "testiAvatar", (url) =>
-                          setTestimonialForm((prev) => ({ ...prev, avatar: url }))
-                        )
-                      }
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/15">
-              <button
-                type="button"
-                onClick={() => setTestimonialModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={saveTestimonialForm}
-                className="px-5 py-2 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-bold text-xs shadow-md"
-              >
-                Simpan Testimoni
+                Terapkan Perubahan
               </button>
             </div>
           </div>
@@ -1313,4 +743,3 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
     </div>
   );
 }
-
