@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
 export function normalizeImageUrl(url?: string | null): string {
@@ -287,28 +287,18 @@ export default function LandingClient({
 }: {
   initialData?: LandingPageData;
 }) {
-  // Horizontal Slider Indexes
+  const [data, setData] = useState<LandingPageData>(initialData);
   const [activePlatformIndex, setActivePlatformIndex] = useState(0);
   const [activeHIndex, setActiveHIndex] = useState(0);
   const [activeFaqIndex, setActiveFaqIndex] = useState(0);
   const [openFaqItem, setOpenFaqItem] = useState<string | null>("01-0");
-  const [hMoveAmount, setHMoveAmount] = useState(384);
 
   const totalPlatformSlides = 5;
 
-  // Real-time synchronization state with Web CMS
-  const [data, setData] = useState<LandingPageData>(initialData);
-
-  useEffect(() => {
-    fetch("/api/cms/landing")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json?.data) {
-          setData(json.data);
-        }
-      })
-      .catch((err) => console.warn("Failed to fetch fresh live landing data:", err));
-  }, []);
+  // Horizontal scroll container references
+  const platformScrollRef = useRef<HTMLDivElement>(null);
+  const testimoniScrollRef = useRef<HTMLDivElement>(null);
+  const faqScrollRef = useRef<HTMLDivElement>(null);
 
   // Sync artists data from CMS/DB with fallback
   const testimonials: LandingArtist[] =
@@ -326,16 +316,99 @@ export default function LandingClient({
         }))
       : DEFAULT_PRISMA_TESTIMONIALS;
 
+  // Real-time synchronization state with Web CMS
   useEffect(() => {
-    const updateWidth = () => {
-      const w = window.innerWidth < 768 ? 300 : 360;
-      const gap = 24;
-      setHMoveAmount(w + gap);
-    };
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
+    fetch("/api/cms/landing")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data) {
+          setData(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch fresh live landing data:", err));
   }, []);
+
+  // Helper to scroll horizontal tracks with buttons
+  const scrollTrack = useCallback(
+    (
+      ref: React.RefObject<HTMLDivElement>,
+      direction: "prev" | "next",
+      totalCount: number,
+      setIndex: React.Dispatch<React.SetStateAction<number>>
+    ) => {
+      const container = ref.current;
+      if (!container) return;
+      const cardWidth = window.innerWidth < 768 ? 324 : 384; // width + gap
+      const newScrollLeft =
+        direction === "next"
+          ? container.scrollLeft + cardWidth
+          : container.scrollLeft - cardWidth;
+
+      container.scrollTo({ left: newScrollLeft, behavior: "smooth" });
+    },
+    []
+  );
+
+  // Sync active index when horizontal containers are scrolled (drag, swipe, wheel)
+  const onContainerScroll = useCallback(
+    (
+      ref: React.RefObject<HTMLDivElement>,
+      setIndex: React.Dispatch<React.SetStateAction<number>>,
+      maxIndex: number
+    ) => {
+      const container = ref.current;
+      if (!container) return;
+      const cardWidth = window.innerWidth < 768 ? 324 : 384;
+      const idx = Math.min(
+        maxIndex,
+        Math.max(0, Math.round(container.scrollLeft / cardWidth))
+      );
+      setIndex(idx);
+    },
+    []
+  );
+
+  // Setup smart mouse-wheel horizontal redirection on horizontal containers
+  useEffect(() => {
+    const attachSmartWheel = (ref: React.RefObject<HTMLDivElement>) => {
+      const el = ref.current;
+      if (!el) return () => {};
+
+      const handleWheel = (e: WheelEvent) => {
+        // If scrolling horizontally with trackpad, let native scroll handle it
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        const isAtEnd = el.scrollLeft >= maxScroll - 6;
+        const isAtStart = el.scrollLeft <= 6;
+
+        // If user scrolls down and horizontal content hasn't reached end:
+        if (e.deltaY > 0 && !isAtEnd) {
+          e.preventDefault();
+          el.scrollBy({ left: e.deltaY * 1.2, behavior: "auto" });
+        }
+        // If user scrolls up and horizontal content hasn't reached start:
+        else if (e.deltaY < 0 && !isAtStart) {
+          e.preventDefault();
+          el.scrollBy({ left: e.deltaY * 1.2, behavior: "auto" });
+        }
+        // Otherwise, allow window scroll to proceed normally to next/prev sticky stack!
+      };
+
+      el.addEventListener("wheel", handleWheel, { passive: false });
+      return () => el.removeEventListener("wheel", handleWheel);
+    };
+
+    const cleanup1 = attachSmartWheel(platformScrollRef);
+    const cleanup2 = attachSmartWheel(testimoniScrollRef);
+    const cleanup3 = attachSmartWheel(faqScrollRef);
+
+    return () => {
+      cleanup1();
+      cleanup2();
+      cleanup3();
+    };
+  }, [testimonials.length]);
 
   return (
     <>
@@ -354,7 +427,9 @@ export default function LandingClient({
           color: white;
           margin: 0;
           padding: 0;
-          overflow-x: clip;
+          overflow-x: clip !important;
+          height: auto !important;
+          min-height: 100% !important;
         }
 
         /* STICKY STACKING SECTIONS ENGINE */
@@ -372,12 +447,22 @@ export default function LandingClient({
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
           background-color: #050505;
           box-shadow: 0 -25px 50px -10px rgba(0, 0, 0, 0.95);
           border-top: 1px solid rgba(255, 255, 255, 0.08);
           will-change: transform;
         }
+
+        /* GUARANTEED Z-INDEX STACKING (LAYERED SCROLL OVERLAP) */
+        #bar-1 { z-index: 10 !important; }
+        #bar-2 { z-index: 20 !important; }
+        #bar-3 { z-index: 30 !important; }
+        #bar-4 { z-index: 40 !important; }
+        #bar-5 { z-index: 50 !important; }
+        #bar-6 { z-index: 60 !important; }
+        #bar-7 { z-index: 70 !important; }
+        #bar-8 { z-index: 80 !important; }
+        #bar-9 { z-index: 90 !important; }
 
         .bg-img {
           position: absolute;
@@ -407,11 +492,25 @@ export default function LandingClient({
           position: relative;
         }
 
-        .h-track {
+        /* HORIZONTAL SCROLL CAROUSEL STYLES */
+        .horizontal-scroll-track {
           display: flex;
-          width: max-content;
-          transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-          will-change: transform;
+          gap: 24px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          touch-action: pan-x pan-y;
+        }
+        .horizontal-scroll-track::-webkit-scrollbar {
+          display: none;
+        }
+
+        .h-slide {
+          scroll-snap-align: start;
+          flex-shrink: 0;
         }
 
         .btn-glow {
@@ -452,8 +551,8 @@ export default function LandingClient({
            ========================================================================= */}
         <section
           id="bar-1"
-          className="sticky-stack-bar z-10"
-          style={{ borderTop: "none" }}
+          style={{ zIndex: 10, borderTop: "none" }}
+          className="sticky-stack-bar overflow-hidden"
         >
           <img
             src={normalizeImageUrl(data?.heroBgImage) || "/6293920186406475512_121.jpg"}
@@ -496,7 +595,11 @@ export default function LandingClient({
         {/* =========================================================================
             BAR 2: SPEED / DJ (MENUTUPI BAR 1)
            ========================================================================= */}
-        <section id="bar-2" className="sticky-stack-bar z-20">
+        <section
+          id="bar-2"
+          style={{ zIndex: 20 }}
+          className="sticky-stack-bar overflow-hidden"
+        >
           <img
             src="https://images.unsplash.com/photo-1574169208507-84376144848b?q=80&w=2000&auto=format&fit=crop"
             alt="DJ Speed"
@@ -520,12 +623,14 @@ export default function LandingClient({
 
         {/* =========================================================================
             BAR 3: 150+ PLATFORM DIGITAL (MENUTUPI BAR 2)
+            DENGAN SMOOTH HORIZONTAL SCROLL & WHEEL/TOUCH INTERACTIVITY
            ========================================================================= */}
         <section
           id="bar-3"
-          className="sticky-stack-bar z-30 flex-col items-start justify-center"
+          style={{ zIndex: 30 }}
+          className="sticky-stack-bar flex-col items-start justify-center overflow-hidden"
         >
-          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20 pointer-events-none">
             <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
               150+ Platform
             </h2>
@@ -534,40 +639,41 @@ export default function LandingClient({
             </h2>
           </div>
 
-          <div className="w-full mt-24 md:mt-40">
+          <div className="w-full mt-24 md:mt-36">
             <div
-              className="h-track px-8 md:px-[10vw] gap-6"
-              style={{
-                transform: `translateX(-${activePlatformIndex * hMoveAmount}px)`,
-              }}
+              ref={platformScrollRef}
+              onScroll={() =>
+                onContainerScroll(platformScrollRef, setActivePlatformIndex, totalPlatformSlides - 1)
+              }
+              className="horizontal-scroll-track px-8 md:px-[10vw]"
             >
               {/* Slide 1 - Top Tier Platforms */}
-              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+              <div className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
                 <div className="grid grid-cols-2 gap-4 w-full h-full">
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#1DB954]/50 transition-colors">
                     <span className="text-[#1DB954] font-black text-lg tracking-tighter">
                       Spotify
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#FA243C]/50 transition-colors">
                     <span className="text-[#FA243C] font-black text-lg tracking-tighter">
                       Apple Music
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-white/50 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">TikTok</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#FF0000]/50 transition-colors">
                     <span className="text-[#FF0000] font-black text-lg tracking-tighter">
                       YouTube
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#E1306C]/50 transition-colors">
                     <span className="text-[#E1306C] font-black text-lg tracking-tighter">
                       Instagram
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#00A8E1]/50 transition-colors">
                     <span className="text-[#00A8E1] font-black text-lg tracking-tighter">
                       Amazon
                     </span>
@@ -576,88 +682,88 @@ export default function LandingClient({
               </div>
 
               {/* Slide 2 - Global Majors */}
-              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+              <div className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
                 <div className="grid grid-cols-2 gap-4 w-full h-full">
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-gray-600 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">Deezer</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-gray-600 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">TIDAL</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#FF5500]/50 transition-colors">
                     <span className="text-[#FF5500] font-black text-lg tracking-tighter">
                       SoundCloud
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#0055FF]/50 transition-colors">
                     <span className="text-[#0055FF] font-black text-lg tracking-tighter">
                       Pandora
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#00D2FF]/50 transition-colors">
                     <span className="text-[#00D2FF] font-black text-lg tracking-tighter">
                       Shazam
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-gray-600 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">Napster</span>
                   </div>
                 </div>
               </div>
 
               {/* Slide 3 - Asia & Regional */}
-              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+              <div className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
                 <div className="grid grid-cols-2 gap-4 w-full h-full">
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-gray-600 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">Tencent</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#E60026]/50 transition-colors">
                     <span className="text-[#E60026] font-black text-lg tracking-tighter">
                       NetEase
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#00B900]/50 transition-colors">
                     <span className="text-[#00B900] font-black text-lg tracking-tighter">JOOX</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#FFD500]/50 transition-colors">
                     <span className="text-[#FFD500] font-black text-lg tracking-tighter">
                       Boomplay
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#8923FF]/50 transition-colors">
                     <span className="text-[#8923FF] font-black text-lg tracking-tighter">
                       Anghami
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#E52D27]/50 transition-colors">
                     <span className="text-[#E52D27] font-black text-lg tracking-tighter">Claro</span>
                   </div>
                 </div>
               </div>
 
               {/* Slide 4 - Electronic & High Fidelity */}
-              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
+              <div className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center shadow-xl h-[400px]">
                 <div className="grid grid-cols-2 gap-4 w-full h-full">
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#C6002B]/50 transition-colors">
                     <span className="text-[#C6002B] font-black text-lg tracking-tighter">
                       iHeart
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-white/50 transition-colors">
                     <span className="text-white font-black text-lg tracking-tighter">Qobuz</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#9146FF]/50 transition-colors">
                     <span className="text-[#9146FF] font-black text-lg tracking-tighter">Twitch</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#E60000]/50 transition-colors">
                     <span className="text-[#E60000] font-black text-lg tracking-tighter">Vevo</span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#01FF95]/50 transition-colors">
                     <span className="text-[#01FF95] font-black text-lg tracking-tighter">
                       Beatport
                     </span>
                   </div>
-                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800">
+                  <div className="flex items-center justify-center p-4 bg-[#121212] rounded-xl border border-gray-800 hover:border-[#FFCC00]/50 transition-colors">
                     <span className="text-[#FFCC00] font-black text-lg tracking-tighter">
                       Yandex
                     </span>
@@ -666,7 +772,7 @@ export default function LandingClient({
               </div>
 
               {/* Slide 5 - 120+ Lainnya */}
-              <div className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-gradient-to-br from-[#ff0055] to-[#88002e] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(255,0,85,0.4)] h-[400px]">
+              <div className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-gradient-to-br from-[#ff0055] to-[#88002e] rounded-3xl p-6 md:p-8 flex flex-col justify-center items-center text-center shadow-[0_0_30px_rgba(255,0,85,0.4)] h-[400px]">
                 <h3 className="text-5xl md:text-6xl font-black text-white mb-3">+120</h3>
                 <p className="text-lg md:text-xl font-bold tracking-widest uppercase text-white mb-2">
                   Platform Lainnya
@@ -681,14 +787,16 @@ export default function LandingClient({
           {/* Slider Controls */}
           <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
             <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
-              {`0${activePlatformIndex + 1}`.slice(-2)} / {totalPlatformSlides}
+              {`0${activePlatformIndex + 1}`.slice(-2)} / {`0${totalPlatformSlides}`.slice(-2)}
             </div>
             <div className="flex items-center gap-1.5 ml-1">
               <button
                 type="button"
-                onClick={() => setActivePlatformIndex((prev) => Math.max(0, prev - 1))}
+                onClick={() =>
+                  scrollTrack(platformScrollRef, "prev", totalPlatformSlides, setActivePlatformIndex)
+                }
                 disabled={activePlatformIndex === 0}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Previous Slide"
               >
                 ‹
@@ -696,10 +804,10 @@ export default function LandingClient({
               <button
                 type="button"
                 onClick={() =>
-                  setActivePlatformIndex((prev) => Math.min(totalPlatformSlides - 1, prev + 1))
+                  scrollTrack(platformScrollRef, "next", totalPlatformSlides, setActivePlatformIndex)
                 }
                 disabled={activePlatformIndex === totalPlatformSlides - 1}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Next Slide"
               >
                 ›
@@ -711,7 +819,11 @@ export default function LandingClient({
         {/* =========================================================================
             BAR 4: PANTAU STATISTIK (MENUTUPI BAR 3)
            ========================================================================= */}
-        <section id="bar-4" className="sticky-stack-bar z-40">
+        <section
+          id="bar-4"
+          style={{ zIndex: 40 }}
+          className="sticky-stack-bar overflow-hidden"
+        >
           <img
             src="https://images.unsplash.com/photo-1520872024865-3ff2805d8bb3?q=80&w=2000&auto=format&fit=crop"
             alt="Data Analitik"
@@ -736,7 +848,11 @@ export default function LandingClient({
         {/* =========================================================================
             BAR 5: 100% HAK ANDA (MENUTUPI BAR 4)
            ========================================================================= */}
-        <section id="bar-5" className="sticky-stack-bar z-50">
+        <section
+          id="bar-5"
+          style={{ zIndex: 50 }}
+          className="sticky-stack-bar overflow-hidden"
+        >
           <img
             src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=2000&auto=format&fit=crop"
             alt="100% Hak Milik"
@@ -758,7 +874,11 @@ export default function LandingClient({
         {/* =========================================================================
             BAR 6: DIBUAT OLEH MUSISI (MENUTUPI BAR 5)
            ========================================================================= */}
-        <section id="bar-6" className="sticky-stack-bar z-60">
+        <section
+          id="bar-6"
+          style={{ zIndex: 60 }}
+          className="sticky-stack-bar overflow-hidden"
+        >
           <img
             src="https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?q=80&w=2000&auto=format&fit=crop"
             alt="Gitaris Wanita"
@@ -782,26 +902,31 @@ export default function LandingClient({
 
         {/* =========================================================================
             BAR 7: TESTIMONI ARTIS (MENUTUPI BAR 6)
+            DENGAN SMOOTH HORIZONTAL SCROLL & 13 ARTIS SINGKRON CMS
            ========================================================================= */}
         <section
           id="bar-7"
-          className="sticky-stack-bar z-70 flex-col items-start justify-center"
+          style={{ zIndex: 70 }}
+          className="sticky-stack-bar flex-col items-start justify-center overflow-hidden"
         >
-          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20 pointer-events-none">
             <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
               Testimoni
             </h2>
           </div>
 
-          <div className="w-full mt-24 md:mt-40">
+          <div className="w-full mt-24 md:mt-36">
             <div
-              className="h-track px-8 md:px-[10vw] gap-6"
-              style={{ transform: `translateX(-${activeHIndex * hMoveAmount}px)` }}
+              ref={testimoniScrollRef}
+              onScroll={() =>
+                onContainerScroll(testimoniScrollRef, setActiveHIndex, testimonials.length - 1)
+              }
+              className="horizontal-scroll-track px-8 md:px-[10vw]"
             >
               {testimonials.map((t) => (
                 <div
                   key={t.id}
-                  className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col items-center text-center shadow-xl"
+                  className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#0a0a0a] rounded-3xl p-6 md:p-8 flex flex-col items-center text-center shadow-xl hover:border-gray-700 transition-colors"
                 >
                   <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden mb-5 border-4 border-gray-800 shadow-[0_0_15px_rgba(255,0,85,0.25)] bg-[#121212]">
                     <img
@@ -850,14 +975,16 @@ export default function LandingClient({
           {/* Slider Controls */}
           <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
             <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
-              {`0${activeHIndex + 1}`.slice(-2)} / {testimonials.length}
+              {`0${activeHIndex + 1}`.slice(-2)} / {`0${testimonials.length}`.slice(-2)}
             </div>
             <div className="flex items-center gap-1.5 ml-1">
               <button
                 type="button"
-                onClick={() => setActiveHIndex((prev) => Math.max(0, prev - 1))}
+                onClick={() =>
+                  scrollTrack(testimoniScrollRef, "prev", testimonials.length, setActiveHIndex)
+                }
                 disabled={activeHIndex === 0}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Previous Artist"
               >
                 ‹
@@ -865,10 +992,10 @@ export default function LandingClient({
               <button
                 type="button"
                 onClick={() =>
-                  setActiveHIndex((prev) => Math.min(testimonials.length - 1, prev + 1))
+                  scrollTrack(testimoniScrollRef, "next", testimonials.length, setActiveHIndex)
                 }
                 disabled={activeHIndex === testimonials.length - 1}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Next Artist"
               >
                 ›
@@ -879,12 +1006,14 @@ export default function LandingClient({
 
         {/* =========================================================================
             BAR 8: FAQ ACCORDION (MENUTUPI BAR 7)
+            DENGAN INTERACTIVE ACCORDIONS & SMOOTH HORIZONTAL SCROLL
            ========================================================================= */}
         <section
           id="bar-8"
-          className="sticky-stack-bar z-80 flex-col items-start justify-center"
+          style={{ zIndex: 80 }}
+          className="sticky-stack-bar flex-col items-start justify-center overflow-hidden"
         >
-          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20">
+          <div className="absolute top-16 md:top-24 left-8 md:left-[10vw] z-20 pointer-events-none">
             <h2 className="text-3xl md:text-5xl font-black tracking-widest text-white drop-shadow-lg uppercase">
               FAQ
             </h2>
@@ -892,13 +1021,16 @@ export default function LandingClient({
 
           <div className="w-full mt-24 md:mt-32">
             <div
-              className="h-track px-8 md:px-[10vw] gap-6"
-              style={{ transform: `translateX(-${activeFaqIndex * hMoveAmount}px)` }}
+              ref={faqScrollRef}
+              onScroll={() =>
+                onContainerScroll(faqScrollRef, setActiveFaqIndex, faqData.length - 1)
+              }
+              className="horizontal-scroll-track px-8 md:px-[10vw]"
             >
               {faqData.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="h-slide w-[300px] md:w-[360px] flex-shrink-0 border border-gray-800 bg-[#121118] rounded-[32px] p-6 md:p-8 flex flex-col shadow-2xl h-[470px] overflow-y-auto custom-scrollbar"
+                  className="h-slide w-[300px] md:w-[360px] border border-gray-800 bg-[#121118] rounded-[32px] p-6 md:p-8 flex flex-col shadow-2xl h-[470px] overflow-y-auto custom-scrollbar"
                 >
                   <div className="flex justify-between items-center mb-6">
                     <div
@@ -950,14 +1082,16 @@ export default function LandingClient({
           {/* FAQ Controls */}
           <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-40 flex items-center gap-3">
             <div className="text-white font-bold tracking-[0.3em] text-sm md:text-lg">
-              {`0${activeFaqIndex + 1}`.slice(-2)} / {faqData.length}
+              {`0${activeFaqIndex + 1}`.slice(-2)} / {`0${faqData.length}`.slice(-2)}
             </div>
             <div className="flex items-center gap-1.5 ml-1">
               <button
                 type="button"
-                onClick={() => setActiveFaqIndex((prev) => Math.max(0, prev - 1))}
+                onClick={() =>
+                  scrollTrack(faqScrollRef, "prev", faqData.length, setActiveFaqIndex)
+                }
                 disabled={activeFaqIndex === 0}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Previous FAQ"
               >
                 ‹
@@ -965,10 +1099,10 @@ export default function LandingClient({
               <button
                 type="button"
                 onClick={() =>
-                  setActiveFaqIndex((prev) => Math.min(faqData.length - 1, prev + 1))
+                  scrollTrack(faqScrollRef, "next", faqData.length, setActiveFaqIndex)
                 }
                 disabled={activeFaqIndex === faqData.length - 1}
-                className="w-8 h-8 rounded-full border border-white/20 bg-white/10 hover:bg-white/25 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-sm font-bold transition-all"
+                className="w-9 h-9 rounded-full border border-white/20 bg-white/10 hover:bg-[#ff0055] disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center text-white text-base font-bold transition-all shadow-lg active:scale-95"
                 title="Next FAQ"
               >
                 ›
@@ -980,7 +1114,11 @@ export default function LandingClient({
         {/* =========================================================================
             BAR 9: FINAL CTA & FOOTER (MENUTUPI BAR 8)
            ========================================================================= */}
-        <section id="bar-9" className="sticky-stack-bar z-90">
+        <section
+          id="bar-9"
+          style={{ zIndex: 90 }}
+          className="sticky-stack-bar overflow-hidden"
+        >
           <img
             src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2000&auto=format&fit=crop"
             alt="Konser"
