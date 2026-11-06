@@ -1415,24 +1415,16 @@ export default function AdminDashboardPage() {
                       Active Catalog Releases (Live & ACC)
                     </h3>
                     <p className="text-[11px] text-white/70">
-                      Rilisan terbaru (Menampilkan 5 dari {approvedReleases.length} Lagu)
+                      Rilisan terbaru (5 Lagu Terakhir)
                     </p>
                   </div>
-                  {pendingReleases.length > 0 ? (
+                  {pendingReleases.length > 0 && (
                     <button
                       onClick={() => setActiveTab("releases")}
                       className="px-2.5 py-1 rounded-lg bg-[#fde08d] text-[#312042] text-xs font-bold hover:bg-[#fff2a8] transition-colors flex items-center gap-1 shadow"
                     >
                       <Clock className="w-3 h-3" />
                       <span>{pendingReleases.length} Perlu Review</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setActiveTab("my-releases")}
-                      className="text-xs text-[#c8f560] hover:underline font-semibold flex items-center gap-1"
-                    >
-                      <span>Lihat Semua ({approvedReleases.length})</span>
-                      <ArrowUpRight className="w-3 h-3" />
                     </button>
                   )}
                 </div>
@@ -1600,20 +1592,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Footer link to view all catalog releases */}
-                {approvedReleases.length > 5 && (
-                  <div className="pt-3 border-t border-white/10 text-center">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("my-releases")}
-                      className="text-xs text-[#c8f560] hover:underline font-semibold inline-flex items-center gap-1"
-                    >
-                      <span>Lihat seluruh {approvedReleases.length} lagu di My Releases</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Right: Withdrawal Requests Approval — Menampilkan 5 Terbaru */}
@@ -1627,13 +1605,6 @@ export default function AdminDashboardPage() {
                       <h3 className="text-sm font-semibold text-white">Withdrawal Payout Queue</h3>
                       <p className="text-[11px] text-white/70">5 antrean payout terbaru</p>
                     </div>
-                    <button
-                      onClick={() => setActiveTab("withdrawals")}
-                      className="text-xs text-[#c8f560] hover:underline font-medium inline-flex items-center gap-0.5"
-                    >
-                      <span>Semua ({withdrawals.length})</span>
-                      <ArrowUpRight className="w-3 h-3" />
-                    </button>
                   </div>
 
                   <div className="space-y-3">
@@ -1702,19 +1673,6 @@ export default function AdminDashboardPage() {
                       ))
                     )}
                   </div>
-
-                  {withdrawals.length > 5 && (
-                    <div className="pt-3 border-t border-white/10 text-center mt-3">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("withdrawals")}
-                        className="text-xs text-[#c8f560] hover:underline font-semibold inline-flex items-center gap-1"
-                      >
-                        <span>Lihat seluruh {withdrawals.length} antrean payout di menu Withdrawals</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 <div className="mt-5 p-4 rounded-2xl bg-white/15 border border-white/20 text-xs flex items-center justify-between">
