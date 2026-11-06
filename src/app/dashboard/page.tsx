@@ -932,22 +932,9 @@ export default function UserDashboardPage() {
             <aside className="relative w-80 max-w-[85vw] h-full bg-[#271f37]/95 backdrop-blur-2xl border-r border-white/20 z-50 flex flex-col justify-between p-6 text-white shadow-2xl overflow-y-auto animate-slide-right">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("overview");
-                        setMobileMenuOpen(false);
-                      }}
-                      title="Dashboard Overview"
-                      className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer bg-white/10"
-                    >
-                      <div className="w-4 h-7 rounded-full border-2 border-white" />
-                    </button>
-                    <div>
-                      <span className="font-bold text-base tracking-tight text-white block">BREAKOUT</span>
-                      <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Artist Studio</span>
-                    </div>
+                  <div>
+                    <span className="font-bold text-base tracking-tight text-white block">BREAKOUT</span>
+                    <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Artist Studio</span>
                   </div>
                   <button
                     type="button"
@@ -961,18 +948,18 @@ export default function UserDashboardPage() {
 
                 <nav className="mt-5 space-y-1.5">
                   {[
-                    { id: "overview", label: "Dashboard Overview", icon: Home, badge: null, color: null },
-                    { id: "analytics", label: "Analytics & Streams", icon: Activity, badge: "LIVE", color: "bg-[#c8f560]/20 text-[#c8f560]" },
-                    { id: "catalog", label: "Katalog Musik (Song ID)", icon: ListMusic, badge: null, color: null },
-                    { id: "generator", label: "Studio AI Cover Art", icon: Sparkles, badge: "AI", color: "bg-[#ff7fab]/25 text-[#ff7fab]" },
-                    { id: "upload", label: "Submit Track Rilis Baru", icon: UploadCloud, badge: "NEW", color: "bg-[#c8f560] text-[#312042]" },
-                    { id: "artists", label: "Profil Artis & Creator", icon: Mic2, badge: userArtists.length ? `${userArtists.length}` : null, color: "bg-white/20 text-white" },
-                    { id: "releases", label: "My Releases — ACC", icon: CheckCircle2, badge: approvedUserReleases.length ? `${approvedUserReleases.length}` : null, color: "bg-[#c8f560] text-[#312042]" },
-                    { id: "in-review", label: "Lagu Di-Review", icon: Clock, badge: reviewUserReleases.length ? `${reviewUserReleases.length}` : null, color: "bg-[#fde08d] text-[#312042]" },
-                    { id: "rejected", label: "Lagu Di-Reject", icon: XCircle, badge: rejectedUserReleases.length ? `${rejectedUserReleases.length}` : null, color: "bg-red-400 text-white" },
-                    { id: "wallet", label: "Royalty & Withdraw", icon: Building2, badge: "IDR", color: "bg-[#c8f560]/20 text-[#c8f560]" },
-                    { id: "inbox", label: "Inbox Pesan", icon: Inbox, badge: messages.length ? `${messages.length}` : null, color: "bg-[#c8f560] text-[#312042]" },
-                    { id: "settings", label: "Pengaturan Akun", icon: Settings, badge: null, color: null },
+                    { id: "overview", label: "Dashboard Overview", icon: Home },
+                    { id: "analytics", label: "Analytics & Streams", icon: Activity },
+                    { id: "catalog", label: "Katalog Musik (Song ID)", icon: ListMusic },
+                    { id: "generator", label: "Studio AI Cover Art", icon: Sparkles },
+                    { id: "upload", label: "Submit Track Rilis Baru", icon: UploadCloud },
+                    { id: "artists", label: "Profil Artis & Creator", icon: Mic2 },
+                    { id: "releases", label: "My Releases — ACC", icon: CheckCircle2 },
+                    { id: "in-review", label: "Lagu Di-Review", icon: Clock },
+                    { id: "rejected", label: "Lagu Di-Reject", icon: XCircle },
+                    { id: "wallet", label: "Royalty & Withdraw", icon: Building2 },
+                    { id: "inbox", label: "Inbox Pesan", icon: Inbox },
+                    { id: "settings", label: "Pengaturan Akun", icon: Settings },
                   ].map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
@@ -995,11 +982,6 @@ export default function UserDashboardPage() {
                           </span>
                           <span className="truncate">{item.label}</span>
                         </div>
-                        {item.badge && (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${item.color || "bg-white/15 text-white"}`}>
-                            {item.badge}
-                          </span>
-                        )}
                       </button>
                     );
                   })}

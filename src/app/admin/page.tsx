@@ -862,21 +862,9 @@ export default function AdminDashboardPage() {
             <aside className="relative w-80 max-w-[85vw] h-full bg-[#271f37]/95 backdrop-blur-2xl border-r border-white/20 z-50 flex flex-col justify-between p-6 text-white shadow-2xl overflow-y-auto animate-slide-right">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab("overview");
-                        setMobileMenuOpen(false);
-                      }}
-                      className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer bg-white/10"
-                    >
-                      <div className="w-4 h-7 rounded-full border-2 border-white" />
-                    </button>
-                    <div>
-                      <span className="font-bold text-base tracking-tight text-white block">BREAKOUT ADMIN</span>
-                      <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Executive Console</span>
-                    </div>
+                  <div>
+                    <span className="font-bold text-base tracking-tight text-white block">BREAKOUT ADMIN</span>
+                    <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Executive Console</span>
                   </div>
                   <button
                     type="button"
@@ -890,17 +878,17 @@ export default function AdminDashboardPage() {
 
                 <nav className="mt-5 space-y-1.5">
                   {[
-                    { id: "overview", label: "Admin Overview", icon: Home, badge: null, color: null },
-                    { id: "releases", label: "Review Submissions", icon: Clock, badge: pendingReleases.length ? `${pendingReleases.length} Baru` : null, color: "bg-[#fde08d] text-[#312042]" },
-                    { id: "my-releases", label: "My Releases — ACC", icon: CheckCircle2, badge: approvedReleases.length ? `${approvedReleases.length} ACC` : null, color: "bg-[#c8f560] text-[#312042]" },
-                    { id: "my-reject", label: "My Reject (Revisi)", icon: XCircle, badge: rejectedReleases.length ? `${rejectedReleases.length}` : null, color: "bg-red-400 text-white" },
-                    { id: "catalog", label: "Daftar Katalog Musik", icon: ListMusic, badge: catalogs.length ? `${catalogs.length}` : null, color: "bg-white/20 text-white" },
-                    { id: "cms", label: "Web CMS Landing Page", icon: Globe, badge: "LIVE", color: "bg-[#ff7fab]/25 text-[#ff7fab]" },
-                    { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote, badge: "IDR", color: "bg-[#c8f560]/20 text-[#c8f560]" },
-                    { id: "withdrawals", label: "Payouts & VISA ACC", icon: Wallet, badge: withdrawals.length ? `${withdrawals.length} Req` : null, color: "bg-[#c8f560] text-[#312042]" },
-                    { id: "inbox", label: "Inbox & Broadcast", icon: Mail, badge: null, color: null },
-                    { id: "users", label: "Daftar Artis & Akun", icon: Users, badge: releasedArtists.length ? `${releasedArtists.length} Artis` : null, color: "bg-white/20 text-white" },
-                    { id: "settings", label: "Pengaturan Sistem", icon: Settings, badge: null, color: null },
+                    { id: "overview", label: "Admin Overview", icon: Home },
+                    { id: "releases", label: "Review Submissions", icon: Clock },
+                    { id: "my-releases", label: "My Releases — ACC", icon: CheckCircle2 },
+                    { id: "my-reject", label: "My Reject (Revisi)", icon: XCircle },
+                    { id: "catalog", label: "Daftar Katalog Musik", icon: ListMusic },
+                    { id: "cms", label: "Web CMS Landing Page", icon: Globe },
+                    { id: "royalty-input", label: "Input Royalty & Streams", icon: Banknote },
+                    { id: "withdrawals", label: "Payouts & VISA ACC", icon: Wallet },
+                    { id: "inbox", label: "Inbox & Broadcast", icon: Mail },
+                    { id: "users", label: "Daftar Artis & Akun", icon: Users },
+                    { id: "settings", label: "Pengaturan Sistem", icon: Settings },
                   ].map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
@@ -923,11 +911,6 @@ export default function AdminDashboardPage() {
                           </span>
                           <span className="truncate">{item.label}</span>
                         </div>
-                        {item.badge && (
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${item.color || "bg-white/15 text-white"}`}>
-                            {item.badge}
-                          </span>
-                        )}
                       </button>
                     );
                   })}
