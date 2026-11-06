@@ -22,7 +22,7 @@ import {
   normalizeImageUrl,
   type LandingArtist,
   type LandingPageData,
-} from "@/components/LandingClient";
+} from "@/lib/landingDefaults";
 
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";

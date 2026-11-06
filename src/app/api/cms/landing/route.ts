@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_PRISMA_TESTIMONIALS } from "@/components/LandingClient";
+import { DEFAULT_PRISMA_TESTIMONIALS } from "@/lib/landingDefaults";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
