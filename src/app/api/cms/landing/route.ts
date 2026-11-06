@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_PRISMA_TESTIMONIALS } from "@/lib/landingDefaults";
+import {
+  DEFAULT_LANDING_DATA,
+  DEFAULT_PLATFORMS,
+  DEFAULT_RELEASES,
+  DEFAULT_FEATURES,
+  DEFAULT_FAQS,
+  DEFAULT_TESTIMONIALS_LIST,
+  DEFAULT_ROSTER,
+  DEFAULT_CONTACT_DATA,
+  normalizeImageUrl,
+} from "@/lib/landingDefaults";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,17 +19,6 @@ function cleanUrl(url: any): string {
   if (typeof url !== "string") return url || "";
   return url.replace(/https?:\/\/storage\.vpsmurah\.co\.id/g, "/api/storage");
 }
-
-const DEFAULT_LANDING_CONTENT = {
-  id: "default",
-  heroSubtitle:
-    "Masa depan distribusi musik independen. Rilis karya Anda ke seluruh dunia tanpa batas.",
-  heroTitle1: "Breakout",
-  heroTitle2: "ID",
-  heroBgImage: "/6293920186406475512_121.jpg",
-  storesCount: 150,
-  artists: DEFAULT_PRISMA_TESTIMONIALS,
-};
 
 export async function GET() {
   try {
@@ -30,53 +29,127 @@ export async function GET() {
     if (!content) {
       return NextResponse.json({
         ok: true,
-        data: DEFAULT_LANDING_CONTENT,
+        data: DEFAULT_LANDING_DATA,
       });
     }
 
-    let parsedArtists: any[] = DEFAULT_PRISMA_TESTIMONIALS;
+    let platforms = DEFAULT_PLATFORMS;
+    try {
+      if (content.platformsJson) {
+        const arr = JSON.parse(content.platformsJson);
+        if (Array.isArray(arr) && arr.length > 0) platforms = arr;
+      }
+    } catch (e) {
+      console.warn("Failed to parse platformsJson:", e);
+    }
+
+    let releases = DEFAULT_RELEASES;
+    try {
+      if (content.releasesJson) {
+        const arr = JSON.parse(content.releasesJson);
+        if (Array.isArray(arr) && arr.length > 0) {
+          releases = arr.map((r: any, idx: number) => ({
+            id: r.id || idx + 1,
+            title: r.title || "Release",
+            artist: r.artist || "Artist",
+            coverUrl: cleanUrl(r.coverUrl || DEFAULT_RELEASES[idx % DEFAULT_RELEASES.length].coverUrl),
+            tag: r.tag || "Live di DSP",
+            listenUrl: r.listenUrl || "/login",
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse releasesJson:", e);
+    }
+
+    let features = DEFAULT_FEATURES;
+    try {
+      if (content.featuresJson) {
+        const arr = JSON.parse(content.featuresJson);
+        if (Array.isArray(arr) && arr.length > 0) features = arr;
+      }
+    } catch (e) {
+      console.warn("Failed to parse featuresJson:", e);
+    }
+
+    let faqs = DEFAULT_FAQS;
+    try {
+      if (content.faqsJson) {
+        const arr = JSON.parse(content.faqsJson);
+        if (Array.isArray(arr) && arr.length > 0) faqs = arr;
+      }
+    } catch (e) {
+      console.warn("Failed to parse faqsJson:", e);
+    }
+
+    let testimonials = DEFAULT_TESTIMONIALS_LIST;
+    try {
+      if (content.testimonialsJson) {
+        const arr = JSON.parse(content.testimonialsJson);
+        if (Array.isArray(arr) && arr.length > 0) {
+          testimonials = arr.map((t: any, idx: number) => ({
+            id: t.id || idx + 1,
+            text: t.text || t.quote || "Great service!",
+            author: t.author || t.name || "Artist",
+            avatar: cleanUrl(t.avatar || t.imageUrl || t.photo || DEFAULT_TESTIMONIALS_LIST[idx % DEFAULT_TESTIMONIALS_LIST.length].avatar),
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse testimonialsJson:", e);
+    }
+
+    let roster = DEFAULT_ROSTER;
     try {
       if (content.artistsJson) {
         const arr = JSON.parse(content.artistsJson);
-        if (Array.isArray(arr) && arr.length > 0) parsedArtists = arr;
-      } else if (content.testimonialsJson) {
-        const arr = JSON.parse(content.testimonialsJson);
-        if (Array.isArray(arr) && arr.length > 0) parsedArtists = arr;
+        if (Array.isArray(arr) && arr.length > 0) {
+          roster = arr.map((a: any, idx: number) => ({
+            id: a.id || idx + 1,
+            name: a.name || "Artist",
+            imageUrl: cleanUrl(a.imageUrl || a.photo || a.avatar || DEFAULT_ROSTER[idx % DEFAULT_ROSTER.length].imageUrl),
+          }));
+        }
       }
     } catch (e) {
-      console.error("Failed to parse artistsJson:", e);
+      console.warn("Failed to parse artistsJson for roster:", e);
     }
 
-    const sanitizedArtists = (parsedArtists || []).map((a: any, idx: number) => ({
-      id: a.id || idx + 1,
-      name: a.name || "Artis",
-      genre: a.genre || "Pop",
-      imageUrl: cleanUrl(a.imageUrl || a.photo || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
-      photo: cleanUrl(a.photo || a.imageUrl || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
-      listeners: a.listeners || a.monthlyListeners || "1M+",
-      monthlyListeners: a.monthlyListeners || a.listeners || "1M+",
-      quote: a.quote || a.bio || "Platform terbaik untuk musisi independen.",
-      bio: a.bio || a.quote || "Platform terbaik untuk musisi independen.",
-      isVerified: a.isVerified !== undefined ? Boolean(a.isVerified) : true,
-    }));
+    let contact = DEFAULT_CONTACT_DATA;
+    try {
+      if (content.contactJson) {
+        const obj = JSON.parse(content.contactJson);
+        if (obj && typeof obj === "object" && obj.headline) {
+          contact = { ...DEFAULT_CONTACT_DATA, ...obj };
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to parse contactJson:", e);
+    }
 
     return NextResponse.json({
       ok: true,
       data: {
         id: content.id,
-        heroSubtitle: content.heroSubtitle || DEFAULT_LANDING_CONTENT.heroSubtitle,
-        heroTitle1: content.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
-        heroTitle2: content.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
-        heroBgImage: cleanUrl(content.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
-        storesCount: Number(content.storesCount) || 150,
-        artists: sanitizedArtists,
+        platforms,
+        releases,
+        features,
+        faqs,
+        testimonials,
+        roster,
+        contact,
+        // Legacy fields preserved
+        heroSubtitle: content.heroSubtitle,
+        heroTitle1: content.heroTitle1,
+        heroTitle2: content.heroTitle2,
+        heroBgImage: cleanUrl(content.heroBgImage),
       },
     });
   } catch (error) {
     console.error("GET Landing Content error:", error);
     return NextResponse.json({
       ok: true,
-      data: DEFAULT_LANDING_CONTENT,
+      data: DEFAULT_LANDING_DATA,
     });
   }
 }
@@ -85,43 +158,79 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const incomingArtists = Array.isArray(body.artists) ? body.artists : DEFAULT_PRISMA_TESTIMONIALS;
+    const platforms = Array.isArray(body.platforms) ? body.platforms : DEFAULT_PLATFORMS;
 
-    const sanitizedArtists = incomingArtists.map((a: any, idx: number) => ({
-      id: a.id || idx + 1,
-      name: a.name || "Artis",
-      genre: a.genre || "Pop",
-      imageUrl: cleanUrl(a.imageUrl || a.photo || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
-      photo: cleanUrl(a.photo || a.imageUrl || a.avatar || DEFAULT_PRISMA_TESTIMONIALS[idx % DEFAULT_PRISMA_TESTIMONIALS.length].imageUrl),
-      listeners: a.listeners || a.monthlyListeners || "1M+",
-      monthlyListeners: a.monthlyListeners || a.listeners || "1M+",
-      quote: a.quote || a.bio || "Platform terbaik untuk musisi independen.",
-      bio: a.bio || a.quote || "Platform terbaik untuk musisi independen.",
-      isVerified: a.isVerified !== undefined ? Boolean(a.isVerified) : true,
+    const releases = (Array.isArray(body.releases) ? body.releases : DEFAULT_RELEASES).map(
+      (r: any, idx: number) => ({
+        id: r.id || idx + 1,
+        title: r.title || "Release",
+        artist: r.artist || "Artist",
+        coverUrl: cleanUrl(r.coverUrl || DEFAULT_RELEASES[idx % DEFAULT_RELEASES.length].coverUrl),
+        tag: r.tag || "Live di DSP",
+        listenUrl: r.listenUrl || "/login",
+      })
+    );
+
+    const features = Array.isArray(body.features) ? body.features : DEFAULT_FEATURES;
+
+    const faqs = Array.isArray(body.faqs) ? body.faqs : DEFAULT_FAQS;
+
+    const testimonials = (
+      Array.isArray(body.testimonials) ? body.testimonials : DEFAULT_TESTIMONIALS_LIST
+    ).map((t: any, idx: number) => ({
+      id: t.id || idx + 1,
+      text: t.text || t.quote || "Platform musik terbaik.",
+      author: t.author || t.name || "Artist",
+      avatar: cleanUrl(
+        t.avatar || t.imageUrl || t.photo || DEFAULT_TESTIMONIALS_LIST[idx % DEFAULT_TESTIMONIALS_LIST.length].avatar
+      ),
     }));
 
-    const artistsJson = JSON.stringify(sanitizedArtists);
+    const roster = (Array.isArray(body.roster) ? body.roster : DEFAULT_ROSTER).map(
+      (a: any, idx: number) => ({
+        id: a.id || idx + 1,
+        name: a.name || "Artist",
+        imageUrl: cleanUrl(
+          a.imageUrl || a.photo || a.avatar || DEFAULT_ROSTER[idx % DEFAULT_ROSTER.length].imageUrl
+        ),
+      })
+    );
+
+    const contact = {
+      headline: body.contact?.headline || DEFAULT_CONTACT_DATA.headline,
+      subtitle: body.contact?.subtitle || DEFAULT_CONTACT_DATA.subtitle,
+      buttonText: body.contact?.buttonText || DEFAULT_CONTACT_DATA.buttonText,
+      placeholder: body.contact?.placeholder || DEFAULT_CONTACT_DATA.placeholder,
+    };
 
     const updated = await prisma.landingContent.upsert({
       where: { id: "default" },
       create: {
         id: "default",
-        heroSubtitle: body.heroSubtitle || DEFAULT_LANDING_CONTENT.heroSubtitle,
-        heroTitle1: body.heroTitle1 || DEFAULT_LANDING_CONTENT.heroTitle1,
-        heroTitle2: body.heroTitle2 || DEFAULT_LANDING_CONTENT.heroTitle2,
-        heroBgImage: cleanUrl(body.heroBgImage || DEFAULT_LANDING_CONTENT.heroBgImage),
-        storesCount: Number(body.storesCount) || 150,
-        artistsJson,
-        testimonialsJson: artistsJson,
+        platformsJson: JSON.stringify(platforms),
+        releasesJson: JSON.stringify(releases),
+        featuresJson: JSON.stringify(features),
+        faqsJson: JSON.stringify(faqs),
+        testimonialsJson: JSON.stringify(testimonials),
+        artistsJson: JSON.stringify(roster),
+        contactJson: JSON.stringify(contact),
+        heroSubtitle: body.heroSubtitle || "Global Reach By BREAKOUT.ID",
+        heroTitle1: body.heroTitle1 || "BREAKOUT",
+        heroTitle2: body.heroTitle2 || "ID",
+        heroBgImage: cleanUrl(body.heroBgImage || "/6293920186406475229_121.jpg"),
       },
       update: {
+        platformsJson: JSON.stringify(platforms),
+        releasesJson: JSON.stringify(releases),
+        featuresJson: JSON.stringify(features),
+        faqsJson: JSON.stringify(faqs),
+        testimonialsJson: JSON.stringify(testimonials),
+        artistsJson: JSON.stringify(roster),
+        contactJson: JSON.stringify(contact),
         heroSubtitle: body.heroSubtitle,
         heroTitle1: body.heroTitle1,
         heroTitle2: body.heroTitle2,
         heroBgImage: cleanUrl(body.heroBgImage),
-        storesCount: Number(body.storesCount) || 150,
-        artistsJson,
-        testimonialsJson: artistsJson,
       },
     });
 

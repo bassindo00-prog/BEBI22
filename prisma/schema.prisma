@@ -120,6 +120,11 @@ model LandingContent {
   card3Image       String   @default("/6293920186406475218_120.jpg")
   artistsJson      String   @default("[]")
   testimonialsJson String   @default("[]")
+  releasesJson     String?  @default("[]")
+  featuresJson     String?  @default("[]")
+  faqsJson         String?  @default("[]")
+  platformsJson    String?  @default("[]")
+  contactJson      String?  @default("{}")
   updatedAt        DateTime @updatedAt
 }
 
