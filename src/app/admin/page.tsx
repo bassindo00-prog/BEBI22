@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 import AdminLandingCMS from "@/components/AdminLandingCMS";
+import Pagination from "@/components/Pagination";
 import { THEMES, type ThemeId } from "@/lib/theme";
 
 const ROYALTY_CARD =
@@ -111,6 +112,14 @@ export default function AdminDashboardPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkCsvText, setBulkCsvText] = useState("");
   const [catSearch, setCatSearch] = useState("");
+
+  // Pagination State (5 items per page)
+  const [pageReleases, setPageReleases] = useState(1);
+  const [pageMyReleases, setPageMyReleases] = useState(1);
+  const [pageMyReject, setPageMyReject] = useState(1);
+  const [pageCatalog, setPageCatalog] = useState(1);
+  const [pageWithdrawals, setPageWithdrawals] = useState(1);
+  const [pageUsers, setPageUsers] = useState(1);
 
   // Track Detail Modal State
   const [selectedRelease, setSelectedRelease] = useState<any | null>(null);
@@ -1697,8 +1706,12 @@ export default function AdminDashboardPage() {
               type: "review" | "my-releases" | "my-reject",
               title: string,
               subtitle: string,
-              emptyMessage: string
-            ) => (
+              emptyMessage: string,
+              currentPage: number,
+              onPageChange: (p: number) => void
+            ) => {
+              const paginatedItems = items.slice((currentPage - 1) * 5, currentPage * 5);
+              return (
               <div className={`${ROYALTY_CARD} animate-card-enter`}>
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/15">
                   <div>
@@ -1734,7 +1747,7 @@ export default function AdminDashboardPage() {
                       <p className="font-semibold text-sm text-white">{emptyMessage}</p>
                     </div>
                   ) : (
-                    items.map((r) => (
+                    paginatedItems.map((r) => (
                       <div
                         key={r.id}
                         onClick={() => setSelectedRelease(r)}
@@ -1844,7 +1857,7 @@ export default function AdminDashboardPage() {
                           <p className="font-semibold text-base text-white">{emptyMessage}</p>
                         </div>
                       ) : (
-                        items.map((r) => (
+                        paginatedItems.map((r) => (
                           <div
                             key={r.id}
                             onClick={() => setSelectedRelease(r)}
@@ -1950,8 +1963,17 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Pagination Controls (5 item per halaman) */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={items.length}
+                  pageSize={5}
+                  onPageChange={onPageChange}
+                />
               </div>
             );
+          };
 
             if (activeTab === "releases") {
               return renderReleaseSection(
@@ -1959,7 +1981,9 @@ export default function AdminDashboardPage() {
                 "review",
                 "Review Submissions — Antrean Lagu Menunggu Moderasi",
                 "Daftar lagu yang baru disubmit user dan menunggu verifikasi / ACC sebelum dirilis ke DSP.",
-                "Tidak ada lagu yang sedang menunggu review. Semua sudah di-ACC atau ditolak."
+                "Tidak ada lagu yang sedang menunggu review. Semua sudah di-ACC atau ditolak.",
+                pageReleases,
+                setPageReleases
               );
             }
 
@@ -1969,7 +1993,9 @@ export default function AdminDashboardPage() {
                 "my-releases",
                 "My Releases — Lagu Terverifikasi & Live DSP",
                 "Daftar seluruh rilisan musik yang sudah disetujui (ACC) dan aktif terdistribusi ke Spotify, Apple Music, TikTok, dsb.",
-                "Belum ada rilisan yang di-ACC. Silakan tinjau lagu baru di menu Review Submissions."
+                "Belum ada rilisan yang di-ACC. Silakan tinjau lagu baru di menu Review Submissions.",
+                pageMyReleases,
+                setPageMyReleases
               );
             }
 
@@ -1979,7 +2005,9 @@ export default function AdminDashboardPage() {
                 "my-reject",
                 "My Reject — Rilisan Ditolak / Perlu Revisi",
                 "Daftar lagu yang ditolak karena masalah hak cipta, metadata, atau audio. Anda dapat meng-ACC ulang jika user telah merevisi.",
-                "Tidak ada rilisan yang ditolak."
+                "Tidak ada rilisan yang ditolak.",
+                pageMyReject,
+                setPageMyReject
               );
             }
 
@@ -2020,127 +2048,148 @@ export default function AdminDashboardPage() {
                     <input
                       type="text"
                       value={catSearch}
-                      onChange={(e) => setCatSearch(e.target.value)}
+                      onChange={(e) => {
+                        setCatSearch(e.target.value);
+                        setPageCatalog(1);
+                      }}
                       placeholder="Cari lagu di katalog (Song ID, Judul, Artis, Publisher)..."
                       className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white/15 border border-white/25 text-white text-xs placeholder:text-white/40 focus:outline-none focus:border-[#c8f560]"
                     />
                   </div>
-                  <span className="text-xs text-white/70">
-                    Menampilkan{" "}
-                    <strong className="text-white">
-                      {
-                        catalogs.filter(
-                          (c) =>
-                            !catSearch ||
-                            c.songId?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.title?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.artist?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.publisher?.toLowerCase().includes(catSearch.toLowerCase())
-                        ).length
-                      }
-                    </strong>{" "}
-                    lagu
-                  </span>
+                  {(() => {
+                    const filteredCatalogs = catalogs.filter(
+                      (c) =>
+                        !catSearch ||
+                        c.songId?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                        c.title?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                        c.artist?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                        c.publisher?.toLowerCase().includes(catSearch.toLowerCase())
+                    );
+                    return (
+                      <span className="text-xs text-white/70">
+                        Menampilkan{" "}
+                        <strong className="text-white">
+                          {filteredCatalogs.length}
+                        </strong>{" "}
+                        lagu
+                      </span>
+                    );
+                  })()}
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-white">
-                    <thead className="bg-[#312042]/60 border-b border-white/15 text-[11px] uppercase tracking-wider text-white/75">
-                      <tr>
-                        <th className="py-3 px-4 font-semibold">SONG ID</th>
-                        <th className="py-3 px-4 font-semibold">JUDUL LAGU</th>
-                        <th className="py-3 px-4 font-semibold">VOKAL / ARTIS</th>
-                        <th className="py-3 px-4 font-semibold">PUBLISHER</th>
-                        <th className="py-3 px-4 font-semibold">STATUS / AKTIF</th>
-                        <th className="py-3 px-4 font-semibold text-center">LINK YT / DRIVE</th>
-                        <th className="py-3 px-4 font-semibold text-right">AKSI</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                      {catalogs
-                        .filter(
-                          (c) =>
-                            !catSearch ||
-                            c.songId?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.title?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.artist?.toLowerCase().includes(catSearch.toLowerCase()) ||
-                            c.publisher?.toLowerCase().includes(catSearch.toLowerCase())
-                        )
-                        .map((c) => (
-                          <tr key={c.id} className="hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-4 font-mono font-bold text-[#c8f560] whitespace-nowrap">
-                              {c.songId}
-                            </td>
-                            <td className="py-3 px-4 font-semibold text-white whitespace-nowrap">
-                              {c.title}
-                            </td>
-                            <td className="py-3 px-4 text-white/90 whitespace-nowrap">
-                              {c.artist}
-                            </td>
-                            <td className="py-3 px-4 text-white/80 whitespace-nowrap">
-                              {c.publisher}
-                            </td>
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleCatalogStatus(c.id, c.status)}
-                                title="Klik untuk mengubah status"
-                                className={`px-3 py-0.5 rounded-full font-bold text-[10px] transition-all ${
-                                  c.status === "Aktif"
-                                    ? "bg-[#c8f560] text-[#312042] hover:bg-[#b0dc4c]"
-                                    : c.status === "Review"
-                                    ? "bg-[#fde08d] text-[#312042]"
-                                    : "bg-white/20 text-white"
-                                }`}
-                              >
-                                {c.status}
-                              </button>
-                            </td>
-                            <td className="py-3 px-4 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1.5">
-                                {c.youtubeLink ? (
-                                  <a
-                                    href={c.youtubeLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-2 py-0.5 rounded bg-red-600/80 hover:bg-red-600 text-white font-bold text-[10px] flex items-center gap-1"
+                {(() => {
+                  const filteredCatalogs = catalogs.filter(
+                    (c) =>
+                      !catSearch ||
+                      c.songId?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                      c.title?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                      c.artist?.toLowerCase().includes(catSearch.toLowerCase()) ||
+                      c.publisher?.toLowerCase().includes(catSearch.toLowerCase())
+                  );
+                  const paginatedCatalogs = filteredCatalogs.slice((pageCatalog - 1) * 5, pageCatalog * 5);
+
+                  return (
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-white">
+                          <thead className="bg-[#312042]/60 border-b border-white/15 text-[11px] uppercase tracking-wider text-white/75">
+                            <tr>
+                              <th className="py-3 px-4 font-semibold">SONG ID</th>
+                              <th className="py-3 px-4 font-semibold">JUDUL LAGU</th>
+                              <th className="py-3 px-4 font-semibold">VOKAL / ARTIS</th>
+                              <th className="py-3 px-4 font-semibold">PUBLISHER</th>
+                              <th className="py-3 px-4 font-semibold">STATUS / AKTIF</th>
+                              <th className="py-3 px-4 font-semibold text-center">LINK YT / DRIVE</th>
+                              <th className="py-3 px-4 font-semibold text-right">AKSI</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/10">
+                            {paginatedCatalogs.map((c) => (
+                              <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                                <td className="py-3 px-4 font-mono font-bold text-[#c8f560] whitespace-nowrap">
+                                  {c.songId}
+                                </td>
+                                <td className="py-3 px-4 font-semibold text-white whitespace-nowrap">
+                                  {c.title}
+                                </td>
+                                <td className="py-3 px-4 text-white/90 whitespace-nowrap">
+                                  {c.artist}
+                                </td>
+                                <td className="py-3 px-4 text-white/80 whitespace-nowrap">
+                                  {c.publisher}
+                                </td>
+                                <td className="py-3 px-4 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleCatalogStatus(c.id, c.status)}
+                                    title="Klik untuk mengubah status"
+                                    className={`px-3 py-0.5 rounded-full font-bold text-[10px] transition-all ${
+                                      c.status === "Aktif"
+                                        ? "bg-[#c8f560] text-[#312042] hover:bg-[#b0dc4c]"
+                                        : c.status === "Review"
+                                        ? "bg-[#fde08d] text-[#312042]"
+                                        : "bg-white/20 text-white"
+                                    }`}
                                   >
-                                    <Youtube className="w-3 h-3" />
-                                    <span>YT</span>
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-white/40">-</span>
-                                )}
-                                {c.driveLink ? (
-                                  <a
-                                    href={c.driveLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-2 py-0.5 rounded bg-blue-600/80 hover:bg-blue-600 text-white font-bold text-[10px] flex items-center gap-1"
+                                    {c.status}
+                                  </button>
+                                </td>
+                                <td className="py-3 px-4 text-center whitespace-nowrap">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {c.youtubeLink ? (
+                                      <a
+                                        href={c.youtubeLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-2 py-0.5 rounded bg-red-600/80 hover:bg-red-600 text-white font-bold text-[10px] flex items-center gap-1"
+                                      >
+                                        <Youtube className="w-3 h-3" />
+                                        <span>YT</span>
+                                      </a>
+                                    ) : (
+                                      <span className="text-[10px] text-white/40">-</span>
+                                    )}
+                                    {c.driveLink ? (
+                                      <a
+                                        href={c.driveLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-2 py-0.5 rounded bg-blue-600/80 hover:bg-blue-600 text-white font-bold text-[10px] flex items-center gap-1"
+                                      >
+                                        <HardDrive className="w-3 h-3" />
+                                        <span>Drive</span>
+                                      </a>
+                                    ) : (
+                                      <span className="text-[10px] text-white/40">-</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCatalog(c.id)}
+                                    title="Hapus lagu dari katalog"
+                                    className="p-1 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
                                   >
-                                    <HardDrive className="w-3 h-3" />
-                                    <span>Drive</span>
-                                  </a>
-                                ) : (
-                                  <span className="text-[10px] text-white/40">-</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-right whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteCatalog(c.id)}
-                                title="Hapus lagu dari katalog"
-                                className="p-1 rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="p-4">
+                        <Pagination
+                          currentPage={pageCatalog}
+                          totalItems={filteredCatalogs.length}
+                          pageSize={5}
+                          onPageChange={setPageCatalog}
+                        />
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -2646,7 +2695,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                 ) : (
-                  withdrawals.map((w) => (
+                  withdrawals.slice((pageWithdrawals - 1) * 5, pageWithdrawals * 5).map((w) => (
                     <div
                       key={w.id}
                       onClick={() => setSelectedWithdrawalForVisaModal(w)}
@@ -2716,6 +2765,14 @@ export default function AdminDashboardPage() {
                   ))
                 )}
               </div>
+
+              {/* Pagination Payouts */}
+              <Pagination
+                currentPage={pageWithdrawals}
+                totalItems={withdrawals.length}
+                pageSize={5}
+                onPageChange={setPageWithdrawals}
+              />
             </div>
           )}
 
@@ -2752,7 +2809,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                 ) : (
-                  releasedArtists.map((u) => (
+                  releasedArtists.slice((pageUsers - 1) * 5, pageUsers * 5).map((u) => (
                     <div
                       key={u.id}
                       className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -2827,6 +2884,14 @@ export default function AdminDashboardPage() {
                   ))
                 )}
               </div>
+
+              {/* Pagination Artis */}
+              <Pagination
+                currentPage={pageUsers}
+                totalItems={releasedArtists.length}
+                pageSize={5}
+                onPageChange={setPageUsers}
+              />
             </div>
           )}
 
