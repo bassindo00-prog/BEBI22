@@ -1579,7 +1579,7 @@ export default function AdminDashboardPage() {
               value={`Rp ${totalGlobalRoyalty.toLocaleString("id-ID")}`}
               valueColor="text-[#c8f560]"
               valueSize="text-2xl sm:text-3xl lg:text-3xl"
-              subtitle={`${releasedArtists.length} Musisi Aktif`}
+              subtitle={`${releasedArtists.length} Musisi Aktif • Saldo Endap`}
               dotColor="bg-[#c8f560]"
               cardNumber="4532 •••• •••• 9924"
               holderName="BREAKOUT LABEL • EXECUTIVE"

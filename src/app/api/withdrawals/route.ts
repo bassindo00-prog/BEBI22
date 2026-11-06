@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, royaltyBalance: true, name: true },
+      select: { id: true, royaltyBalance: true, pendingWithdraw: true, name: true },
     });
 
     if (!user) {
@@ -37,20 +37,22 @@ export async function POST(req: Request) {
     }
 
     const currentBalance = Math.max(0, Number(user.royaltyBalance) || 0);
+    const pendingBalance = Math.max(0, Number(user.pendingWithdraw) || 0);
+    const availableBalance = Math.max(0, currentBalance - pendingBalance);
 
-    if (currentBalance <= 0) {
+    if (availableBalance <= 0) {
       return NextResponse.json(
         {
-          error: "Saldo royalti Anda saat ini Rp 0. Tidak ada saldo yang dapat ditarik.",
+          error: "Saldo royalti Anda saat ini Rp 0 atau sedang dalam antrean penarikan. Tidak ada saldo yang dapat ditarik.",
         },
         { status: 400 }
       );
     }
 
-    if (amount > currentBalance) {
+    if (amount > availableBalance) {
       return NextResponse.json(
         {
-          error: `Gagal! Jumlah penarikan (Rp ${amount.toLocaleString("id-ID")}) melebihi saldo yang Anda miliki saat ini (Rp ${currentBalance.toLocaleString("id-ID")}).`,
+          error: `Gagal! Jumlah penarikan (Rp ${amount.toLocaleString("id-ID")}) melebihi saldo yang tersedia untuk ditarik (Rp ${availableBalance.toLocaleString("id-ID")}).`,
         },
         { status: 400 }
       );
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
       now.getMonth() + 1
     ).padStart(2, "0")}-${now.getFullYear()}`;
 
-    // Execute withdrawal creation and user balance decrement atomically
+    // Execute withdrawal creation and increment user pending withdraw
     const [withdrawal] = await prisma.$transaction([
       prisma.withdrawal.create({
         data: {
@@ -77,7 +79,6 @@ export async function POST(req: Request) {
       prisma.user.update({
         where: { id: userId },
         data: {
-          royaltyBalance: { decrement: amount },
           pendingWithdraw: { increment: amount },
         },
       }),
@@ -118,22 +119,41 @@ export async function PATCH(req: Request) {
           data: { status: targetStatus },
         });
 
-        if (w.status === "Pending" && targetStatus === "Approved") {
-          await prisma.user.update({
-            where: { id: w.userId },
-            data: {
-              pendingWithdraw: { decrement: w.amount },
-              totalWithdrawn: { increment: w.amount },
-            },
-          });
-        } else if (w.status === "Pending" && targetStatus === "Rejected") {
-          await prisma.user.update({
-            where: { id: w.userId },
-            data: {
-              pendingWithdraw: { decrement: w.amount },
-              royaltyBalance: { increment: w.amount },
-            },
-          });
+        const targetUser = await prisma.user.findUnique({
+          where: { id: w.userId },
+          select: { royaltyBalance: true, pendingWithdraw: true, totalWithdrawn: true },
+        });
+
+        if (targetUser) {
+          if (w.status === "Pending" && targetStatus === "Approved") {
+            // Deduct royaltyBalance (saldo endap berkurang saat di-ACC)
+            // Deduct pendingWithdraw (antrean berkurang)
+            // Increment totalWithdrawn (masuk ke payout dan grafik bulanan)
+            await prisma.user.update({
+              where: { id: w.userId },
+              data: {
+                royaltyBalance: Math.max(0, (targetUser.royaltyBalance || 0) - w.amount),
+                pendingWithdraw: Math.max(0, (targetUser.pendingWithdraw || 0) - w.amount),
+                totalWithdrawn: (targetUser.totalWithdrawn || 0) + w.amount,
+              },
+            });
+          } else if (w.status === "Pending" && targetStatus === "Rejected") {
+            await prisma.user.update({
+              where: { id: w.userId },
+              data: {
+                pendingWithdraw: Math.max(0, (targetUser.pendingWithdraw || 0) - w.amount),
+              },
+            });
+          } else if (w.status === "Approved" && targetStatus === "Rejected") {
+            // Rollback if previously approved
+            await prisma.user.update({
+              where: { id: w.userId },
+              data: {
+                royaltyBalance: (targetUser.royaltyBalance || 0) + w.amount,
+                totalWithdrawn: Math.max(0, (targetUser.totalWithdrawn || 0) - w.amount),
+              },
+            });
+          }
         }
         count++;
       }
@@ -152,22 +172,37 @@ export async function PATCH(req: Request) {
       data: { status },
     });
 
-    if (existing.status === "Pending" && status === "Approved") {
-      await prisma.user.update({
-        where: { id: existing.userId },
-        data: {
-          pendingWithdraw: { decrement: existing.amount },
-          totalWithdrawn: { increment: existing.amount },
-        },
-      });
-    } else if (existing.status === "Pending" && status === "Rejected") {
-      await prisma.user.update({
-        where: { id: existing.userId },
-        data: {
-          pendingWithdraw: { decrement: existing.amount },
-          royaltyBalance: { increment: existing.amount },
-        },
-      });
+    const targetUser = await prisma.user.findUnique({
+      where: { id: existing.userId },
+      select: { royaltyBalance: true, pendingWithdraw: true, totalWithdrawn: true },
+    });
+
+    if (targetUser) {
+      if (existing.status === "Pending" && status === "Approved") {
+        await prisma.user.update({
+          where: { id: existing.userId },
+          data: {
+            royaltyBalance: Math.max(0, (targetUser.royaltyBalance || 0) - existing.amount),
+            pendingWithdraw: Math.max(0, (targetUser.pendingWithdraw || 0) - existing.amount),
+            totalWithdrawn: (targetUser.totalWithdrawn || 0) + existing.amount,
+          },
+        });
+      } else if (existing.status === "Pending" && status === "Rejected") {
+        await prisma.user.update({
+          where: { id: existing.userId },
+          data: {
+            pendingWithdraw: Math.max(0, (targetUser.pendingWithdraw || 0) - existing.amount),
+          },
+        });
+      } else if (existing.status === "Approved" && status === "Rejected") {
+        await prisma.user.update({
+          where: { id: existing.userId },
+          data: {
+            royaltyBalance: (targetUser.royaltyBalance || 0) + existing.amount,
+            totalWithdrawn: Math.max(0, (targetUser.totalWithdrawn || 0) - existing.amount),
+          },
+        });
+      }
     }
 
     return NextResponse.json({ withdrawal: updated });

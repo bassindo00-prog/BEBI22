@@ -777,9 +777,11 @@ export default function UserDashboardPage() {
     e.preventDefault();
     const amountNum = parseFormattedNumber(withdrawAmount);
     const currentBalance = Math.max(0, user?.royaltyBalance || 0);
+    const pendingBalance = Math.max(0, user?.pendingWithdraw || 0);
+    const availableBalance = Math.max(0, currentBalance - pendingBalance);
 
-    if (currentBalance <= 0) {
-      showNotice("Anda tidak memiliki saldo royalti yang dapat ditarik (Saldo Rp 0).");
+    if (availableBalance <= 0) {
+      showNotice("Anda tidak memiliki saldo royalti yang dapat ditarik atau saldo sedang dalam antrean penarikan (Saldo Tersedia Rp 0).");
       return;
     }
 
@@ -788,9 +790,9 @@ export default function UserDashboardPage() {
       return;
     }
 
-    if (amountNum > currentBalance) {
+    if (amountNum > availableBalance) {
       showNotice(
-        `Penarikan ditolak! Nominal Rp ${amountNum.toLocaleString("id-ID")} melebihi saldo Anda saat ini (Maksimal Rp ${currentBalance.toLocaleString("id-ID")}).`
+        `Penarikan ditolak! Nominal Rp ${amountNum.toLocaleString("id-ID")} melebihi saldo tersedia Anda saat ini (Maksimal Rp ${availableBalance.toLocaleString("id-ID")}).`
       );
       return;
     }
@@ -917,7 +919,10 @@ export default function UserDashboardPage() {
 
   const userStreams = user?.totalStreams || 0;
   const userRoyalty = user?.royaltyBalance || 0;
-  const userPendingRoyalty = user?.royaltyPending || 0;
+  const userPendingRoyalty =
+    user?.pendingWithdraw && user.pendingWithdraw > 0
+      ? user.pendingWithdraw
+      : user?.royaltyPending || 0;
 
   const batteryTarget = releases.length > 0 ? Math.round((approvedCount / releases.length) * 100) : 0;
   const animatedBatteryPct = Math.round(batteryTarget * animProgress);
