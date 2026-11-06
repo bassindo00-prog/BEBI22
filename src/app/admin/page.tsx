@@ -137,6 +137,10 @@ export default function AdminDashboardPage() {
   const [selectedReleaseIds, setSelectedReleaseIds] = useState<string[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
 
+  // Bulk Withdrawal State
+  const [selectedWithdrawalIds, setSelectedWithdrawalIds] = useState<string[]>([]);
+  const [bulkProcessingWithdrawals, setBulkProcessingWithdrawals] = useState(false);
+
   // Send Message State
   const [msgTargetUser, setMsgTargetUser] = useState<string>("ALL");
   const [msgTitle, setMsgTitle] = useState("");
@@ -420,6 +424,72 @@ export default function AdminDashboardPage() {
     if (res.ok) {
       await fetchAdminData();
       showNotice(`Withdrawal request marked as ${status}`);
+    }
+  };
+
+  const handleApproveAllPendingWithdrawals = async () => {
+    const pendingList = withdrawals.filter((w) => w.status === "Pending");
+    if (pendingList.length === 0) {
+      showNotice("Tidak ada antrean withdraw yang berstatus Pending");
+      return;
+    }
+    const totalAmount = pendingList.reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+    const confirmed = window.confirm(
+      `⚡ ALL ACC WITHDRAWAL:\nApakah Anda yakin ingin MENYETUJUI (ACC) SEMUA ${pendingList.length} permintaan penarikan dana pending senilai total Rp ${totalAmount.toLocaleString("id-ID")} sekaligus?`
+    );
+    if (!confirmed) return;
+
+    setBulkProcessingWithdrawals(true);
+    try {
+      const res = await fetch("/api/withdrawals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allPending: true, status: "Approved" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await fetchAdminData();
+        setSelectedWithdrawalIds([]);
+        showNotice(`⚡ Sukses! Seluruh ${data.count || pendingList.length} penarikan dana berhasil di-ACC.`);
+      } else {
+        showNotice("Gagal memproses ACC massal penarikan dana");
+      }
+    } catch (err) {
+      console.error(err);
+      showNotice("Terjadi kesalahan saat memproses ACC massal");
+    } finally {
+      setBulkProcessingWithdrawals(false);
+    }
+  };
+
+  const handleBulkWithdrawalAction = async (status: "Approved" | "Rejected") => {
+    if (selectedWithdrawalIds.length === 0) return;
+    const count = selectedWithdrawalIds.length;
+    const actionLabel = status === "Approved" ? "MENYETUJUI (ACC)" : "MENOLAK (REJECT)";
+    const confirmed = window.confirm(
+      `Apakah Anda yakin ingin ${actionLabel} ${count} permintaan penarikan dana terpilih?`
+    );
+    if (!confirmed) return;
+
+    setBulkProcessingWithdrawals(true);
+    try {
+      const res = await fetch("/api/withdrawals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedWithdrawalIds, status }),
+      });
+      if (res.ok) {
+        await fetchAdminData();
+        setSelectedWithdrawalIds([]);
+        showNotice(`Sukses: ${count} penarikan dana berhasil di-${status.toLowerCase()}`);
+      } else {
+        showNotice(`Gagal memproses penarikan terpilih`);
+      }
+    } catch (err) {
+      console.error(err);
+      showNotice(`Terjadi kesalahan sistem`);
+    } finally {
+      setBulkProcessingWithdrawals(false);
     }
   };
 
@@ -1945,6 +2015,23 @@ export default function AdminDashboardPage() {
                       <h3 className="text-sm font-semibold text-white">Withdrawal Payout Queue</h3>
                       <p className="text-[11px] text-white/70">5 antrean payout terbaru</p>
                     </div>
+
+                    {pendingWithdrawals.length > 0 && (
+                      <button
+                        type="button"
+                        disabled={bulkProcessingWithdrawals}
+                        onClick={handleApproveAllPendingWithdrawals}
+                        className="px-3 py-1.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-extrabold text-[11px] flex items-center gap-1 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        title="Setujui (ACC) Semua Permintaan Penarikan Pending Sekaligus"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#312042]" />
+                        <span>
+                          {bulkProcessingWithdrawals
+                            ? "Memproses..."
+                            : `⚡ ALL ACC (${pendingWithdrawals.length})`}
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -3190,116 +3277,210 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-semibold text-white">
-                    Total Permintaan: <strong className="text-[#c8f560]">{withdrawals.length}</strong>
-                  </span>
+                  <div className="flex items-center gap-2.5">
+                    {/* ALL ACC BUTTON */}
+                    <button
+                      type="button"
+                      disabled={pendingWithdrawals.length === 0 || bulkProcessingWithdrawals}
+                      onClick={handleApproveAllPendingWithdrawals}
+                      className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg transition-all ${
+                        pendingWithdrawals.length > 0 && !bulkProcessingWithdrawals
+                          ? "bg-[#c8f560] text-[#312042] hover:bg-[#d8ff75] hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-[#c8f560]/60"
+                          : "bg-white/10 text-white/35 cursor-not-allowed border border-white/10"
+                      }`}
+                      title="Setujui (ACC) Semua Permintaan Penarikan Pending Sekaligus"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-[#312042]" />
+                      <span>
+                        {bulkProcessingWithdrawals
+                          ? "Memproses..."
+                          : `⚡ ALL ACC (${pendingWithdrawals.length} Pending)`}
+                      </span>
+                    </button>
+
+                    <span className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs font-semibold text-white">
+                      Total: <strong className="text-[#c8f560]">{withdrawals.length}</strong>
+                    </span>
+                  </div>
                 </div>
 
-                {/* Sub-tabs: Pending, Approved, Rejected, All */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
-                  {/* TAB 1: PENDING (MENUNGGU ACC) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWithdrawalTab("Pending");
-                      setPageWithdrawals(1);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
-                      withdrawalTab === "Pending"
-                        ? "bg-[#fde08d] text-[#312042] shadow-md ring-2 ring-[#fde08d]/50 font-extrabold scale-102"
-                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
-                    }`}
-                  >
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Menunggu ACC (Pending)</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                {/* Sub-tabs & Quick Master Selection */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* TAB 1: PENDING (MENUNGGU ACC) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWithdrawalTab("Pending");
+                        setPageWithdrawals(1);
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
                         withdrawalTab === "Pending"
-                          ? "bg-[#312042] text-[#fde08d]"
-                          : "bg-[#fde08d]/25 text-[#fde08d]"
+                          ? "bg-[#fde08d] text-[#312042] shadow-md ring-2 ring-[#fde08d]/50 font-extrabold scale-102"
+                          : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
                       }`}
                     >
-                      {pendingWithdrawals.length}
-                    </span>
-                  </button>
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Menunggu ACC (Pending)</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          withdrawalTab === "Pending"
+                            ? "bg-[#312042] text-[#fde08d]"
+                            : "bg-[#fde08d]/25 text-[#fde08d]"
+                        }`}
+                      >
+                        {pendingWithdrawals.length}
+                      </span>
+                    </button>
 
-                  {/* TAB 2: APPROVED (SUDAH DI-ACC) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWithdrawalTab("Approved");
-                      setPageWithdrawals(1);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
-                      withdrawalTab === "Approved"
-                        ? "bg-[#c8f560] text-[#312042] shadow-md ring-2 ring-[#c8f560]/50 font-extrabold scale-102"
-                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Disetujui (Approved)</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    {/* TAB 2: APPROVED (SUDAH DI-ACC) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWithdrawalTab("Approved");
+                        setPageWithdrawals(1);
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
                         withdrawalTab === "Approved"
-                          ? "bg-[#312042] text-[#c8f560]"
-                          : "bg-[#c8f560]/25 text-[#c8f560]"
+                          ? "bg-[#c8f560] text-[#312042] shadow-md ring-2 ring-[#c8f560]/50 font-extrabold scale-102"
+                          : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
                       }`}
                     >
-                      {approvedWithdrawals.length}
-                    </span>
-                  </button>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Disetujui (Approved)</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          withdrawalTab === "Approved"
+                            ? "bg-[#312042] text-[#c8f560]"
+                            : "bg-[#c8f560]/25 text-[#c8f560]"
+                        }`}
+                      >
+                        {approvedWithdrawals.length}
+                      </span>
+                    </button>
 
-                  {/* TAB 3: REJECTED (DITOLAK) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWithdrawalTab("Rejected");
-                      setPageWithdrawals(1);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
-                      withdrawalTab === "Rejected"
-                        ? "bg-red-500 text-white shadow-md ring-2 ring-red-400/50 font-extrabold scale-102"
-                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
-                    }`}
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>Ditolak (Rejected)</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    {/* TAB 3: REJECTED (DITOLAK) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWithdrawalTab("Rejected");
+                        setPageWithdrawals(1);
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
                         withdrawalTab === "Rejected"
-                          ? "bg-[#312042] text-red-200"
-                          : "bg-red-500/25 text-red-200"
+                          ? "bg-red-500 text-white shadow-md ring-2 ring-red-400/50 font-extrabold scale-102"
+                          : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
                       }`}
                     >
-                      {rejectedWithdrawals.length}
-                    </span>
-                  </button>
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Ditolak (Rejected)</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          withdrawalTab === "Rejected"
+                            ? "bg-[#312042] text-red-200"
+                            : "bg-red-500/25 text-red-200"
+                        }`}
+                      >
+                        {rejectedWithdrawals.length}
+                      </span>
+                    </button>
 
-                  {/* TAB 4: SEMUA (ALL) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWithdrawalTab("All");
-                      setPageWithdrawals(1);
-                    }}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
-                      withdrawalTab === "All"
-                        ? "bg-white text-[#312042] shadow-md ring-2 ring-white/50 font-extrabold scale-102"
-                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
-                    }`}
-                  >
-                    <span>Semua Payout</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    {/* TAB 4: SEMUA (ALL) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWithdrawalTab("All");
+                        setPageWithdrawals(1);
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
                         withdrawalTab === "All"
-                          ? "bg-[#312042] text-white"
-                          : "bg-white/20 text-white"
+                          ? "bg-white text-[#312042] shadow-md ring-2 ring-white/50 font-extrabold scale-102"
+                          : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
                       }`}
                     >
-                      {withdrawals.length}
-                    </span>
-                  </button>
+                      <span>Semua Payout</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          withdrawalTab === "All"
+                            ? "bg-[#312042] text-white"
+                            : "bg-white/20 text-white"
+                        }`}
+                      >
+                        {withdrawals.length}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Master Checkbox: Centang Semua */}
+                  {currentWithdrawals.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allCurrentIds = currentWithdrawals.map((w) => w.id);
+                          const allSelected = allCurrentIds.every((id) => selectedWithdrawalIds.includes(id));
+                          if (allSelected) {
+                            setSelectedWithdrawalIds((prev) => prev.filter((id) => !allCurrentIds.includes(id)));
+                          } else {
+                            setSelectedWithdrawalIds((prev) => Array.from(new Set([...prev, ...allCurrentIds])));
+                          }
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          readOnly
+                          checked={
+                            currentWithdrawals.length > 0 &&
+                            currentWithdrawals.every((w) => selectedWithdrawalIds.includes(w.id))
+                          }
+                          className="w-4 h-4 accent-[#c8f560] pointer-events-none rounded"
+                        />
+                        <span>Centang Semua ({currentWithdrawals.length})</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {/* Floating Bulk Action Bar if items selected */}
+                {selectedWithdrawalIds.length > 0 && (
+                  <div className="p-3.5 px-4 rounded-2xl bg-[#312042] border-2 border-[#c8f560] flex flex-wrap items-center justify-between gap-3 shadow-2xl animate-fade-in">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560] animate-ping" />
+                      <span className="text-xs font-bold text-white">
+                        <strong className="text-[#c8f560] text-sm">{selectedWithdrawalIds.length}</strong> Payout Terpilih
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedWithdrawalIds([])}
+                        className="text-[11px] text-white/60 hover:text-white underline ml-2 cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={bulkProcessingWithdrawals}
+                        onClick={() => handleBulkWithdrawalAction("Approved")}
+                        className="px-4 py-2 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-extrabold text-xs flex items-center gap-1.5 shadow transition-all cursor-pointer hover:scale-105 active:scale-95"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>✓ ACC ({selectedWithdrawalIds.length}) Terpilih</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={bulkProcessingWithdrawals}
+                        onClick={() => handleBulkWithdrawalAction("Rejected")}
+                        className="px-3.5 py-2 rounded-xl bg-red-500/80 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all cursor-pointer hover:scale-105 active:scale-95"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>✕ Tolak Terpilih</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* List Container */}
                 <div className="divide-y divide-white/15 text-xs pt-1">
@@ -3344,10 +3525,29 @@ export default function AdminDashboardPage() {
                       <div
                         key={w.id}
                         onClick={() => setSelectedWithdrawalForVisaModal(w)}
-                        className="py-3.5 px-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 bg-white/5 border border-white/10 rounded-2xl transition-all cursor-pointer group"
+                        className={`py-3.5 px-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 bg-white/5 border rounded-2xl transition-all cursor-pointer group ${
+                          selectedWithdrawalIds.includes(w.id)
+                            ? "border-[#c8f560] bg-[#c8f560]/10 shadow-md ring-1 ring-[#c8f560]/40"
+                            : "border-white/10"
+                        }`}
                       >
-                        {/* Left: User Profile Avatar Logo + Name + Amount */}
+                        {/* Left: Checkbox + User Profile Avatar Logo + Name + Amount */}
                         <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedWithdrawalIds.includes(w.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => {
+                              setSelectedWithdrawalIds((prev) =>
+                                prev.includes(w.id)
+                                  ? prev.filter((id) => id !== w.id)
+                                  : [...prev, w.id]
+                              );
+                            }}
+                            className="w-4 h-4 accent-[#c8f560] cursor-pointer rounded shrink-0"
+                            title="Centang untuk aksi massal"
+                          />
+
                           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#312042] to-[#483363] border border-[#c8f560]/40 flex items-center justify-center font-bold text-sm text-[#c8f560] shadow-sm shrink-0 overflow-hidden">
                             {w.user?.avatar ? (
                               <img
@@ -3381,7 +3581,7 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
 
-                        {/* Right: Status Badge & Detail Button */}
+                        {/* Right: Status Badge & Quick ACC / Detail Buttons */}
                         <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
                           <span
                             className={`px-3 py-1 rounded-full text-[11px] font-bold ${
@@ -3399,6 +3599,21 @@ export default function AdminDashboardPage() {
                               : "⏳ Pending ACC"}
                           </span>
 
+                          {w.status === "Pending" && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleWithdrawalStatus(w.id, "Approved");
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-extrabold text-xs flex items-center gap-1 shadow transition-all cursor-pointer hover:scale-105 active:scale-95"
+                              title="Langsung ACC Penarikan Ini"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>ACC</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={(e) => {
@@ -3407,11 +3622,11 @@ export default function AdminDashboardPage() {
                             }}
                             className={`px-3.5 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 shadow-md transition-all ${
                               w.status === "Pending"
-                                ? "bg-[#c8f560] text-[#312042] border-[#c8f560] hover:bg-[#d8ff75] animate-pulse"
+                                ? "bg-[#352a4a] text-white border-white/20 hover:border-[#c8f560]"
                                 : "bg-gradient-to-r from-[#312042] via-[#483363] to-[#312042] border-[#c8f560]/50 text-[#c8f560] hover:text-white hover:border-[#c8f560]"
                             }`}
                           >
-                            <span>💳 {w.status === "Pending" ? "Periksa & ACC" : "Detail Payout"}</span>
+                            <span>💳 {w.status === "Pending" ? "Detail VISA" : "Detail Payout"}</span>
                           </button>
                         </div>
                       </div>

@@ -93,8 +93,55 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, status } = body;
+    const { id, ids, allPending, status } = body;
 
+    // Bulk approve all pending or by list of IDs
+    if (allPending || (Array.isArray(ids) && ids.length > 0)) {
+      const targetStatus = status || "Approved";
+      let targets: any[] = [];
+      if (allPending) {
+        targets = await prisma.withdrawal.findMany({
+          where: { status: "Pending" },
+        });
+      } else {
+        targets = await prisma.withdrawal.findMany({
+          where: { id: { in: ids } },
+        });
+      }
+
+      let count = 0;
+      for (const w of targets) {
+        if (w.status === targetStatus) continue;
+
+        await prisma.withdrawal.update({
+          where: { id: w.id },
+          data: { status: targetStatus },
+        });
+
+        if (w.status === "Pending" && targetStatus === "Approved") {
+          await prisma.user.update({
+            where: { id: w.userId },
+            data: {
+              pendingWithdraw: { decrement: w.amount },
+              totalWithdrawn: { increment: w.amount },
+            },
+          });
+        } else if (w.status === "Pending" && targetStatus === "Rejected") {
+          await prisma.user.update({
+            where: { id: w.userId },
+            data: {
+              pendingWithdraw: { decrement: w.amount },
+              royaltyBalance: { increment: w.amount },
+            },
+          });
+        }
+        count++;
+      }
+
+      return NextResponse.json({ ok: true, count });
+    }
+
+    // Single item update
     const existing = await prisma.withdrawal.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
