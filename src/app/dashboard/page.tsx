@@ -52,6 +52,7 @@ import {
   AlertCircle,
   XCircle,
   RefreshCw,
+  Banknote,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -1153,126 +1154,65 @@ export default function UserDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-6">
-                  <div>
-                    <p className="text-xs text-white/80">Total streams today</p>
-                    <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      {animatedStreamsToday > 0 ? `${animatedStreamsToday.toLocaleString()}K` : "0"}
-                    </p>
-                  </div>
-
-                  <div className="h-9 w-[1px] bg-white/25 hidden sm:block" />
-
-                  <div>
-                    <p className="text-xs text-white/80">Royalty pending</p>
-                    <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                      Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setActiveTab("upload")}
-                    className="px-5 py-3 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium flex items-center gap-2 shadow-md transition-all hover:scale-105"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Upload Track</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setActiveTab("upload")}
+                  className="px-5 py-3 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium flex items-center gap-2 shadow-md transition-all hover:scale-105"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Upload Track</span>
+                </button>
               </div>
 
-              {/* Row 1: Release Completion, Royalty Growth, Streams by Platform */}
+              {/* Row 1: Saldo Royalti, Royalty Growth, Streams by Platform */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {/* Card 1: Release Completion — Translucent Lavender Card */}
+                {/* Card 1: Saldo Royalti Musisi (Replaces Battery) */}
                 <div
                   className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
                   style={{ animationDelay: "60ms" }}
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-white">Release Completion</h3>
-                    <div className="flex items-center gap-1.5 text-xs text-white/80">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560] animate-pulse" />
-                      <span>12:00</span>
-                    </div>
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
+                        <Banknote className="w-4 h-4" />
+                      </span>
+                      <span>Saldo Royalti Anda</span>
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-[10px] font-bold">
+                      ROYALTY RP
+                    </span>
                   </div>
 
-                  {/* Animated 76% Battery Pill with Live Filling Bar */}
-                  <div className="my-5 relative h-24 rounded-[26px] flex items-center justify-center select-none group">
-                    <svg
-                      viewBox="0 0 300 96"
-                      className="absolute inset-0 w-full h-full pointer-events-none"
+                  {/* Saldo Siap Dicairkan */}
+                  <div className="my-4 p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col items-center justify-center text-center">
+                    <span className="text-[11px] font-medium text-white/75 uppercase tracking-wider">
+                      Saldo Siap Dicairkan
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#c8f560] mt-1 tabular-nums">
+                      Rp {animatedRoyaltyBalance.toLocaleString("id-ID")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("wallet")}
+                      className="mt-3 px-3.5 py-1.5 rounded-full bg-[#312042] hover:bg-[#432d5b] text-white text-[11px] font-semibold transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
-                      <rect
-                        x="4"
-                        y="4"
-                        width="292"
-                        height="88"
-                        rx="24"
-                        fill="none"
-                        stroke="rgba(255,255,255,0.22)"
-                        strokeWidth="8"
-                      />
-                      <rect
-                        x="4"
-                        y="4"
-                        width="292"
-                        height="88"
-                        rx="24"
-                        fill="none"
-                        stroke="#b8b7e8"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray="720"
-                        strokeDashoffset={720 - 340 * animProgress}
-                        className="transition-all duration-300"
-                      />
-                      <rect
-                        x="4"
-                        y="4"
-                        width="292"
-                        height="88"
-                        rx="24"
-                        fill="none"
-                        stroke="#c8f560"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={`${210 * animProgress} 720`}
-                        strokeDashoffset={-240}
-                        className="transition-all duration-300"
-                      />
-                    </svg>
-
-                    <div className="w-[calc(100%-16px)] h-[calc(100%-16px)] rounded-[20px] bg-white/10 overflow-hidden relative flex items-center justify-center">
-                      <div
-                        style={{
-                          width: `${animatedBatteryPct}%`,
-                        }}
-                        className="absolute left-0 top-0 bottom-0 progress-stripes transition-all duration-300 ease-out overflow-hidden border-r-2 border-[#c8f560]"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#312042]/35 via-[#c8f560]/25 to-[#c8f560]/45" />
-                        <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-battery-shimmer" />
-                      </div>
-
-                      <div className="relative z-10 flex items-center gap-1.5">
-                        <span className="text-3xl font-semibold text-white tabular-nums tracking-tight drop-shadow">
-                          {animatedBatteryPct}%
-                        </span>
-                      </div>
-                    </div>
+                      <span>Tarik Dana (Withdraw)</span>
+                      <ArrowRight className="w-3 h-3 text-[#c8f560]" />
+                    </button>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-white/85 pt-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#b8b7e8]" />
-                      Spotify
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560]" />
-                      Apple Music
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white/40" />
-                      TikTok
-                    </span>
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/15 text-xs">
+                    <div className="p-2 rounded-xl bg-black/20">
+                      <span className="text-white/60 block text-[10px]">Royalti Pending</span>
+                      <span className="text-white font-semibold">
+                        Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-black/20">
+                      <span className="text-white/60 block text-[10px]">Total Dicairkan</span>
+                      <span className="text-white font-semibold">
+                        Rp {Number(user?.totalWithdrawn || 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

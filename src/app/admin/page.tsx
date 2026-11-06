@@ -523,6 +523,9 @@ export default function AdminDashboardPage() {
   const totalPayoutAmount = withdrawals
     .filter((w) => w.status === "Approved")
     .reduce((acc, w) => acc + Number(w.amount || 0), 0);
+  const totalPendingAmount = withdrawals
+    .filter((w) => w.status === "Pending")
+    .reduce((acc, w) => acc + Number(w.amount || 0), 0);
 
   // Helper to extract artist display name (prefer registered Artist profile over generic account name)
   const getArtistDisplayName = (u: any) => {
@@ -1048,30 +1051,15 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-6">
-              <div>
-                <p className="text-xs text-white/80">Global network streams</p>
-                <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                  {totalGlobalStreams > 0 ? `${Math.round(totalGlobalStreams * animProgress).toLocaleString()}K` : "0"}
-                </p>
-              </div>
-
-              <div className="h-9 w-[1px] bg-white/25 hidden sm:block" />
-
-              <div>
-                <p className="text-xs text-white/80">Cleared payouts</p>
-                <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
-                  Rp {Math.round(totalPayoutAmount * animProgress).toLocaleString("id-ID")}
-                </p>
-              </div>
-
+            {pendingReleases.length > 0 && (
               <button
                 onClick={() => setActiveTab("releases")}
-                className="px-5 py-3 rounded-full bg-[#312042] hover:bg-[#422c58] text-white text-xs font-medium flex items-center gap-2 shadow-md"
+                className="px-5 py-2.5 rounded-full bg-[#fde08d] text-[#312042] text-xs font-bold flex items-center gap-2 shadow-md hover:bg-[#fff2a8] transition-all"
               >
+                <Clock className="w-4 h-4" />
                 <span>Review Queue ({pendingReleases.length})</span>
               </button>
-            </div>
+            )}
           </div>
 
           {/* LIVE ANIMATED CHARTS ROW FOR ADMIN */}
@@ -1079,89 +1067,48 @@ export default function AdminDashboardPage() {
             key={`admin-charts-${animKey}`}
             className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6"
           >
-            {/* Card 1: Animated Battery Chart (Catalog Approval Rate) */}
+            {/* Card 1: Royalty & Settlement Overview (Replaces Battery) */}
             <div
               className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
               style={{ animationDelay: "60ms" }}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-white">Catalog Approval Rate</h3>
-                <div className="flex items-center gap-1.5 text-xs text-white/80">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560] animate-ping" />
-                  <span>LIVE QC</span>
-                </div>
-              </div>
-
-              <div className="my-5 relative h-24 rounded-[26px] flex items-center justify-center select-none">
-                <svg
-                  viewBox="0 0 300 96"
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                >
-                  <rect
-                    x="4"
-                    y="4"
-                    width="292"
-                    height="88"
-                    rx="24"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.22)"
-                    strokeWidth="8"
-                  />
-                  <rect
-                    x="4"
-                    y="4"
-                    width="292"
-                    height="88"
-                    rx="24"
-                    fill="none"
-                    stroke="#b8b7e8"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray="720"
-                    strokeDashoffset={720 - 350 * animProgress}
-                  />
-                  <rect
-                    x="4"
-                    y="4"
-                    width="292"
-                    height="88"
-                    rx="24"
-                    fill="none"
-                    stroke="#c8f560"
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${230 * animProgress} 720`}
-                    strokeDashoffset={-240}
-                  />
-                </svg>
-
-                <div className="w-[calc(100%-16px)] h-[calc(100%-16px)] rounded-[20px] bg-white/10 overflow-hidden relative flex items-center justify-center">
-                  <div
-                    style={{ width: `${adminBatteryPct}%` }}
-                    className="absolute left-0 top-0 bottom-0 progress-stripes transition-all duration-300 ease-out overflow-hidden border-r-2 border-[#c8f560]"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#312042]/35 via-[#c8f560]/25 to-[#c8f560]/45" />
-                    <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-battery-shimmer" />
-                  </div>
-                  <span className="relative z-10 text-3xl font-semibold text-white tabular-nums">
-                    {adminBatteryPct}%
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
+                    <Banknote className="w-4 h-4" />
                   </span>
-                </div>
+                  <span>Total Royalty Musisi</span>
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-[10px] font-bold">
+                  ROYALTY RP
+                </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-white/85">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#c8f560]" />
-                  {approvedReleases.length} Approved
+              <div className="my-4 p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col items-center justify-center text-center">
+                <span className="text-[11px] font-medium text-white/75 uppercase tracking-wider">
+                  Total Saldo Royalti Artis
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#fde08d]" />
-                  {pendingReleases.length} Pending
+                <span className="text-2xl sm:text-3xl font-extrabold text-[#c8f560] mt-1 tabular-nums drop-shadow">
+                  Rp {totalGlobalRoyalty.toLocaleString("id-ID")}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#c4c3f0]" />
-                  {releasedArtists.length} Artists Aktif
+                <span className="text-[10px] text-white/60 mt-1">
+                  Akumulasi saldo royalti dari {releasedArtists.length} musisi aktif
                 </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/15 text-xs">
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] text-white/60">Cleared Payout</p>
+                  <p className="text-xs font-bold text-white mt-0.5 truncate">
+                    Rp {totalPayoutAmount.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] text-[#fde08d]">Antrean Withdraw</p>
+                  <p className="text-xs font-bold text-[#fde08d] mt-0.5 truncate">
+                    Rp {totalPendingAmount.toLocaleString("id-ID")}
+                  </p>
+                </div>
               </div>
             </div>
 
