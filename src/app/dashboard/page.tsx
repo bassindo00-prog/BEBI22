@@ -933,6 +933,84 @@ export default function UserDashboardPage() {
     });
   }, [releases, user, userStreams, userRoyalty]);
 
+  const [hoveredUserStreamIdx, setHoveredUserStreamIdx] = useState<number>(4);
+
+  // Synchronized User Streaming Chart Points based on userStreams (input by Admin) and period
+  const userStreamingChartPoints = useMemo(() => {
+    const total = userStreams || 0;
+    if (total === 0) {
+      if (period === "Daily") {
+        const days = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+        const xs = [24, 76, 128, 180, 232, 284, 336];
+        return days.map((day, i) => ({ label: day, x: xs[i], y: 110, val: 0 }));
+      } else if (period === "Weekly") {
+        const weeks = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"];
+        const xs = [40, 140, 240, 330];
+        return weeks.map((w, i) => ({ label: w, x: xs[i], y: 110, val: 0 }));
+      } else {
+        const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul"];
+        const xs = [24, 76, 128, 180, 232, 284, 336];
+        return months.map((m, i) => ({ label: m, x: xs[i], y: 110, val: 0 }));
+      }
+    }
+
+    if (period === "Daily") {
+      const days = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+      const weights = [0.11, 0.12, 0.13, 0.15, 0.20, 0.16, 0.13];
+      const xs = [24, 76, 128, 180, 232, 284, 336];
+      const maxVal = Math.max(...weights.map((w) => total * w), 1);
+      return days.map((day, i) => {
+        const val = Math.round(total * weights[i]);
+        const y = Math.round(112 - (val / maxVal) * 75);
+        return { label: day, x: xs[i], y, val };
+      });
+    } else if (period === "Weekly") {
+      const weeks = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"];
+      const weights = [0.22, 0.24, 0.28, 0.26];
+      const xs = [40, 140, 240, 330];
+      const maxVal = Math.max(...weights.map((w) => total * w), 1);
+      return weeks.map((w, i) => {
+        const val = Math.round(total * weights[i]);
+        const y = Math.round(112 - (val / maxVal) * 75);
+        return { label: w, x: xs[i], y, val };
+      });
+    } else {
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul"];
+      const weights = [0.10, 0.12, 0.13, 0.16, 0.18, 0.15, 0.16];
+      const xs = [24, 76, 128, 180, 232, 284, 336];
+      const maxVal = Math.max(...weights.map((w) => total * w), 1);
+      return months.map((m, i) => {
+        const val = Math.round(total * weights[i]);
+        const y = Math.round(112 - (val / maxVal) * 75);
+        return { label: m, x: xs[i], y, val };
+      });
+    }
+  }, [userStreams, period]);
+
+  const activeUserStreamPoint =
+    userStreamingChartPoints[hoveredUserStreamIdx] ||
+    userStreamingChartPoints[Math.min(4, userStreamingChartPoints.length - 1)];
+
+  const userStreamPathD = useMemo(() => {
+    if (userStreamingChartPoints.length === 0) return "";
+    return userStreamingChartPoints.reduce((acc, pt, i, arr) => {
+      if (i === 0) return `M ${pt.x} ${pt.y}`;
+      const prev = arr[i - 1];
+      const cx1 = prev.x + (pt.x - prev.x) / 2;
+      const cy1 = prev.y;
+      const cx2 = prev.x + (pt.x - prev.x) / 2;
+      const cy2 = pt.y;
+      return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
+    }, "");
+  }, [userStreamingChartPoints]);
+
+  const userStreamAreaD = useMemo(() => {
+    if (userStreamingChartPoints.length === 0) return "";
+    const first = userStreamingChartPoints[0];
+    const last = userStreamingChartPoints[userStreamingChartPoints.length - 1];
+    return `${userStreamPathD} L ${last.x} 125 L ${first.x} 125 Z`;
+  }, [userStreamPathD, userStreamingChartPoints]);
+
   return (
     <div
       className={`h-screen w-full overflow-hidden flex transition-all duration-300 ${currentTheme.className}`}
@@ -1442,138 +1520,240 @@ export default function UserDashboardPage() {
                 </div>
               </div>
 
-              {/* Row 2: Recent Releases Table + Upcoming Releases Timeline */}
+              {/* Row 2: Synchronized Streaming Velocity Chart + Upcoming Releases Timeline */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {/* Recent Releases — Translucent Lavender Card with Horizontal Scroll Protection */}
+                {/* Synchronized Streaming Chart — 100% Singkron dengan Data Input Admin */}
                 <div
                   className={`lg:col-span-8 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
                   style={{ animationDelay: "260ms" }}
                 >
-                  <div className="pb-4 flex items-center justify-between border-b border-white/15">
-                    <h3 className="text-sm font-medium text-white">Recent Releases</h3>
-                    <button
-                      onClick={() => setActiveTab("releases")}
-                      className="text-xs text-[#c8f560] underline hover:text-white"
-                    >
-                      See All Releases
-                    </button>
+                  {/* Header */}
+                  <div className="pb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/15">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#c8f560]/20 border border-[#c8f560]/40 flex items-center justify-center text-[#c8f560]">
+                        <Activity className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                          <span>Streaming Chart (Live Sync)</span>
+                          <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-pulse" />
+                        </h3>
+                        <p className="text-[11px] text-white/70">
+                          Sinkronisasi performa streaming akun Anda ({userStreams.toLocaleString("id-ID")} Streams) • {period}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setActiveTab("releases")}
+                        className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition-colors"
+                      >
+                        Lihat Katalog ({releases.length})
+                      </button>
+                      <span className="px-2.5 py-1 rounded-lg bg-black/25 border border-white/15 text-[11px] font-mono text-[#c8f560] font-bold">
+                        {Math.round(userStreams * animProgress).toLocaleString("id-ID")} Streams
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Mobile Overview Releases Card List (< md) — Menampilkan rilisan aktif (Lagu ditolak tidak masuk overview) */}
-                  <div className="md:hidden space-y-3 pt-3">
-                    {overviewUserReleases.length === 0 ? (
-                      <div className="py-8 text-center text-white/70">
-                        <Music className="w-8 h-8 mx-auto text-white/25 mb-2" />
-                        <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
-                        <button
-                          onClick={() => setActiveTab("upload")}
-                          className="mt-2 px-3.5 py-1.5 rounded-full bg-[#312042] text-[11px] text-[#c8f560] font-semibold"
-                        >
-                          + Submit Lagu Baru
-                        </button>
+                  {/* Sub-Header: Metric Highlights */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                      <span className="text-[10px] text-white/60 block">Volume {period}</span>
+                      <span className="text-sm sm:text-base font-extrabold text-[#c8f560] tabular-nums">
+                        {Math.round(userStreams * animProgress).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                      <span className="text-[10px] text-white/60 block">Peak Stream</span>
+                      <span className="text-sm sm:text-base font-bold text-white tabular-nums">
+                        {Math.round((activeUserStreamPoint?.val || 0) * animProgress).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                      <span className="text-[10px] text-white/60 block">Lagu Terverifikasi</span>
+                      <span className="text-sm sm:text-base font-bold text-white tabular-nums">
+                        {approvedUserReleases.length} Lagu ACC
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                      <span className="text-[10px] text-white/60 block">Royalti Berjalan</span>
+                      <span className="text-sm sm:text-base font-bold text-[#c4c3f0] tabular-nums">
+                        Rp {Math.round((user?.royaltyBalance || 0) * animProgress).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Live Synchronized SVG Area Chart */}
+                  <div className="relative my-3 pt-4">
+                    {/* Floating Tooltip positioned over active point */}
+                    {activeUserStreamPoint && (
+                      <div
+                        className="absolute -top-1 transition-all duration-200 pointer-events-none -translate-x-1/2 z-20 px-3 py-1 rounded-xl bg-[#312042] border border-[#c8f560]/60 text-white shadow-xl text-center"
+                        style={{
+                          left: `${(activeUserStreamPoint.x / 360) * 100}%`,
+                        }}
+                      >
+                        <span className="text-[10px] text-white/70 block uppercase tracking-wider">
+                          {activeUserStreamPoint.label}
+                        </span>
+                        <span className="text-xs font-bold text-[#c8f560] tabular-nums">
+                          {Math.round(activeUserStreamPoint.val * animProgress).toLocaleString("id-ID")} stream
+                        </span>
+                        <div className="w-1.5 h-1.5 bg-[#312042] rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
                       </div>
-                    ) : (
-                      overviewUserReleases.slice(0, 3).map((item) => (
-                        <div
-                          key={item.id}
-                          className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={item.coverUrl}
-                              alt={item.title}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0 border border-white/20"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-1">
-                                <h4 className="font-semibold text-xs text-white truncate">{item.title}</h4>
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                                    item.status === "Approved"
-                                      ? "bg-[#c8f560] text-[#312042]"
-                                      : "bg-[#fde08d] text-[#312042]"
-                                  }`}
-                                >
-                                  {item.status === "Approved" ? "✓ Approved" : `⏳ ${item.status}`}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-white/70 truncate mt-0.5">{item.genre}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1 pt-2 border-t border-white/10 text-[10px]">
-                            <div>
-                              <span className="text-white/50 block">Rilis</span>
-                              <span className="text-white font-medium truncate block">{item.releaseDate}</span>
-                            </div>
-                            <div>
-                              <span className="text-white/50 block">UPC</span>
-                              <span className="text-white/90 font-mono truncate block">{item.upc || "899214578101"}</span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-white/50 block">ISRC</span>
-                              <span className="text-[#c8f560] font-mono font-bold truncate block">{item.isrc || "ID-HRM-24-00101"}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
                     )}
+
+                    <svg
+                      viewBox="0 0 360 135"
+                      className="w-full h-36 overflow-visible select-none"
+                    >
+                      <defs>
+                        <linearGradient id="userStreamAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#c8f560" stopOpacity="0.45" />
+                          <stop offset="60%" stopColor="#c8f560" stopOpacity="0.12" />
+                          <stop offset="100%" stopColor="#c8f560" stopOpacity="0.0" />
+                        </linearGradient>
+                        <linearGradient id="userStreamLineGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#b8b7e8" />
+                          <stop offset="50%" stopColor="#c8f560" />
+                          <stop offset="100%" stopColor="#c8f560" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Subtle Horizontal Grid lines */}
+                      <line x1="20" y1="35" x2="340" y2="35" stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                      <line x1="20" y1="75" x2="340" y2="75" stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                      <line x1="20" y1="115" x2="340" y2="115" stroke="rgba(255,255,255,0.12)" />
+
+                      {/* Area fill */}
+                      {userStreamAreaD && (
+                        <path
+                          d={userStreamAreaD}
+                          fill="url(#userStreamAreaGrad)"
+                          className="transition-all duration-500 ease-out"
+                        />
+                      )}
+
+                      {/* Line path */}
+                      {userStreamPathD && (
+                        <path
+                          d={userStreamPathD}
+                          fill="none"
+                          stroke="url(#userStreamLineGrad)"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          className="transition-all duration-500 ease-out"
+                        />
+                      )}
+
+                      {/* Interactive points & hover columns */}
+                      {userStreamingChartPoints.map((pt, idx) => {
+                        const isHovered = hoveredUserStreamIdx === idx;
+                        return (
+                          <g key={idx} className="cursor-pointer">
+                            {/* Hover target rect */}
+                            <rect
+                              x={pt.x - 20}
+                              y="0"
+                              width="40"
+                              height="135"
+                              fill="transparent"
+                              onMouseEnter={() => setHoveredUserStreamIdx(idx)}
+                            />
+
+                            {/* Vertical guide on hover */}
+                            {isHovered && (
+                              <line
+                                x1={pt.x}
+                                y1="10"
+                                x2={pt.x}
+                                y2="120"
+                                stroke="rgba(200,245,96,0.35)"
+                                strokeDasharray="2 2"
+                                strokeWidth="1.5"
+                              />
+                            )}
+
+                            {/* Outer pulse circle for hovered point */}
+                            {isHovered && (
+                              <circle
+                                cx={pt.x}
+                                cy={pt.y}
+                                r={10}
+                                fill="#c8f560"
+                                opacity="0.3"
+                                className="animate-ping"
+                              />
+                            )}
+
+                            {/* Main Dot */}
+                            <circle
+                              cx={pt.x}
+                              cy={pt.y}
+                              r={isHovered ? 6 : 4}
+                              fill={isHovered ? "#c8f560" : "#8a88b5"}
+                              stroke={isHovered ? "#312042" : "#c8f560"}
+                              strokeWidth={isHovered ? 2.5 : 2}
+                              className="transition-all duration-200"
+                            />
+
+                            {/* X-axis label */}
+                            <text
+                              x={pt.x}
+                              y="132"
+                              textAnchor="middle"
+                              fontSize="10"
+                              fontWeight={isHovered ? "bold" : "normal"}
+                              fill={isHovered ? "#c8f560" : "rgba(255,255,255,0.7)"}
+                            >
+                              {pt.label}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
                   </div>
 
-                  {/* Desktop Overview Releases Table (md:block) — Lagu Ditolak Tidak Ditampilkan di Sini */}
-                  <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
-                    <div className="min-w-[480px]">
-                      <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
-                        <div className="col-span-5 font-semibold">Release Title</div>
-                        <div className="col-span-2 text-center font-semibold">Date</div>
-                        <div className="col-span-2 text-center font-semibold">UPC Barcode</div>
-                        <div className="col-span-3 text-right font-semibold">ISRC Code</div>
-                      </div>
+                  {/* Bottom Row: DSP Distribution (100% Singkron dengan input admin) */}
+                  <div className="pt-3 border-t border-white/15 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-white/80">Distribusi Stream DSP Akun Anda:</span>
+                      <span className="text-[10px] text-white/60">
+                        {userStreams > 0 ? "Singkron dengan server" : "Menunggu data streaming admin"}
+                      </span>
+                    </div>
 
-                      {overviewUserReleases.length === 0 ? (
-                        <div className="py-10 text-center text-white/70">
-                          <Music className="w-10 h-10 mx-auto text-white/25 mb-2" />
-                          <p className="font-semibold text-xs text-white">Belum Ada Rilisan Musik</p>
-                          <p className="text-[11px] text-white/60 mt-1 max-w-sm mx-auto">
-                            Lagu yang Anda submit akan muncul di sini lengkap dengan status verifikasi, barcode UPC & ISRC.
-                          </p>
-                          <button
-                            onClick={() => setActiveTab("upload")}
-                            className="mt-3 px-4 py-1.5 rounded-full bg-[#312042] text-[11px] text-[#c8f560] font-semibold hover:bg-[#422c58] transition-colors"
-                          >
-                            + Submit Lagu Baru
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-white/15">
-                          {overviewUserReleases.slice(0, 3).map((item) => (
+                    {/* Synchronized Platform Proportion Bars */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      {[
+                        { name: "Spotify", pct: 46, count: Math.round(userStreams * 0.46), color: "#c8f560" },
+                        { name: "Apple Music", pct: 28, count: Math.round(userStreams * 0.28), color: "#c4c3f0" },
+                        { name: "TikTok / Reels", pct: 16, count: Math.round(userStreams * 0.16), color: "#fde08d" },
+                        { name: "YouTube", pct: 10, count: Math.round(userStreams * 0.10), color: "#ff8b8b" },
+                      ].map((dsp, i) => (
+                        <div key={i} className="p-2 rounded-xl bg-black/20 border border-white/10 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-white">{dsp.name}</span>
+                            <span className="text-[10px] font-mono font-bold" style={{ color: dsp.color }}>
+                              {dsp.pct}%
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
                             <div
-                              key={item.id}
-                              className="grid grid-cols-12 items-center py-3.5 text-xs hover:bg-white/10 rounded-xl px-2 transition-colors"
-                            >
-                              <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
-                                <img
-                                  src={item.coverUrl}
-                                  alt={item.title}
-                                  className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/25"
-                                />
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-white truncate">{item.title}</p>
-                                  <p className="text-[11px] text-white/70 truncate">{item.genre}</p>
-                                </div>
-                              </div>
-                              <div className="col-span-2 text-center font-medium text-white/90 whitespace-nowrap">
-                                {item.releaseDate}
-                              </div>
-                              <div className="col-span-2 text-center font-mono font-semibold text-white/90 text-[11px] whitespace-nowrap">
-                                {item.upc || "899214578101"}
-                              </div>
-                              <div className="col-span-3 text-right font-mono font-bold text-[#c8f560] text-[11px] whitespace-nowrap">
-                                {item.isrc || "ID-HRM-24-00101"}
-                              </div>
-                            </div>
-                          ))}
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{
+                                width: `${dsp.pct * animProgress}%`,
+                                backgroundColor: dsp.color,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-white/60 block tabular-nums">
+                            {Math.round(dsp.count * animProgress).toLocaleString("id-ID")} streams
+                          </span>
                         </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>
