@@ -9,12 +9,15 @@ type VisaMetricCardProps = {
   subtitle: string;
   dotColor: string;
   valueColor?: string;
+  valueSize?: string;
   cardNumber: string;
   holderName: string;
   expiry?: string;
   tier?: string;
   variant?: "lavender" | "plum" | "lime-tint";
   delayMs?: number;
+  className?: string;
+  children?: React.ReactNode;
 };
 
 export default function VisaMetricCard({
@@ -23,12 +26,15 @@ export default function VisaMetricCard({
   subtitle,
   dotColor,
   valueColor = "text-white",
+  valueSize = "text-2xl sm:text-3xl lg:text-3xl xl:text-4xl",
   cardNumber,
   holderName,
   expiry = "11/28",
   tier = "SIGNATURE",
   variant = "lavender",
   delayMs = 60,
+  className = "",
+  children,
 }: VisaMetricCardProps) {
   const bgStyle =
     variant === "plum"
@@ -40,7 +46,7 @@ export default function VisaMetricCard({
   return (
     <div
       style={{ animationDelay: `${delayMs}ms` }}
-      className={`relative overflow-hidden rounded-[26px] border p-5 sm:p-6 text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group animate-card-enter select-none ${bgStyle}`}
+      className={`relative overflow-hidden rounded-[26px] border p-5 sm:p-6 text-white shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group animate-card-enter select-none ${bgStyle} ${className}`}
     >
       {/* Decorative Visa Card Holographic Circles & Mesh */}
       <div className="pointer-events-none absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[#c8f560]/10 blur-xl group-hover:bg-[#c8f560]/20 transition-all" />
@@ -78,7 +84,7 @@ export default function VisaMetricCard({
       </div>
 
       {/* Middle Row: EMV Metallic Chip + Big Animated Metric Value */}
-      <div className="relative z-10 my-4 flex items-center justify-between gap-4">
+      <div className="relative z-10 my-4 flex items-center justify-between gap-3 sm:gap-4">
         {/* Realistic Metallic EMV Chip */}
         <div className="w-11 h-8 rounded-lg bg-gradient-to-br from-[#f6e27a] via-[#d4af37] to-[#aa820a] p-1 shadow-inner border border-white/40 shrink-0 flex flex-col justify-between">
           <div className="w-full h-[1px] bg-black/25" />
@@ -91,7 +97,7 @@ export default function VisaMetricCard({
 
         {/* Big Metric Number */}
         <p
-          className={`text-4xl sm:text-5xl font-bold tracking-tight tabular-nums drop-shadow ${valueColor}`}
+          className={`font-bold tracking-tight tabular-nums drop-shadow ${valueSize} ${valueColor}`}
         >
           {value}
         </p>
@@ -114,6 +120,13 @@ export default function VisaMetricCard({
           {subtitle}
         </span>
       </div>
+
+      {/* Optional Children/Footer Slot */}
+      {children && (
+        <div className="relative z-10 mt-3 pt-2.5 border-t border-white/15">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

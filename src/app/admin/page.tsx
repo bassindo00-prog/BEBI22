@@ -42,6 +42,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
+import VisaMetricCard from "@/components/VisaMetricCard";
 import AdminLandingCMS from "@/components/AdminLandingCMS";
 import Pagination from "@/components/Pagination";
 import { THEMES, type ThemeId } from "@/lib/theme";
@@ -1067,50 +1068,37 @@ export default function AdminDashboardPage() {
             key={`admin-charts-${animKey}`}
             className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6"
           >
-            {/* Card 1: Royalty & Settlement Overview (Replaces Battery) */}
-            <div
-              className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
-              style={{ animationDelay: "60ms" }}
+            {/* Card 1: Luxury VISA Card for Total Royalty Musisi */}
+            <VisaMetricCard
+              title="TOTAL ROYALTY MUSISI"
+              value={`Rp ${totalGlobalRoyalty.toLocaleString("id-ID")}`}
+              valueColor="text-[#c8f560]"
+              valueSize="text-2xl sm:text-3xl lg:text-3xl"
+              subtitle={`${releasedArtists.length} Musisi Aktif`}
+              dotColor="bg-[#c8f560]"
+              cardNumber="4532 •••• •••• 9924"
+              holderName="BREAKOUT LABEL • EXECUTIVE"
+              expiry="12/29"
+              tier="INFINITE"
+              variant="lime-tint"
+              delayMs={60}
+              className="lg:col-span-4 flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
-                    <Banknote className="w-4 h-4" />
-                  </span>
-                  <span>Total Royalty Musisi</span>
-                </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-[10px] font-bold">
-                  ROYALTY RP
-                </span>
-              </div>
-
-              <div className="my-4 p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col items-center justify-center text-center">
-                <span className="text-[11px] font-medium text-white/75 uppercase tracking-wider">
-                  Total Saldo Royalti Artis
-                </span>
-                <span className="text-2xl sm:text-3xl font-extrabold text-[#c8f560] mt-1 tabular-nums drop-shadow">
-                  Rp {totalGlobalRoyalty.toLocaleString("id-ID")}
-                </span>
-                <span className="text-[10px] text-white/60 mt-1">
-                  Akumulasi saldo royalti dari {releasedArtists.length} musisi aktif
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/15 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-xl bg-black/25 border border-white/10">
                   <p className="text-[10px] text-white/60">Cleared Payout</p>
                   <p className="text-xs font-bold text-white mt-0.5 truncate">
                     Rp {totalPayoutAmount.toLocaleString("id-ID")}
                   </p>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                <div className="p-2 rounded-xl bg-black/25 border border-white/10">
                   <p className="text-[10px] text-[#fde08d]">Antrean Withdraw</p>
                   <p className="text-xs font-bold text-[#fde08d] mt-0.5 truncate">
                     Rp {totalPendingAmount.toLocaleString("id-ID")}
                   </p>
                 </div>
               </div>
-            </div>
+            </VisaMetricCard>
 
             {/* Card 2: Live Label Revenue Curve */}
             <div

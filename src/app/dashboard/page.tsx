@@ -1165,56 +1165,39 @@ export default function UserDashboardPage() {
 
               {/* Row 1: Saldo Royalti, Royalty Growth, Streams by Platform */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {/* Card 1: Saldo Royalti Musisi (Replaces Battery) */}
-                <div
-                  className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
-                  style={{ animationDelay: "60ms" }}
+                {/* Card 1: Luxury VISA Card for Saldo Royalti Musisi */}
+                <VisaMetricCard
+                  title="SALDO ROYALTI ANDA"
+                  value={`Rp ${animatedRoyaltyBalance.toLocaleString("id-ID")}`}
+                  valueColor="text-[#c8f560]"
+                  valueSize="text-2xl sm:text-3xl lg:text-3xl"
+                  subtitle="Siap Dicairkan"
+                  dotColor="bg-[#c8f560]"
+                  cardNumber="4532 •••• •••• 8891"
+                  holderName={`${user?.name || "ARTIST"} • BREAKOUT PAY`}
+                  expiry="09/29"
+                  tier="INFINITE"
+                  variant="lime-tint"
+                  delayMs={60}
+                  className="lg:col-span-4 flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
-                        <Banknote className="w-4 h-4" />
-                      </span>
-                      <span>Saldo Royalti Anda</span>
-                    </h3>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-[10px] font-bold">
-                      ROYALTY RP
-                    </span>
-                  </div>
-
-                  {/* Saldo Siap Dicairkan */}
-                  <div className="my-4 p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col items-center justify-center text-center">
-                    <span className="text-[11px] font-medium text-white/75 uppercase tracking-wider">
-                      Saldo Siap Dicairkan
-                    </span>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-[#c8f560] mt-1 tabular-nums">
-                      Rp {animatedRoyaltyBalance.toLocaleString("id-ID")}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("wallet")}
-                      className="mt-3 px-3.5 py-1.5 rounded-full bg-[#312042] hover:bg-[#432d5b] text-white text-[11px] font-semibold transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer shadow-sm"
-                    >
-                      <span>Tarik Dana (Withdraw)</span>
-                      <ArrowRight className="w-3 h-3 text-[#c8f560]" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/15 text-xs">
-                    <div className="p-2 rounded-xl bg-black/20">
-                      <span className="text-white/60 block text-[10px]">Royalti Pending</span>
-                      <span className="text-white font-semibold">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <div className="p-1.5 px-2.5 rounded-xl bg-black/25 border border-white/10 text-[10px]">
+                      <span className="text-white/60">Pending: </span>
+                      <span className="font-semibold text-[#fde08d]">
                         Rp {animatedRoyaltyPending.toLocaleString("id-ID")}
                       </span>
                     </div>
-                    <div className="p-2 rounded-xl bg-black/20">
-                      <span className="text-white/60 block text-[10px]">Total Dicairkan</span>
-                      <span className="text-white font-semibold">
-                        Rp {Number(user?.totalWithdrawn || 0).toLocaleString("id-ID")}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("wallet")}
+                      className="px-3.5 py-1.5 rounded-full bg-[#312042] hover:bg-[#432d5b] text-white text-[11px] font-semibold transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+                    >
+                      <span>Tarik Dana</span>
+                      <ArrowRight className="w-3 h-3 text-[#c8f560]" />
+                    </button>
                   </div>
-                </div>
+                </VisaMetricCard>
 
                 {/* Card 2: Royalty Growth */}
                 <div
