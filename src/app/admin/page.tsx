@@ -41,6 +41,7 @@ import {
   Globe,
   Sparkles,
   Activity,
+  Palette,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -82,8 +83,11 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem("breakout_theme");
-    if (saved && ["dark", "white", "blue", "purple", "yellow"].includes(saved)) {
+    if (saved && ["purple", "dark", "white", "blue", "yellow"].includes(saved)) {
       setTheme(saved as ThemeId);
+    } else {
+      setTheme("purple");
+      localStorage.setItem("breakout_theme", "purple");
     }
   }, []);
 
@@ -92,7 +96,7 @@ export default function AdminDashboardPage() {
     localStorage.setItem("breakout_theme", newTheme);
   };
 
-  const currentTheme = THEMES.find((t) => t.id === theme) || THEMES[3];
+  const currentTheme = THEMES.find((t) => t.id === theme) || THEMES[0];
   const [users, setUsers] = useState<any[]>([]);
   const [releases, setReleases] = useState<any[]>([]);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
@@ -1412,25 +1416,10 @@ export default function AdminDashboardPage() {
 
                 {/* Mobile Right Quick Actions */}
                 <div className="flex sm:hidden items-center gap-1.5">
-                  <div className="flex items-center gap-1.5 p-1 rounded-full bg-black/20 backdrop-blur-md border border-white/15">
-                    {THEMES.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => changeTheme(t.id)}
-                        className={`w-4 h-4 rounded-full transition-transform ${t.dotBg} ${
-                          theme === t.id
-                            ? "ring-2 ring-white scale-110 shadow"
-                            : "opacity-60 hover:opacity-100"
-                        }`}
-                        title={t.name}
-                      />
-                    ))}
-                  </div>
                   <button
                     type="button"
                     onClick={fetchAdminData}
-                    className="p-1.5 rounded-full bg-white/15 text-white"
+                    className="p-2 rounded-full bg-white/15 text-white active:scale-95 transition-all"
                     title="Refresh Data"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
@@ -1457,30 +1446,10 @@ export default function AdminDashboardPage() {
 
               {/* Desktop Right Controls (hidden on mobile) */}
               <div className="hidden sm:flex items-center gap-3">
-                {/* 5-Theme Switcher Palette */}
-                <div className="bg-[#8a88b5]/70 border border-white/20 p-1 rounded-full flex items-center gap-1 backdrop-blur-md text-xs">
-                  {THEMES.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => changeTheme(t.id)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all ${
-                        theme === t.id
-                          ? "bg-[#312042] text-white font-semibold shadow-sm"
-                          : "text-white/80 hover:text-white"
-                      }`}
-                      title={t.name}
-                    >
-                      <span className={`w-2.5 h-2.5 rounded-full ${t.dotBg} border ${t.dotBorder}`} />
-                      <span className="hidden xl:inline">{t.name.split(" ")[0]}</span>
-                    </button>
-                  ))}
-                </div>
-
                 <button
                   onClick={fetchAdminData}
                   title="Refresh Prisma Data"
-                  className="w-10 h-10 rounded-full bg-[#8a88b5]/70 border border-white/20 flex items-center justify-center text-white hover:bg-white/25"
+                  className="w-10 h-10 rounded-full bg-[#8a88b5]/70 border border-white/20 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 </button>
@@ -3913,13 +3882,58 @@ export default function AdminDashboardPage() {
                       Pengaturan Sistem & Kebijakan Distribusi Admin
                     </h3>
                     <p className="text-xs text-white/75">
-                      Konfigurasi moderasi otomatis, batas royalti, dan keamanan label BREAKOUT
+                      Konfigurasi moderasi otomatis, tema tampilan, batas royalti, dan keamanan label BREAKOUT
                     </p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-[#312042] text-[#c8f560] text-xs font-semibold">
                   avelinfx@gmail.com
                 </span>
+              </div>
+
+              {/* Tema Tampilan Dashboard Admin */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-white/10 border border-white/15 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-[#c8f560]">
+                      <Palette className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm text-white flex items-center gap-2">
+                        <span>Tema Warna Dashboard Admin</span>
+                        <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-pulse" />
+                      </h4>
+                      <p className="text-white/70 text-xs mt-0.5">
+                        Pilih tema tampilan antarmuka (Tema standar utama: <strong>Ungu / Lavender</strong>)
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#312042] border border-[#c8f560]/40 text-[#c8f560] text-xs font-bold">
+                    Aktif: {currentTheme.name}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                  {THEMES.map((t) => {
+                    const isSelected = theme === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => changeTheme(t.id)}
+                        className={`p-3 rounded-2xl border flex items-center gap-2.5 transition-all text-xs font-bold cursor-pointer ${
+                          isSelected
+                            ? "bg-[#312042] text-white border-[#c8f560] ring-2 ring-[#c8f560]/50 shadow-lg scale-102"
+                            : "bg-white/5 hover:bg-white/15 text-white/80 border-white/15"
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full ${t.dotBg} border ${t.dotBorder} shrink-0`} />
+                        <span className="truncate">{t.name.split(" ")[0]}</span>
+                        {isSelected && <span className="text-[#c8f560] ml-auto">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">

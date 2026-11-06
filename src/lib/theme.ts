@@ -1,4 +1,4 @@
-export type ThemeId = "dark" | "white" | "blue" | "purple" | "yellow";
+export type ThemeId = "purple" | "dark" | "white" | "blue" | "yellow";
 
 export interface ThemeOption {
   id: ThemeId;
@@ -10,6 +10,14 @@ export interface ThemeOption {
 }
 
 export const THEMES: ThemeOption[] = [
+  {
+    id: "purple",
+    name: "Ungu (Lavender)",
+    dotBg: "bg-[#8a88b5]",
+    dotBorder: "border-white/50",
+    background: "linear-gradient(135deg, #5d5b86 0%, #6e6c99 50%, #4f4d75 100%)",
+    className: "theme-bg-purple",
+  },
   {
     id: "dark",
     name: "Hitam (Dark)",
@@ -33,14 +41,6 @@ export const THEMES: ThemeOption[] = [
     dotBorder: "border-sky-300",
     background: "radial-gradient(circle at 50% 20%, #0f2d57 0%, #071529 60%, #020710 100%)",
     className: "theme-bg-blue",
-  },
-  {
-    id: "purple",
-    name: "Ungu (Lavender)",
-    dotBg: "bg-[#8a88b5]",
-    dotBorder: "border-white/50",
-    background: "linear-gradient(135deg, #5d5b86 0%, #6e6c99 50%, #4f4d75 100%)",
-    className: "theme-bg-purple",
   },
   {
     id: "yellow",
