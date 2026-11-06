@@ -1415,7 +1415,7 @@ export default function AdminDashboardPage() {
                       Active Catalog Releases (Live & ACC)
                     </h3>
                     <p className="text-[11px] text-white/70">
-                      Rilisan yang telah disetujui ({approvedReleases.length} Lagu)
+                      Rilisan terbaru (Menampilkan 5 dari {approvedReleases.length} Lagu)
                     </p>
                   </div>
                   {pendingReleases.length > 0 ? (
@@ -1429,14 +1429,15 @@ export default function AdminDashboardPage() {
                   ) : (
                     <button
                       onClick={() => setActiveTab("my-releases")}
-                      className="text-xs text-[#c8f560] underline"
+                      className="text-xs text-[#c8f560] hover:underline font-semibold flex items-center gap-1"
                     >
-                      Lihat Semua ACC
+                      <span>Lihat Semua ({approvedReleases.length})</span>
+                      <ArrowUpRight className="w-3 h-3" />
                     </button>
                   )}
                 </div>
 
-                {/* Overview Mobile Releases List (< md) — Hanya menampilkan Approved Releases */}
+                {/* Overview Mobile Releases List (< md) — Menampilkan 5 Rilisan Terbaru */}
                 <div className="md:hidden space-y-3 pt-3">
                   {approvedReleases.length === 0 ? (
                     <div className="py-8 text-center text-white/70 space-y-1">
@@ -1458,7 +1459,7 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                   ) : (
-                    approvedReleases.map((item) => (
+                    approvedReleases.slice(0, 5).map((item) => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedRelease(item)}
@@ -1508,7 +1509,7 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
 
-                {/* Overview Desktop Table (md:block) — Hanya Approved Releases */}
+                {/* Overview Desktop Table (md:block) — Menampilkan 5 Rilisan Terbaru */}
                 <div className="hidden md:block pt-3 flex-1 overflow-x-auto">
                   <div className="min-w-[540px]">
                     <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15 px-2">
@@ -1539,7 +1540,7 @@ export default function AdminDashboardPage() {
                           )}
                         </div>
                       ) : (
-                        approvedReleases.map((item) => (
+                        approvedReleases.slice(0, 5).map((item) => (
                           <div
                             key={item.id}
                             className="grid grid-cols-12 items-center py-3.5 text-xs gap-2 hover:bg-white/5 rounded-xl px-2 transition-colors cursor-pointer"
@@ -1599,21 +1600,39 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Footer link to view all catalog releases */}
+                {approvedReleases.length > 5 && (
+                  <div className="pt-3 border-t border-white/10 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("my-releases")}
+                      className="text-xs text-[#c8f560] hover:underline font-semibold inline-flex items-center gap-1"
+                    >
+                      <span>Lihat seluruh {approvedReleases.length} lagu di My Releases</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Right: Withdrawal Requests Approval */}
+              {/* Right: Withdrawal Requests Approval — Menampilkan 5 Terbaru */}
               <div
                 className={`lg:col-span-5 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
                 style={{ animationDelay: "310ms" }}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-white">Withdrawal Payout Queue</h3>
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Withdrawal Payout Queue</h3>
+                      <p className="text-[11px] text-white/70">5 antrean payout terbaru</p>
+                    </div>
                     <button
                       onClick={() => setActiveTab("withdrawals")}
-                      className="text-xs text-[#c8f560] underline font-medium"
+                      className="text-xs text-[#c8f560] hover:underline font-medium inline-flex items-center gap-0.5"
                     >
-                      All Payouts
+                      <span>Semua ({withdrawals.length})</span>
+                      <ArrowUpRight className="w-3 h-3" />
                     </button>
                   </div>
 
@@ -1625,7 +1644,7 @@ export default function AdminDashboardPage() {
                         <p className="text-[11px] text-white/55 mt-0.5">Semua permintaan pencairan telah diproses.</p>
                       </div>
                     ) : (
-                      withdrawals.map((w) => (
+                      withdrawals.slice(0, 5).map((w) => (
                         <div
                           key={w.id}
                           onClick={() => setSelectedWithdrawalForVisaModal(w)}
@@ -1683,6 +1702,19 @@ export default function AdminDashboardPage() {
                       ))
                     )}
                   </div>
+
+                  {withdrawals.length > 5 && (
+                    <div className="pt-3 border-t border-white/10 text-center mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("withdrawals")}
+                        className="text-xs text-[#c8f560] hover:underline font-semibold inline-flex items-center gap-1"
+                      >
+                        <span>Lihat seluruh {withdrawals.length} antrean payout di menu Withdrawals</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-5 p-4 rounded-2xl bg-white/15 border border-white/20 text-xs flex items-center justify-between">
