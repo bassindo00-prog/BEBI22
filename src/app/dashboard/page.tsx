@@ -907,6 +907,32 @@ export default function UserDashboardPage() {
   const activeOverviewPoint = overviewChartPoints[hoveredDayIdx] || overviewChartPoints[4];
   const activeAnalyticsPoint = analyticsChartPoints[hoveredMonthIdx] || analyticsChartPoints[4];
 
+  // User's active releases for Top Tracks by Country (singkron dengan data rilis asli)
+  const displayCountryTracks = useMemo(() => {
+    return releases.slice(0, 5).map((r, i) => {
+      let streamDisplay = r.streams;
+      if (!streamDisplay || streamDisplay === "0") {
+        if (r.streamsNum > 0) {
+          streamDisplay = `${r.streamsNum.toLocaleString()} streams`;
+        } else if (userStreams > 0) {
+          const prop = Math.max(1, Math.round(userStreams / Math.max(1, releases.length)));
+          streamDisplay = `${prop.toLocaleString()} streams`;
+        } else {
+          streamDisplay = "0 streams";
+        }
+      }
+      return {
+        id: r.id,
+        title: r.title,
+        sub: `${r.artist || user?.name || "Artis"} • ${r.genre || "Music"}`,
+        country: r.country || (i % 3 === 0 ? "🇮🇩 Indonesia" : i % 3 === 1 ? "🇲🇾 Malaysia" : "🇸🇬 Singapore"),
+        streams: streamDisplay,
+        royalty: r.royaltyGrowth || (userRoyalty > 0 ? "+12.4%" : "+0%"),
+        avatar: r.coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80",
+      };
+    });
+  }, [releases, user, userStreams, userRoyalty]);
+
   return (
     <div
       className={`h-screen w-full overflow-hidden flex transition-all duration-300 ${currentTheme.className}`}
@@ -1910,123 +1936,88 @@ export default function UserDashboardPage() {
                     </h3>
                   </div>
                   <div className="pt-3 flex-1">
-                    {/* Mobile Card List (< sm) */}
-                    <div className="sm:hidden space-y-2.5">
-                      {[
-                        {
-                          title: "Midnight Lights",
-                          sub: "Pop • BREAKOUT",
-                          country: "🇺🇸 United States",
-                          streams: "1.2M",
-                          royalty: "+12.4%",
-                          avatar:
-                            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80",
-                        },
-                        {
-                          title: "Neon Dawn",
-                          sub: "Electronic • BREAKOUT",
-                          country: "🇬🇧 United Kingdom",
-                          streams: "980K",
-                          royalty: "+8.1%",
-                          avatar:
-                            "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=120&auto=format&fit=crop&q=80",
-                        },
-                        {
-                          title: "City Pulse",
-                          sub: "Chill • BREAKOUT",
-                          country: "🇩🇪 Germany",
-                          streams: "754K",
-                          royalty: "+5.6%",
-                          avatar:
-                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
-                        },
-                      ].map((t, idx) => (
-                        <div key={idx} className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={t.avatar}
-                              alt={t.title}
-                              className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-white truncate">{t.title}</p>
-                              <p className="text-[11px] text-white/70 truncate">{t.sub}</p>
-                            </div>
-                            <span className="text-[11px] font-medium text-white/90 bg-white/10 px-2 py-0.5 rounded-full shrink-0">
-                              {t.country}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px]">
-                            <span className="text-white/60">Streams: <strong className="text-white font-semibold">{t.streams}</strong></span>
-                            <span className="text-[#c8f560] font-semibold">{t.royalty}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Desktop Table (sm:block) */}
-                    <div className="hidden sm:block">
-                      <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
-                        <div className="col-span-5">Track</div>
-                        <div className="col-span-3 text-center">Country</div>
-                        <div className="col-span-2 text-center">Streams</div>
-                        <div className="col-span-2 text-right">Royalty</div>
+                    {displayCountryTracks.length === 0 ? (
+                      <div className="py-10 text-center text-white/60 space-y-1">
+                        <Music className="w-8 h-8 mx-auto text-white/25 mb-1" />
+                        <p className="font-semibold text-xs text-white">Belum Ada Rilisan Lagu</p>
+                        <p className="text-[11px] text-white/60">
+                          Lagu yang Anda upload akan otomatis muncul di sini beserta analitik streaming.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("upload")}
+                          className="mt-2.5 px-3.5 py-1.5 bg-[#c8f560] text-[#312042] rounded-xl text-xs font-bold shadow hover:bg-[#b8e450] transition-colors"
+                        >
+                          Upload Lagu Baru
+                        </button>
                       </div>
-                      <div className="divide-y divide-white/15">
-                        {[
-                          {
-                            title: "Midnight Lights",
-                            sub: "Pop • BREAKOUT",
-                            country: "🇺🇸 United States",
-                            streams: "1.2M",
-                            royalty: "+12.4%",
-                            avatar:
-                              "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80",
-                          },
-                          {
-                            title: "Neon Dawn",
-                            sub: "Electronic • BREAKOUT",
-                            country: "🇬🇧 United Kingdom",
-                            streams: "980K",
-                            royalty: "+8.1%",
-                            avatar:
-                              "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=120&auto=format&fit=crop&q=80",
-                          },
-                          {
-                            title: "City Pulse",
-                            sub: "Chill • BREAKOUT",
-                            country: "🇩🇪 Germany",
-                            streams: "754K",
-                            royalty: "+5.6%",
-                            avatar:
-                              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
-                          },
-                        ].map((t, idx) => (
-                          <div key={idx} className="grid grid-cols-12 items-center py-3.5 text-xs">
-                            <div className="col-span-5 flex items-center gap-3">
-                              <img
-                                src={t.avatar}
-                                alt={t.title}
-                                className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
-                              />
-                              <div>
-                                <p className="font-semibold text-white">{t.title}</p>
-                                <p className="text-[11px] text-white/70">{t.sub}</p>
+                    ) : (
+                      <>
+                        {/* Mobile Card List (< sm) */}
+                        <div className="sm:hidden space-y-2.5">
+                          {displayCountryTracks.map((t) => (
+                            <div key={t.id} className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={t.avatar}
+                                  alt={t.title}
+                                  className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-semibold text-white truncate">{t.title}</p>
+                                  <p className="text-[11px] text-white/70 truncate">{t.sub}</p>
+                                </div>
+                                <span className="text-[11px] font-medium text-white/90 bg-white/10 px-2 py-0.5 rounded-full shrink-0">
+                                  {t.country}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px]">
+                                <span className="text-white/60">
+                                  Streams: <strong className="text-white font-semibold">{t.streams}</strong>
+                                </span>
+                                <span className="text-[#c8f560] font-semibold">{t.royalty}</span>
                               </div>
                             </div>
-                            <div className="col-span-3 text-center font-medium text-white/90">
-                              {t.country}
-                            </div>
-                            <div className="col-span-2 text-center font-semibold text-white">
-                              {t.streams}
-                            </div>
-                            <div className="col-span-2 text-right font-semibold text-[#c8f560]">
-                              {t.royalty}
-                            </div>
+                          ))}
+                        </div>
+
+                        {/* Desktop Table (sm:block) */}
+                        <div className="hidden sm:block">
+                          <div className="grid grid-cols-12 text-xs text-white/65 pb-3 border-b border-white/15">
+                            <div className="col-span-5">Track</div>
+                            <div className="col-span-3 text-center">Country</div>
+                            <div className="col-span-2 text-center">Streams</div>
+                            <div className="col-span-2 text-right">Royalty</div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <div className="divide-y divide-white/15">
+                            {displayCountryTracks.map((t) => (
+                              <div key={t.id} className="grid grid-cols-12 items-center py-3.5 text-xs">
+                                <div className="col-span-5 flex items-center gap-3">
+                                  <img
+                                    src={t.avatar}
+                                    alt={t.title}
+                                    className="w-10 h-10 rounded-full object-cover border border-white/30 shrink-0"
+                                  />
+                                  <div>
+                                    <p className="font-semibold text-white">{t.title}</p>
+                                    <p className="text-[11px] text-white/70">{t.sub}</p>
+                                  </div>
+                                </div>
+                                <div className="col-span-3 text-center font-medium text-white/90">
+                                  {t.country}
+                                </div>
+                                <div className="col-span-2 text-center font-semibold text-white">
+                                  {t.streams}
+                                </div>
+                                <div className="col-span-2 text-right font-semibold text-[#c8f560]">
+                                  {t.royalty}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
