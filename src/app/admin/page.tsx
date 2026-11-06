@@ -130,6 +130,10 @@ export default function AdminDashboardPage() {
   // Visa Withdrawal Card Modal State
   const [selectedWithdrawalForVisaModal, setSelectedWithdrawalForVisaModal] = useState<any | null>(null);
 
+  // Bulk Selection & Deletion State
+  const [selectedReleaseIds, setSelectedReleaseIds] = useState<string[]>([]);
+  const [deletingBulk, setDeletingBulk] = useState(false);
+
   // Send Message State
   const [msgTargetUser, setMsgTargetUser] = useState<string>("ALL");
   const [msgTitle, setMsgTitle] = useState("");
@@ -186,6 +190,10 @@ export default function AdminDashboardPage() {
       cancelAnimationFrame(frameId);
     };
   }, [activeTab, period]);
+
+  useEffect(() => {
+    setSelectedReleaseIds([]);
+  }, [activeTab]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -355,10 +363,48 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteRelease = async (id: string) => {
+    const confirmDelete = window.confirm(
+      "Apakah Anda yakin ingin menghapus lagu ini? Lagu akan otomatis hilang dari database dan dashboard user/artis."
+    );
+    if (!confirmDelete) return;
+
     const res = await fetch(`/api/releases?id=${id}`, { method: "DELETE" });
     if (res.ok) {
+      setSelectedReleaseIds((prev) => prev.filter((x) => x !== id));
       await fetchAdminData();
-      showNotice("Release removed from catalog");
+      showNotice("Lagu berhasil dihapus permanen & hilang dari user");
+    } else {
+      showNotice("Gagal menghapus lagu.");
+    }
+  };
+
+  const handleDeleteBulkReleases = async () => {
+    if (selectedReleaseIds.length === 0) return;
+    const count = selectedReleaseIds.length;
+    const confirmDelete = window.confirm(
+      `PERINGATAN: Apakah Anda yakin ingin menghapus ${count} lagu terpilih?\n\nLagu-lagu ini akan dihapus permanen dari sistem dan OTOMATIS HILANG dari dashboard user/artis masing-masing.`
+    );
+    if (!confirmDelete) return;
+
+    setDeletingBulk(true);
+    try {
+      const res = await fetch("/api/releases", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedReleaseIds }),
+      });
+      if (res.ok) {
+        setSelectedReleaseIds([]);
+        await fetchAdminData();
+        showNotice(`Sukses: ${count} lagu berhasil dihapus & hilang dari user!`);
+      } else {
+        const err = await res.json();
+        showNotice(`Gagal menghapus: ${err.error || "Terjadi kesalahan"}`);
+      }
+    } catch (e: any) {
+      showNotice("Gagal menghapus: " + e.message);
+    } finally {
+      setDeletingBulk(false);
     }
   };
 
@@ -1733,6 +1779,45 @@ export default function AdminDashboardPage() {
               onPageChange: (p: number) => void
             ) => {
               const paginatedItems = items.slice((currentPage - 1) * 5, currentPage * 5);
+              const allPageIds = paginatedItems.map((r) => r.id);
+              const allSectionIds = items.map((r) => r.id);
+              const isAllPageSelected =
+                paginatedItems.length > 0 &&
+                paginatedItems.every((r) => selectedReleaseIds.includes(r.id));
+              const isAllSectionSelected =
+                items.length > 0 &&
+                items.every((r) => selectedReleaseIds.includes(r.id));
+
+              const toggleSelectAll = () => {
+                if (isAllSectionSelected) {
+                  setSelectedReleaseIds((prev) =>
+                    prev.filter((id) => !allSectionIds.includes(id))
+                  );
+                } else {
+                  setSelectedReleaseIds((prev) =>
+                    Array.from(new Set([...prev, ...allSectionIds]))
+                  );
+                }
+              };
+
+              const toggleSelectPage = () => {
+                if (isAllPageSelected) {
+                  setSelectedReleaseIds((prev) =>
+                    prev.filter((id) => !allPageIds.includes(id))
+                  );
+                } else {
+                  setSelectedReleaseIds((prev) =>
+                    Array.from(new Set([...prev, ...allPageIds]))
+                  );
+                }
+              };
+
+              const toggleItemSelect = (id: string) => {
+                setSelectedReleaseIds((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+                );
+              };
+
               return (
               <div className={`${ROYALTY_CARD} animate-card-enter`}>
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/15">
@@ -1756,10 +1841,72 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-white/75 mt-0.5">{subtitle}</p>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-semibold text-white">
-                    Total: <strong className={type === "my-releases" ? "text-[#c8f560]" : type === "my-reject" ? "text-red-300" : "text-[#fde08d]"}>{items.length} Track</strong>
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={toggleSelectAll}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          isAllSectionSelected
+                            ? "bg-[#c8f560] text-[#312042] border-[#c8f560] shadow"
+                            : "bg-white/10 hover:bg-white/20 text-white border-white/20"
+                        }`}
+                        title="Centang semua lagu di menu ini untuk dihapus"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>
+                          {isAllSectionSelected
+                            ? "Batal Centang All"
+                            : `Centang Semua (${items.length})`}
+                        </span>
+                      </button>
+                    )}
+
+                    <span className="px-3 py-1.5 rounded-xl bg-white/15 border border-white/20 text-xs font-semibold text-white">
+                      Total: <strong className={type === "my-releases" ? "text-[#c8f560]" : type === "my-reject" ? "text-red-300" : "text-[#fde08d]"}>{items.length} Track</strong>
+                    </span>
+                  </div>
                 </div>
+
+                {/* Floating Bulk Action Delete Bar */}
+                {selectedReleaseIds.length > 0 && (
+                  <div className="mb-4 p-3.5 rounded-2xl bg-red-500/25 border border-red-500/50 flex flex-wrap items-center justify-between gap-3 shadow-xl animate-card-enter">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-3 h-3 rounded-full bg-red-400 animate-ping" />
+                      <div>
+                        <span className="text-xs font-bold text-white block">
+                          {selectedReleaseIds.length} Lagu Terpilih Dicentang
+                        </span>
+                        <span className="text-[10px] text-red-200">
+                          Penghapusan akan otomatis menghapus lagu dari database & hilang permanen di user
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReleaseIds([])}
+                        className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingBulk}
+                        onClick={handleDeleteBulkReleases}
+                        className="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>
+                          {deletingBulk
+                            ? "Menghapus..."
+                            : `Hapus ${selectedReleaseIds.length} Lagu Terpilih (Hilang di User)`}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* MOBILE VIEW (< md): Clean Card List, No Horizontal Table Clutter, Zero Overlap */}
                 <div className="md:hidden space-y-3.5 pt-2">
@@ -1769,14 +1916,31 @@ export default function AdminDashboardPage() {
                       <p className="font-semibold text-sm text-white">{emptyMessage}</p>
                     </div>
                   ) : (
-                    paginatedItems.map((r) => (
+                    paginatedItems.map((r) => {
+                      const isSelected = selectedReleaseIds.includes(r.id);
+                      return (
                       <div
                         key={r.id}
                         onClick={() => setSelectedRelease(r)}
-                        className="p-4 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 transition-all cursor-pointer space-y-3"
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
+                          isSelected
+                            ? "bg-[#c8f560]/10 border-[#c8f560]/60 ring-1 ring-[#c8f560]/50"
+                            : "bg-white/5 border-white/15 hover:bg-white/10"
+                        }`}
                       >
-                        {/* Top Row: Cover + Info + Status */}
+                        {/* Top Row: Checkbox + Cover + Info + Status */}
                         <div className="flex items-start gap-3">
+                          <div
+                            className="pt-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleItemSelect(r.id)}
+                              className="w-5 h-5 rounded text-[#c8f560] accent-[#c8f560] cursor-pointer"
+                            />
+                          </div>
                           <img
                             src={r.coverUrl}
                             alt={r.title}
@@ -1848,14 +2012,15 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteRelease(r.id)}
-                            className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors"
-                            title="Hapus Rilisan"
+                            className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-colors cursor-pointer"
+                            title="Hapus Rilisan (Hilang di User)"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
@@ -1864,10 +2029,19 @@ export default function AdminDashboardPage() {
                   <div className="min-w-[840px]">
                     {/* Table Headers */}
                     <div className="grid grid-cols-12 text-xs font-semibold uppercase tracking-wider text-white/70 pb-3 border-b border-white/20 px-3">
+                      <div className="col-span-1 flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllPageSelected}
+                          onChange={toggleSelectPage}
+                          className="w-4 h-4 rounded text-[#c8f560] accent-[#c8f560] cursor-pointer"
+                          title="Centang semua lagu di halaman ini"
+                        />
+                      </div>
                       <div className="col-span-4">Track & Artis</div>
                       <div className="col-span-2 text-center">UPC Barcode</div>
                       <div className="col-span-2 text-center">ISRC Code</div>
-                      <div className="col-span-2 text-center">Status</div>
+                      <div className="col-span-1 text-center">Status</div>
                       <div className="col-span-2 text-right">Aksi & Unduh</div>
                     </div>
 
@@ -1879,12 +2053,31 @@ export default function AdminDashboardPage() {
                           <p className="font-semibold text-base text-white">{emptyMessage}</p>
                         </div>
                       ) : (
-                        paginatedItems.map((r) => (
+                        paginatedItems.map((r) => {
+                          const isSelected = selectedReleaseIds.includes(r.id);
+                          return (
                           <div
                             key={r.id}
                             onClick={() => setSelectedRelease(r)}
-                            className="grid grid-cols-12 items-center py-3.5 px-3 hover:bg-white/10 rounded-2xl transition-colors cursor-pointer group"
+                            className={`grid grid-cols-12 items-center py-3.5 px-3 rounded-2xl transition-colors cursor-pointer group ${
+                              isSelected
+                                ? "bg-[#c8f560]/10 border border-[#c8f560]/50"
+                                : "hover:bg-white/10"
+                            }`}
                           >
+                            {/* Col 0: Checkbox */}
+                            <div
+                              className="col-span-1 flex items-center justify-center"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleItemSelect(r.id)}
+                                className="w-4 h-4 rounded text-[#c8f560] accent-[#c8f560] cursor-pointer"
+                              />
+                            </div>
+
                             {/* Col 1: Track & Artis */}
                             <div className="col-span-4 flex items-center gap-3.5 min-w-0 pr-3">
                               <img
@@ -1917,18 +2110,18 @@ export default function AdminDashboardPage() {
                             </div>
 
                             {/* Col 4: Status */}
-                            <div className="col-span-2 flex justify-center">
+                            <div className="col-span-1 flex justify-center">
                               {r.status === "Approved" ? (
-                                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
-                                  ✓ Approved
+                                <span className="px-2.5 py-1 rounded-full bg-[#c8f560] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ✓ ACC
                                 </span>
                               ) : r.status === "Rejected" ? (
-                                <span className="px-3 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-xs whitespace-nowrap shadow-sm">
-                                  ✕ Rejected
+                                <span className="px-2.5 py-1 rounded-full bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ✕ Rej
                                 </span>
                               ) : (
-                                <span className="px-3 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
-                                  ⏳ Review
+                                <span className="px-2.5 py-1 rounded-full bg-[#fde08d] text-[#312042] font-bold text-xs whitespace-nowrap shadow-sm">
+                                  ⏳ Rev
                                 </span>
                               )}
                             </div>
@@ -1941,18 +2134,18 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedRelease(r)}
-                                className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-semibold transition-colors"
+                                className="px-2 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-1 text-[11px] font-semibold transition-colors"
                                 title="Buka Detail Rilis Lengkap & Unduh MP3/Art"
                               >
                                 <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
-                                <span>Detail</span>
+                                <span className="hidden sm:inline">Detail</span>
                               </button>
 
                               {r.status !== "Approved" && (
                                 <button
                                   type="button"
                                   onClick={() => handleReleaseStatus(r.id, "Approved")}
-                                  className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:bg-[#d8ff75] transition-colors shadow"
+                                  className="px-2 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] hover:bg-[#d8ff75] transition-colors shadow cursor-pointer"
                                   title="Setujui Rilis Ini (ACC)"
                                 >
                                   ACC
@@ -1963,7 +2156,7 @@ export default function AdminDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleReleaseStatus(r.id, "Rejected")}
-                                  className="px-2.5 py-1.5 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[11px] hover:bg-red-500/40 shadow transition-colors"
+                                  className="px-2 py-1.5 rounded-xl bg-red-500/25 border border-red-500/40 text-red-200 font-bold text-[11px] hover:bg-red-500/40 shadow transition-colors cursor-pointer"
                                   title="Tolak Rilis Ini (Reject)"
                                 >
                                   Reject
@@ -1973,14 +2166,15 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteRelease(r.id)}
-                                className="p-1.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 text-white transition-colors"
-                                title="Hapus Rilisan"
+                                className="p-1.5 rounded-xl bg-red-500/25 hover:bg-red-500/40 text-white transition-colors cursor-pointer"
+                                title="Hapus Rilisan (Hilang di User)"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>

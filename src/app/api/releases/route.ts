@@ -185,25 +185,45 @@ export async function DELETE(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "Missing ID" }, { status: 400 });
+    const idsParam = searchParams.get("ids");
+
+    let idsToDelete: string[] = [];
+    if (id) {
+      idsToDelete = [id];
+    } else if (idsParam) {
+      idsToDelete = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+    } else {
+      try {
+        const body = await req.json();
+        if (body.ids && Array.isArray(body.ids)) {
+          idsToDelete = body.ids;
+        } else if (body.id) {
+          idsToDelete = [body.id];
+        }
+      } catch {
+        // ignore json parse error
+      }
     }
 
-    const existing = await prisma.release.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ error: "Release not found" }, { status: 404 });
+    if (idsToDelete.length === 0) {
+      return NextResponse.json({ error: "Missing ID or IDs" }, { status: 400 });
     }
 
     // Only owner or ADMIN can delete
-    if (existing.userId !== user.id && user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Forbidden: Anda tidak berhak menghapus rilis artis lain." },
-        { status: 403 }
-      );
+    if (user.role === "ADMIN") {
+      const result = await prisma.release.deleteMany({
+        where: { id: { in: idsToDelete } },
+      });
+      return NextResponse.json({ ok: true, count: result.count });
+    } else {
+      const result = await prisma.release.deleteMany({
+        where: {
+          id: { in: idsToDelete },
+          userId: user.id,
+        },
+      });
+      return NextResponse.json({ ok: true, count: result.count });
     }
-
-    await prisma.release.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
   } catch (error: any) {
     console.error("DELETE release error:", error);
     return NextResponse.json({ error: error?.message || "Failed to delete release" }, { status: 500 });
