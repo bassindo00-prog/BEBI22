@@ -1090,36 +1090,6 @@ export default function UserDashboardPage() {
                     className="w-8 h-8 rounded-full object-cover border border-white/60"
                   />
                 </div>
-
-                {/* Quick View Switcher Bar (Desktop XL) */}
-                <div className="hidden xl:flex items-center gap-1 ml-4 bg-[#8a88b5]/60 border border-white/20 p-1 rounded-full text-[11px]">
-                  {[
-                    { id: "overview", label: "Overview" },
-                    { id: "analytics", label: "Analytics" },
-                    { id: "catalog", label: "Katalog" },
-                    { id: "generator", label: "AI Art" },
-                    { id: "upload", label: "+ Submit Track" },
-                    { id: "artists", label: `Artis (${userArtists.length})` },
-                    { id: "releases", label: `My Releases (${approvedUserReleases.length})` },
-                    { id: "in-review", label: `Review (${reviewUserReleases.length})` },
-                    { id: "rejected", label: `Reject (${rejectedUserReleases.length})` },
-                    { id: "wallet", label: "Royalty & Withdraw" },
-                    { id: "inbox", label: `Inbox (${messages.length})` },
-                    { id: "settings", label: "⚙ Pengaturan" },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={`px-3 py-1 rounded-full transition-all ${
-                        activeTab === tab.id
-                          ? "bg-[#312042] text-white font-medium"
-                          : "text-white/85 hover:text-white"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Center Period Switcher — Responsive 3-Pills (Daily / Weekly / Monthly) */}

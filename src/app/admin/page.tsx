@@ -999,35 +999,6 @@ export default function AdminDashboardPage() {
                     <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                   </button>
                 </div>
-
-                {/* Quick View Switcher Bar (Desktop XL) */}
-                <div className="hidden xl:flex items-center gap-1 ml-3 bg-[#8a88b5]/60 border border-white/20 p-1 rounded-full text-[11px]">
-                  {[
-                    { id: "overview", label: "Overview" },
-                    { id: "releases", label: `Review (${pendingReleases.length})` },
-                    { id: "my-releases", label: `My Releases (${approvedReleases.length})` },
-                    { id: "my-reject", label: `My Reject (${rejectedReleases.length})` },
-                    { id: "catalog", label: `Katalog (${catalogs.length})` },
-                    { id: "cms", label: "🌐 Web CMS" },
-                    { id: "royalty-input", label: "Rp Input Royalty" },
-                    { id: "inbox", label: "✉ Inbox" },
-                    { id: "withdrawals", label: `Payouts (${withdrawals.length})` },
-                    { id: "users", label: `Artists (${releasedArtists.length})` },
-                    { id: "settings", label: "⚙ Pengaturan" },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setActiveTab(t.id as any)}
-                      className={`px-3 py-1 rounded-full transition-all ${
-                        activeTab === t.id
-                          ? "bg-[#312042] text-white font-medium"
-                          : "text-white/85 hover:text-white"
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Period Pills — Responsive 3-Pills */}
