@@ -913,15 +913,15 @@ export default function UserDashboardPage() {
 
       {/* Full Screen Layout: Viewport Locked, Zero Window Scroll */}
       <div className="w-full h-full flex overflow-hidden">
-        {/* MOBILE SLIDE-OUT MENU DRAWER — Muncul saat tombol menu HP diklik */}
+        {/* SLIDE-OUT MENU DRAWER — Tersedia untuk Desktop & Mobile */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
+          <div className="fixed inset-0 z-50 flex animate-fade-in">
             <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+              className="fixed inset-0 bg-black/65 backdrop-blur-sm transition-opacity"
               onClick={() => setMobileMenuOpen(false)}
             />
 
-            <aside className="relative w-72 max-w-[82vw] h-full bg-[#46385f] border-r border-white/20 z-50 flex flex-col justify-between p-5 text-white shadow-2xl overflow-y-auto">
+            <aside className="relative w-80 max-w-[85vw] h-full bg-[#271f37]/95 backdrop-blur-2xl border-r border-white/20 z-50 flex flex-col justify-between p-6 text-white shadow-2xl overflow-y-auto animate-slide-right">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-white/15">
                   <div className="flex items-center gap-3">
@@ -932,19 +932,20 @@ export default function UserDashboardPage() {
                         setMobileMenuOpen(false);
                       }}
                       title="Dashboard Overview"
-                      className="w-9 h-9 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                      className="w-10 h-10 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer bg-white/10"
                     >
-                      <div className="w-3.5 h-6 rounded-full border-2 border-white" />
+                      <div className="w-4 h-7 rounded-full border-2 border-white" />
                     </button>
                     <div>
-                      <span className="font-bold text-sm tracking-tight text-white block">BREAKOUT</span>
+                      <span className="font-bold text-base tracking-tight text-white block">BREAKOUT</span>
                       <span className="text-[10px] text-[#c8f560] font-semibold tracking-wider uppercase">Artist Studio</span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+                    title="Tutup Menu"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -952,18 +953,18 @@ export default function UserDashboardPage() {
 
                 <nav className="mt-5 space-y-1.5">
                   {[
-                    { id: "overview", label: "Dashboard Overview", icon: Home },
-                    { id: "analytics", label: "Analytics & Streams", icon: Activity },
-                    { id: "catalog", label: "Katalog Musik (Song ID)", icon: ListMusic },
-                    { id: "generator", label: "Studio AI Cover Art", icon: Sparkles },
-                    { id: "upload", label: "Submit Track Rilis Baru", icon: UploadCloud },
-                    { id: "artists", label: `Profil Artis & Creator (${userArtists.length})`, icon: Mic2 },
-                    { id: "releases", label: `My Releases — ACC (${approvedUserReleases.length})`, icon: CheckCircle2 },
-                    { id: "in-review", label: `Lagu Di-Review (${reviewUserReleases.length})`, icon: Clock },
-                    { id: "rejected", label: `Lagu Di-Reject (${rejectedUserReleases.length})`, icon: XCircle },
-                    { id: "wallet", label: "Royalty & Withdraw", icon: Building2 },
-                    { id: "inbox", label: `Inbox Pesan (${messages.length})`, icon: Inbox },
-                    { id: "settings", label: "Pengaturan Akun", icon: Settings },
+                    { id: "overview", label: "Dashboard Overview", icon: Home, badge: null, color: null },
+                    { id: "analytics", label: "Analytics & Streams", icon: Activity, badge: "LIVE", color: "bg-[#c8f560]/20 text-[#c8f560]" },
+                    { id: "catalog", label: "Katalog Musik (Song ID)", icon: ListMusic, badge: null, color: null },
+                    { id: "generator", label: "Studio AI Cover Art", icon: Sparkles, badge: "AI", color: "bg-[#ff7fab]/25 text-[#ff7fab]" },
+                    { id: "upload", label: "Submit Track Rilis Baru", icon: UploadCloud, badge: "NEW", color: "bg-[#c8f560] text-[#312042]" },
+                    { id: "artists", label: "Profil Artis & Creator", icon: Mic2, badge: userArtists.length ? `${userArtists.length}` : null, color: "bg-white/20 text-white" },
+                    { id: "releases", label: "My Releases — ACC", icon: CheckCircle2, badge: approvedUserReleases.length ? `${approvedUserReleases.length}` : null, color: "bg-[#c8f560] text-[#312042]" },
+                    { id: "in-review", label: "Lagu Di-Review", icon: Clock, badge: reviewUserReleases.length ? `${reviewUserReleases.length}` : null, color: "bg-[#fde08d] text-[#312042]" },
+                    { id: "rejected", label: "Lagu Di-Reject", icon: XCircle, badge: rejectedUserReleases.length ? `${rejectedUserReleases.length}` : null, color: "bg-red-400 text-white" },
+                    { id: "wallet", label: "Royalty & Withdraw", icon: Building2, badge: "IDR", color: "bg-[#c8f560]/20 text-[#c8f560]" },
+                    { id: "inbox", label: "Inbox Pesan", icon: Inbox, badge: messages.length ? `${messages.length}` : null, color: "bg-[#c8f560] text-[#312042]" },
+                    { id: "settings", label: "Pengaturan Akun", icon: Settings, badge: null, color: null },
                   ].map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
@@ -974,23 +975,30 @@ export default function UserDashboardPage() {
                           setActiveTab(item.id as any);
                           setMobileMenuOpen(false);
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-medium transition-all ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer ${
                           isActive
-                            ? "bg-[#312042] text-[#c8f560] font-bold shadow-md border border-[#c8f560]/30"
-                            : "text-white/85 hover:bg-white/10 hover:text-white"
+                            ? "bg-[#352a4a] text-[#c8f560] shadow-md border border-[#c8f560]/35 scale-[1.01]"
+                            : "text-white/80 hover:bg-white/10 hover:text-white"
                         }`}
                       >
-                        <span className={`p-2 rounded-xl ${isActive ? "bg-[#c8f560]/20 text-[#c8f560]" : "bg-white/10 text-white"}`}>
-                          <Icon className="w-4 h-4" />
-                        </span>
-                        <span className="truncate">{item.label}</span>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`p-2 rounded-xl shrink-0 ${isActive ? "bg-[#c8f560]/20 text-[#c8f560]" : "bg-white/10 text-white"}`}>
+                            <Icon className="w-4 h-4" />
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${item.color || "bg-white/15 text-white"}`}>
+                            {item.badge}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </nav>
               </div>
 
-              <div className="pt-4 border-t border-white/15 space-y-3">
+              <div className="pt-4 mt-6 border-t border-white/15 space-y-3">
                 <div className="flex items-center gap-3 px-1">
                   <img
                     src={user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"}
@@ -1005,7 +1013,7 @@ export default function UserDashboardPage() {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/30 text-white text-xs font-medium transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-red-500/30 text-white text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-red-400" />
                   <span>Keluar Akun</span>
@@ -1015,232 +1023,22 @@ export default function UserDashboardPage() {
           </div>
         )}
 
-        {/* LEFT SIDEBAR (DESKTOP) — Pinned & Frozen, Hidden on mobile */}
-        <aside className="hidden md:flex w-[74px] sm:w-[86px] h-full shrink-0 border-r border-white/20 flex-col items-center py-6 justify-between select-none z-40 bg-[#74729f]/30 backdrop-blur-md">
-          {/* Top Logo Circle */}
-          <div className="flex flex-col items-center gap-10">
-            <button
-              type="button"
-              onClick={() => setActiveTab("overview")}
-              title="Dashboard Overview"
-              className="w-11 h-11 rounded-full border-2 border-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
-            >
-              <div className="w-4 h-7 rounded-full border-2 border-white" />
-            </button>
-
-            {/* Navigation Pill Icons */}
-            <nav className="flex flex-col items-center gap-3.5 mt-2">
-              <button
-                onClick={() => setActiveTab("overview")}
-                title="Dashboard Overview"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "overview"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Home className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("analytics")}
-                title="Analytics & Streaming"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "analytics"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Activity className="w-4 h-4" />
-              </button>
-
-              {/* Dedicated Menu Button for Music Catalog */}
-              <button
-                onClick={() => setActiveTab("catalog")}
-                title="Katalog Musik (Song ID, Publisher & Link)"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "catalog"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <ListMusic className="w-4 h-4" />
-              </button>
-
-              {/* Dedicated Menu Button for AI Cover Art Generator */}
-              <button
-                onClick={() => setActiveTab("generator")}
-                title="Studio AI Cover Art Generator"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "generator"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Sparkles className="w-4 h-4" />
-              </button>
-
-              {/* Dedicated Menu Button for Submit Track */}
-              <button
-                onClick={() => setActiveTab("upload")}
-                title="New Release — Submit Track"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "upload"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <UploadCloud className="w-4 h-4" />
-              </button>
-
-              {/* Dedicated Menu Button for Artist Profile & Create */}
-              <button
-                onClick={() => setActiveTab("artists")}
-                title="Profil Artis & Creator (Create New Artist)"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
-                  activeTab === "artists"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Mic2 className="w-4 h-4" />
-                {userArtists.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#c8f560] text-[#312042] text-[9px] font-bold flex items-center justify-center shadow">
-                    {userArtists.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Releases - ACC (Approved) */}
-              <button
-                onClick={() => setActiveTab("releases")}
-                title="My Releases — ACC (Rilis Resmi)"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
-                  activeTab === "releases"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {approvedUserReleases.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#c8f560] text-[#312042] text-[9px] font-bold flex items-center justify-center shadow">
-                    {approvedUserReleases.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Releases - In Review (Sedang Ditinjau) */}
-              <button
-                onClick={() => setActiveTab("in-review")}
-                title="Lagu Sedang Di-Review Tim Kurator"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
-                  activeTab === "in-review"
-                    ? "bg-[#312042] text-[#fde08d] shadow-md scale-110 ring-2 ring-[#fde08d]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Clock className="w-4 h-4" />
-                {reviewUserReleases.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#fde08d] text-[#312042] text-[9px] font-bold flex items-center justify-center shadow">
-                    {reviewUserReleases.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Releases - Rejected (Ditolak) */}
-              <button
-                onClick={() => setActiveTab("rejected")}
-                title="Lagu Ditolak (Perlu Perbaikan)"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
-                  activeTab === "rejected"
-                    ? "bg-[#312042] text-red-300 shadow-md scale-110 ring-2 ring-red-400/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <XCircle className="w-4 h-4" />
-                {rejectedUserReleases.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shadow">
-                    {rejectedUserReleases.length}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab("wallet")}
-                title="Royalty & Withdrawals"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "wallet"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-
-              {/* Inbox Menu Button */}
-              <button
-                onClick={() => setActiveTab("inbox")}
-                title="Pesan Masuk / Inbox"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 relative ${
-                  activeTab === "inbox"
-                    ? "bg-[#312042] text-[#c8f560] shadow-md scale-110 ring-2 ring-[#c8f560]/40"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Inbox className="w-4 h-4" />
-                {messages.length > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c8f560]" />
-                )}
-              </button>
-
-              <div className="h-2 w-6 border-b border-white/20" />
-
-              {/* Gear Icon -> Settings / Pengaturan */}
-              <button
-                onClick={() => setActiveTab("settings")}
-                title="Pengaturan / Account Settings"
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  activeTab === "settings"
-                    ? "bg-[#312042] text-white shadow-md scale-110"
-                    : "bg-white/20 text-white hover:bg-white/30"
-                }`}
-              >
-                <Settings
-                  className={`w-4 h-4 transition-transform duration-500 ${
-                    activeTab === "settings" ? "rotate-90 text-[#c8f560]" : ""
-                  }`}
-                />
-              </button>
-            </nav>
-          </div>
-
-          {/* Bottom Logout Icon */}
-          <div className="flex flex-col items-center">
-            <button
-              onClick={handleLogout}
-              title="Logout"
-              className="w-11 h-11 rounded-full bg-white/20 text-white hover:bg-white/35 flex items-center justify-center transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </aside>
-
         {/* RIGHT COLUMN: Pinned Top Bar + Scrollable Main Content */}
         <div className="flex-1 h-full flex flex-col overflow-hidden min-w-0">
           {/* FROZEN TOP BAR — Permanently Pinned at the top, NEVER moves during scroll */}
           <header className="w-full shrink-0 z-30 px-4 sm:px-7 md:px-8 py-3 sm:py-3.5 border-b border-white/15 bg-[#8a88b5]/60 backdrop-blur-md shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-              {/* Brand + Mobile Hamburger Toggle */}
+              {/* Brand + Hamburger Menu Button */}
               <div className="flex items-center justify-between w-full sm:w-auto">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="md:hidden p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
-                    title="Buka Menu Navigasi"
+                    className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
+                    title="Buka Slide Bar Menu"
                   >
-                    <Menu className="w-5 h-5" />
+                    <Menu className="w-5 h-5 text-white" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Menu</span>
                   </button>
                   <span className="text-lg sm:text-xl font-bold tracking-wide text-white flex items-center gap-2">
                     BREAKOUT
