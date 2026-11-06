@@ -123,6 +123,142 @@ const STYLES = `
     transform: translateY(-1px);
   }
 
+  /* MOBILE MENU BUTTON & DRAWER */
+  .mobile-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(20, 17, 20, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 8px;
+    z-index: 25;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .mobile-menu-btn:active {
+    transform: scale(0.95);
+  }
+
+  .mobile-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .mobile-drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(85vw, 320px);
+    background: #fff5f8;
+    z-index: 100;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 24px;
+  }
+  .mobile-drawer.open {
+    transform: translateX(0);
+  }
+
+  .drawer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(20, 17, 20, 0.08);
+  }
+
+  .drawer-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(20, 17, 20, 0.05);
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .drawer-close:hover {
+    background: rgba(20, 17, 20, 0.1);
+  }
+
+  .drawer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 24px 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .drawer-link {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    text-decoration: none;
+    padding: 12px 14px;
+    border-radius: 10px;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .drawer-link:hover, .drawer-link:active {
+    background: rgba(255, 127, 171, 0.15);
+    color: #ff528e;
+  }
+
+  .drawer-footer {
+    padding-top: 16px;
+    border-top: 1px solid rgba(20, 17, 20, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .drawer-cta {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(255, 127, 171, 0.4);
+    transition: transform 0.2s, background 0.2s;
+  }
+  .drawer-cta:hover {
+    background: #ff6a9c;
+    transform: translateY(-1px);
+  }
+
   /* HERO */
   .hero {
     position: relative;
@@ -273,8 +409,8 @@ const STYLES = `
 
   /* RESPONSIVE */
   @media (max-width: 720px) {
-    .links a:not(.cta) { display: none; }
-    .links .cta { padding: 9px 14px; font-size: 13px; }
+    .links { display: none !important; }
+    .mobile-menu-btn { display: flex !important; }
     .brand { font-size: 14px; }
     .brand-mark { width: 30px; height: 30px; border-radius: 8px; }
     .hero { cursor: auto; }
@@ -761,6 +897,18 @@ export default function BreakoutApp({
 }) {
   const [data, setData] = useState<LandingPageData>(initialData);
   const [emailInput, setEmailInput] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<HTMLDivElement>(null);
@@ -1155,7 +1303,92 @@ export default function BreakoutApp({
             LOGIN <span aria-hidden="true">↗</span>
           </Link>
         </nav>
+
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          aria-label="Buka Menu"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
       </header>
+
+      {/* MOBILE SLIDE BAR / DRAWER */}
+      <div
+        className={`mobile-drawer-overlay ${mobileMenuOpen ? "open" : ""}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden={!mobileMenuOpen}
+      />
+      <div
+        className={`mobile-drawer ${mobileMenuOpen ? "open" : ""}`}
+        role="dialog"
+        aria-label="Menu Mobile"
+      >
+        <div className="drawer-top">
+          <div className="brand" style={{ pointerEvents: "none" }}>
+            <span className="brand-mark">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transform: "rotate(-12deg)", width: 16, height: 16 }}
+              >
+                <path d="M6 4h8a4 4 0 0 1 0 8H6z" />
+                <path d="M6 12h9a4 4 0 0 1 0 8H6z" />
+                <path d="M6 4v16" />
+              </svg>
+            </span>
+            BREAKOUT
+          </div>
+          <button
+            type="button"
+            className="drawer-close"
+            aria-label="Tutup Menu"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+
+        <nav className="drawer-links">
+          <a className="drawer-link" href="#rilisan" onClick={() => setMobileMenuOpen(false)}>
+            RELEASES
+          </a>
+          <a className="drawer-link" href="#layanan" onClick={() => setMobileMenuOpen(false)}>
+            LAYANAN
+          </a>
+          <a className="drawer-link" href="#faq" onClick={() => setMobileMenuOpen(false)}>
+            FAQ
+          </a>
+          <a className="drawer-link" href="#testimoni" onClick={() => setMobileMenuOpen(false)}>
+            TESTIMONI
+          </a>
+          <a className="drawer-link" href="#artis" onClick={() => setMobileMenuOpen(false)}>
+            ARTIS
+          </a>
+          <a className="drawer-link" href="#kontak" onClick={() => setMobileMenuOpen(false)}>
+            CONTACT
+          </a>
+        </nav>
+
+        <div className="drawer-footer">
+          <Link
+            className="drawer-cta"
+            href="/login"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            LOGIN <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </div>
 
       {/* BAR 1: HERO DENGAN PINK RIDER SUIT-UP CANVAS */}
       <section
