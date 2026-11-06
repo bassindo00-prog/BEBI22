@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -24,13 +25,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const role = normalizedEmail === "avelinfx@gmail.com" ? "ADMIN" : "USER";
+    const role =
+      normalizedEmail === "avelinfx@gmail.com" || normalizedEmail === "admin@breakout.id"
+        ? "ADMIN"
+        : "USER";
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
-        password,
+        password: hashedPassword,
         role,
         avatar:
           "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",

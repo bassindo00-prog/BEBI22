@@ -93,7 +93,7 @@ export default function LoginPage() {
           {/* User Name / Email Input */}
           <div className="relative">
             <input
-              type="email"
+              type="text"
               required
               placeholder="User Name / Email"
               value={email}
