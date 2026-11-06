@@ -19,6 +19,7 @@ model User {
   royaltyPending   Float        @default(0)
   totalWithdrawn   Float        @default(0)
   pendingWithdraw  Float        @default(0)
+  royaltyMonth     String?      @default("November") // Cukup bulan saja: "Januari", "Februari", dst.
   createdAt        DateTime     @default(now())
   releases         Release[]
   withdrawals      Withdrawal[]

@@ -42,6 +42,7 @@ import {
   Sparkles,
   Activity,
   Palette,
+  Calendar,
 } from "lucide-react";
 import VisaWithdrawalCardModal from "@/components/VisaWithdrawalCardModal";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -156,6 +157,7 @@ export default function AdminDashboardPage() {
   const [inputRoyaltyBalance, setInputRoyaltyBalance] = useState<number>(0);
   const [inputRoyaltyPending, setInputRoyaltyPending] = useState<number>(0);
   const [inputTotalStreams, setInputTotalStreams] = useState<number>(0);
+  const [inputRoyaltyMonth, setInputRoyaltyMonth] = useState<string>("November");
   const [savingRoyalty, setSavingRoyalty] = useState(false);
   const [grossRoyaltyInput, setGrossRoyaltyInput] = useState<number>(100000);
   const [cutPercentage, setCutPercentage] = useState<number>(30);
@@ -238,6 +240,7 @@ export default function AdminDashboardPage() {
           setInputRoyaltyBalance(target.royaltyBalance || 0);
           setInputRoyaltyPending(target.royaltyPending || 0);
           setInputTotalStreams(target.totalStreams || 0);
+          setInputRoyaltyMonth(target.royaltyMonth || "November");
         }
       }
 
@@ -274,6 +277,7 @@ export default function AdminDashboardPage() {
       setInputRoyaltyBalance(u.royaltyBalance || 0);
       setInputRoyaltyPending(u.royaltyPending || 0);
       setInputTotalStreams(u.totalStreams || 0);
+      setInputRoyaltyMonth(u.royaltyMonth || "November");
     }
   };
 
@@ -291,11 +295,12 @@ export default function AdminDashboardPage() {
           royaltyBalance: inputRoyaltyBalance,
           royaltyPending: inputRoyaltyPending,
           totalStreams: inputTotalStreams,
+          royaltyMonth: inputRoyaltyMonth,
         }),
       });
       if (res.ok) {
         await fetchAdminData();
-        showNotice("Data Royalty & Streaming berhasil diupdate untuk User!");
+        showNotice(`Data Royalty & Streams Bulan ${inputRoyaltyMonth} berhasil disimpan untuk User!`);
       }
     } finally {
       setSavingRoyalty(false);
@@ -1357,6 +1362,7 @@ export default function AdminDashboardPage() {
                   setInputRoyaltyBalance(selectedArtistDetail.royaltyBalance || 0);
                   setInputRoyaltyPending(selectedArtistDetail.royaltyPending || 0);
                   setInputTotalStreams(selectedArtistDetail.totalStreams || 0);
+                  setInputRoyaltyMonth(selectedArtistDetail.royaltyMonth || "November");
                   setSelectedArtistDetail(null);
                   setActiveTab("royalty-input");
                 }}
@@ -3125,6 +3131,42 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
+                  {/* Pilihan Periode Bulan Royalti & Streams (Cukup Bulan) */}
+                  <div className="p-3.5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="text-white font-bold text-xs flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#c8f560]" />
+                        <span>Periode Bulan Royalti & Streams:</span>
+                      </label>
+                      <span className="px-3 py-1 rounded-full bg-[#312042] text-[#c8f560] text-xs font-extrabold border border-[#c8f560]/40">
+                        Bulan Terpilih: {inputRoyaltyMonth}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1">
+                      {[
+                        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                      ].map((mName) => {
+                        const isSelected = inputRoyaltyMonth === mName;
+                        return (
+                          <button
+                            key={mName}
+                            type="button"
+                            onClick={() => setInputRoyaltyMonth(mName)}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center ${
+                              isSelected
+                                ? "bg-[#c8f560] text-[#312042] font-extrabold shadow scale-102 ring-1 ring-[#c8f560]"
+                                : "bg-white/10 hover:bg-white/20 text-white/80 border border-white/10"
+                            }`}
+                          >
+                            {mName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
                     <button
                       type="button"
@@ -3200,17 +3242,23 @@ export default function AdminDashboardPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-center">
+                          <div className="grid grid-cols-3 gap-2 text-center">
                             <div className="p-3 rounded-xl bg-white/10">
-                              <p className="text-white/60 text-[10px]">Saldo di Akun Saat Ini</p>
-                              <p className="font-bold text-base text-[#c8f560]">
+                              <p className="text-white/60 text-[10px]">Saldo di Akun</p>
+                              <p className="font-bold text-xs sm:text-sm text-[#c8f560] truncate">
                                 Rp {Number(curr.royaltyBalance || 0).toLocaleString("id-ID")}
                               </p>
                             </div>
                             <div className="p-3 rounded-xl bg-white/10">
                               <p className="text-white/60 text-[10px]">Total Streams</p>
-                              <p className="font-bold text-base text-white">
+                              <p className="font-bold text-xs sm:text-sm text-white">
                                 {(Number(curr.totalStreams) / 1000).toFixed(0)}K
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/10">
+                              <p className="text-white/60 text-[10px]">Bulan Royalti</p>
+                              <p className="font-bold text-xs sm:text-sm text-[#fde08d] truncate">
+                                {curr.royaltyMonth || inputRoyaltyMonth}
                               </p>
                             </div>
                           </div>
@@ -3879,6 +3927,7 @@ export default function AdminDashboardPage() {
                                 setInputRoyaltyBalance(u.royaltyBalance || 0);
                                 setInputRoyaltyPending(u.royaltyPending || 0);
                                 setInputTotalStreams(u.totalStreams || 0);
+                                setInputRoyaltyMonth(u.royaltyMonth || "November");
                                 setActiveTab("royalty-input");
                               }}
                               className="py-1.5 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs transition-colors cursor-pointer"
@@ -3983,6 +4032,7 @@ export default function AdminDashboardPage() {
                                     setInputRoyaltyBalance(u.royaltyBalance || 0);
                                     setInputRoyaltyPending(u.royaltyPending || 0);
                                     setInputTotalStreams(u.totalStreams || 0);
+                                    setInputRoyaltyMonth(u.royaltyMonth || "November");
                                     setActiveTab("royalty-input");
                                   }}
                                   className="px-2 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-[11px] transition-colors cursor-pointer"

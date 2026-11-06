@@ -40,7 +40,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { userId, royaltyBalance, totalStreams, royaltyPending, role } = body;
+    const { userId, royaltyBalance, totalStreams, royaltyPending, royaltyMonth, role } = body;
 
     const updated = await prisma.user.update({
       where: { id: userId },
@@ -48,6 +48,7 @@ export async function PATCH(req: Request) {
         ...(royaltyBalance !== undefined ? { royaltyBalance: Number(royaltyBalance) } : {}),
         ...(royaltyPending !== undefined ? { royaltyPending: Number(royaltyPending) } : {}),
         ...(totalStreams !== undefined ? { totalStreams: Number(totalStreams) } : {}),
+        ...(royaltyMonth !== undefined ? { royaltyMonth: String(royaltyMonth) } : {}),
         ...(role !== undefined ? { role } : {}),
       },
     });

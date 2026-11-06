@@ -114,6 +114,7 @@ type UserProfile = {
   royaltyPending: number;
   totalWithdrawn: number;
   pendingWithdraw: number;
+  royaltyMonth?: string;
   releases: ReleaseItem[];
   withdrawals: WithdrawalItem[];
 };
@@ -1311,7 +1312,7 @@ export default function UserDashboardPage() {
                   value={`Rp ${animatedRoyaltyBalance.toLocaleString("id-ID")}`}
                   valueColor="text-[#c8f560]"
                   valueSize="text-2xl sm:text-3xl lg:text-3xl"
-                  subtitle="Siap Dicairkan"
+                  subtitle={`Bulan ${user?.royaltyMonth || "November"} • Siap Dicairkan`}
                   dotColor="bg-[#c8f560]"
                   cardNumber="4532 •••• •••• 8891"
                   holderName={`${user?.name || "ARTIST"} • BREAKOUT PAY`}
@@ -1575,15 +1576,19 @@ export default function UserDashboardPage() {
                           <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-pulse" />
                         </h3>
                         <p className="text-[11px] text-white/70">
-                          Sinkronisasi performa streaming akun Anda ({userStreams.toLocaleString("id-ID")} Streams) • {period}
+                          Sinkronisasi performa streaming akun Anda ({userStreams.toLocaleString("id-ID")} Streams) • Periode: <strong className="text-[#c8f560]">Bulan {user?.royaltyMonth || "November"}</strong>
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#312042] border border-[#c8f560]/40 text-[11px] font-bold text-[#c8f560] flex items-center gap-1 shadow-sm">
+                        <Calendar className="w-3 h-3" />
+                        <span>Bulan {user?.royaltyMonth || "November"}</span>
+                      </span>
                       <button
                         onClick={() => setActiveTab("releases")}
-                        className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-medium transition-colors cursor-pointer"
                       >
                         Lihat Katalog ({releases.length})
                       </button>
@@ -1989,6 +1994,12 @@ export default function UserDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-6">
+                  <div>
+                    <p className="text-xs text-white/80">Periode Data</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#c8f560] mt-0.5">
+                      Bulan {user?.royaltyMonth || "November"}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-white/80">Total Streams</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
@@ -3637,6 +3648,12 @@ export default function UserDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-6">
+                  <div>
+                    <p className="text-xs text-white/80">Periode Royalti</p>
+                    <p className="text-xl sm:text-2xl font-bold text-[#c8f560] mt-0.5">
+                      Bulan {user?.royaltyMonth || "November"}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-white/80">Total Royalti</p>
                     <p className="text-2xl sm:text-3xl font-semibold text-white mt-0.5 tabular-nums">
