@@ -53,6 +53,8 @@ import {
   XCircle,
   RefreshCw,
   Banknote,
+  Wallet,
+  TrendingUp,
 } from "lucide-react";
 import GlobalStreamsMap3D from "@/components/GlobalStreamsMap3D";
 import VisaMetricCard from "@/components/VisaMetricCard";
@@ -831,6 +833,72 @@ export default function UserDashboardPage() {
 
   const releases = user?.releases || [];
   const withdrawals = user?.withdrawals || [];
+
+  // Synchronized User Monthly Approved Payout Royalty Data
+  const userCurrentMonthIdx = useMemo(() => new Date().getMonth(), []);
+  const [hoveredUserPayoutMonth, setHoveredUserPayoutMonth] = useState<number>(new Date().getMonth());
+
+  const userMonthlyApprovedPayoutData = useMemo(() => {
+    const approved = withdrawals.filter((w) => w.status === "Approved");
+    const monthTotals = Array(12).fill(0);
+    const monthCounts = Array(12).fill(0);
+
+    approved.forEach((w) => {
+      let mIdx = -1;
+      if (w.date && typeof w.date === "string") {
+        const parts = w.date.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            // YYYY-MM-DD
+            mIdx = parseInt(parts[1], 10) - 1;
+          } else {
+            // DD-MM-YYYY
+            mIdx = parseInt(parts[1], 10) - 1;
+          }
+        }
+      }
+      if (mIdx < 0 || isNaN(mIdx) || mIdx > 11) {
+        mIdx = userCurrentMonthIdx;
+      }
+      if (mIdx >= 0 && mIdx < 12) {
+        monthTotals[mIdx] += Number(w.amount) || 0;
+        monthCounts[mIdx] += 1;
+      }
+    });
+
+    const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const FULL_MONTH_LABELS = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
+    const maxVal = Math.max(...monthTotals, 1);
+    const totalAll = monthTotals.reduce((a, b) => a + b, 0);
+
+    const items = MONTH_LABELS.map((label, idx) => {
+      const val = monthTotals[idx];
+      const count = monthCounts[idx];
+      const heightPct = val > 0 ? Math.max(12, Math.round((val / maxVal) * 100)) : 6;
+      return {
+        idx,
+        label,
+        fullName: FULL_MONTH_LABELS[idx],
+        val,
+        count,
+        heightPct,
+        isCurrent: idx === userCurrentMonthIdx,
+      };
+    });
+
+    return {
+      items,
+      totalAll,
+      maxVal,
+      approvedList: approved,
+      currentMonthVal: monthTotals[userCurrentMonthIdx],
+      currentMonthCount: monthCounts[userCurrentMonthIdx],
+    };
+  }, [withdrawals, userCurrentMonthIdx]);
 
   // Pemisahan Rilis: ACC (Approved), Sedang Di-Review, dan Ditolak (Rejected)
   const approvedUserReleases = releases.filter((r) => r.status === "Approved");
@@ -1726,70 +1794,180 @@ export default function UserDashboardPage() {
                   </div>
                 </div>
 
-                {/* Upcoming Releases Schedule — Translucent Lavender Card */}
+                {/* Monthly Approved Withdrawals Royalty Chart — Live Synced with Admin ACC */}
                 <div
                   className={`lg:col-span-4 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
                   style={{ animationDelay: "320ms" }}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-white">Upcoming Releases</h3>
-                    <span className="text-xs text-white/75 flex items-center gap-1">
-                      Schedule <ChevronDown className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-
-                  {releases.length === 0 ? (
-                    <div className="py-10 text-center text-white/70">
-                      <Calendar className="w-10 h-10 mx-auto text-white/25 mb-2" />
-                      <p className="font-medium text-xs text-white">Belum Ada Jadwal Rilis</p>
-                      <p className="text-[11px] text-white/60 mt-1">
-                        Jadwal tanggal rilis DSP Anda akan muncul di sini.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 text-xs">
-                      <div className="grid grid-cols-12 items-center gap-2 pb-3 border-b border-white/15">
-                        <div className="col-span-3 text-white/75">
-                          <p className="text-[11px] text-white/70 mb-1">DSP</p>
-                          <p className="font-semibold text-white">Live</p>
-                          <p className="text-[11px]">Active</p>
+                  <div>
+                    {/* Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-[#c8f560]/20 border border-[#c8f560]/40 flex items-center justify-center text-[#c8f560]">
+                          <TrendingUp className="w-4 h-4" />
                         </div>
-                        <div className="col-span-9">
-                          <p className="text-[11px] text-white/70 mb-1.5">Scheduled Releases</p>
-                          <div className="px-4 py-2.5 rounded-2xl bg-white/15 text-white font-medium">
-                            {releases.length} Track Terjadwal
-                          </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                            <span>Grafik Payout ACC Bulanan</span>
+                            <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-pulse" />
+                          </h3>
+                          <p className="text-[11px] text-white/70">
+                            Royalti dicairkan • Tahun {new Date().getFullYear()}
+                          </p>
                         </div>
                       </div>
 
-                      {releases.slice(0, 3).map((slot, idx) => (
-                        <div key={slot.id} className="grid grid-cols-12 items-center gap-2">
-                          <div className="col-span-3">
-                            <p className="font-semibold text-white text-[11px]">{slot.releaseDate.split("-")[0] || "01"}</p>
-                            <p className="text-[10px] text-white/70">DSP</p>
-                          </div>
-                          <div className="col-span-9">
-                            <div
-                              style={{
-                                width: barsReady ? "100%" : "0%",
-                                transitionDelay: `${idx * 140 + 200}ms`,
-                              }}
-                              className={`px-3.5 py-2.5 rounded-2xl ${
-                                idx === 0
-                                  ? "bg-[#c8f560] text-[#312042]"
-                                  : idx === 1
-                                  ? "bg-[#312042] text-white"
-                                  : "bg-white/20 text-white"
-                              } flex items-center justify-between text-[11px] font-medium overflow-hidden whitespace-nowrap transition-all duration-700 ease-out`}
-                            >
-                              <span className="truncate">{slot.title}</span>
-                              <span className="text-[10px] opacity-80 shrink-0 ml-1">{slot.status}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-lg bg-black/25 border border-white/15 text-[10px] font-mono text-[#c8f560] font-bold">
+                          {userMonthlyApprovedPayoutData.approvedList.length} ACC
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("wallet")}
+                          className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-[10px] transition-all cursor-pointer"
+                          title="Buka menu dompet & penarikan"
+                        >
+                          Tarik Dana
+                        </button>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Metric Pills */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="p-2.5 rounded-xl bg-black/25 border border-white/10">
+                        <span className="text-[10px] text-white/60 block">Total Dicairkan</span>
+                        <span className="text-sm sm:text-base font-extrabold text-[#c8f560] tabular-nums block mt-0.5 truncate">
+                          Rp {userMonthlyApprovedPayoutData.totalAll.toLocaleString("id-ID")}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-black/25 border border-white/10">
+                        <span className="text-[10px] text-[#fde08d] block truncate">
+                          {userMonthlyApprovedPayoutData.items[hoveredUserPayoutMonth]?.fullName || "Bulan Ini"}
+                        </span>
+                        <span className="text-sm sm:text-base font-extrabold text-white tabular-nums block mt-0.5 truncate">
+                          Rp {(userMonthlyApprovedPayoutData.items[hoveredUserPayoutMonth]?.val || 0).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 12-Month Bar Chart */}
+                    <div className="p-3 rounded-2xl bg-black/20 border border-white/10 my-2">
+                      <div className="flex items-center justify-between text-[10px] text-white/60 mb-2">
+                        <span className="uppercase font-semibold tracking-wider">Pencairan per Bulan (Rp)</span>
+                        <span className="text-[#c8f560] font-bold">
+                          {userMonthlyApprovedPayoutData.items[hoveredUserPayoutMonth]?.count || 0} Payout di-{userMonthlyApprovedPayoutData.items[hoveredUserPayoutMonth]?.label}
+                        </span>
+                      </div>
+
+                      <div className="h-28 flex items-end justify-between gap-1 sm:gap-1.5 pt-4 pb-1 relative">
+                        {userMonthlyApprovedPayoutData.items.map((m) => {
+                          const isHovered = hoveredUserPayoutMonth === m.idx;
+                          const isCurrent = m.isCurrent;
+                          const hasVal = m.val > 0;
+
+                          return (
+                            <div
+                              key={m.idx}
+                              onMouseEnter={() => setHoveredUserPayoutMonth(m.idx)}
+                              onClick={() => setHoveredUserPayoutMonth(m.idx)}
+                              className="flex-1 flex flex-col items-center h-full justify-end cursor-pointer group relative"
+                              title={`${m.fullName}: Rp ${m.val.toLocaleString("id-ID")} (${m.count} payout)`}
+                            >
+                              <div className="w-full relative flex items-end justify-center h-full">
+                                <div
+                                  style={{
+                                    height: `${hasVal ? m.heightPct * animProgress : 6}%`,
+                                  }}
+                                  className={`w-full max-w-[16px] rounded-t-lg transition-all duration-500 ${
+                                    isHovered
+                                      ? "bg-[#c8f560] shadow-lg shadow-[#c8f560]/40 scale-105"
+                                      : isCurrent
+                                      ? "bg-gradient-to-t from-[#c8f560]/50 to-[#c8f560]"
+                                      : hasVal
+                                      ? "bg-gradient-to-t from-[#8a88b5] to-[#c4c3f0]"
+                                      : "bg-white/10"
+                                  }`}
+                                />
+                              </div>
+
+                              <span
+                                className={`text-[9px] font-bold mt-1.5 transition-colors select-none ${
+                                  isHovered
+                                    ? "text-[#c8f560]"
+                                    : isCurrent
+                                    ? "text-[#c8f560] underline underline-offset-2"
+                                    : "text-white/60 group-hover:text-white"
+                                }`}
+                              >
+                                {m.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 2-3 Payout Terakhir yang Di-ACC */}
+                    <div className="pt-2">
+                      <div className="text-[11px] font-semibold text-white/80 mb-2 flex items-center justify-between">
+                        <span>Riwayat ACC Terbaru:</span>
+                        {withdrawals.filter((w) => w.status === "Pending").length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("wallet")}
+                            className="text-[10px] text-[#fde08d] font-bold hover:underline cursor-pointer"
+                          >
+                            {withdrawals.filter((w) => w.status === "Pending").length} Pending Review →
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {userMonthlyApprovedPayoutData.approvedList.length === 0 ? (
+                          <div className="py-4 text-center text-white/50 text-xs">
+                            Belum ada withdraw yang di-ACC oleh Admin.
+                          </div>
+                        ) : (
+                          userMonthlyApprovedPayoutData.approvedList.slice(0, 3).map((w) => (
+                            <div
+                              key={w.id}
+                              className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between gap-2 text-xs transition-colors"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-semibold text-white truncate text-[11px]">
+                                  <span className="text-[#c8f560] font-bold">
+                                    Rp {w.amount.toLocaleString("id-ID")}
+                                  </span>{" "}
+                                  • {w.method}
+                                </p>
+                                <p className="text-[10px] text-white/60 truncate">
+                                  {w.date}
+                                </p>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-md bg-[#c8f560]/20 text-[#c8f560] text-[10px] font-bold shrink-0">
+                                ✓ ACC
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Realtime Sync */}
+                  <div className="mt-4 p-3 rounded-2xl bg-white/10 border border-white/15 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-ping" />
+                      <div>
+                        <p className="font-semibold text-white text-[11px]">Auto-Sync Admin ACC</p>
+                        <p className="text-[10px] text-[#c8f560]">Otomatis bertambah saat di-ACC admin</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-[#312042] text-[#c8f560] text-[10px] font-bold border border-[#c8f560]/30">
+                      Realtime DB
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
