@@ -120,6 +120,7 @@ export default function AdminDashboardPage() {
   const [pageCatalog, setPageCatalog] = useState(1);
   const [pageWithdrawals, setPageWithdrawals] = useState(1);
   const [pageUsers, setPageUsers] = useState(1);
+  const [withdrawalTab, setWithdrawalTab] = useState<"Pending" | "Approved" | "Rejected" | "All">("Pending");
 
   // Track Detail Modal State
   const [selectedRelease, setSelectedRelease] = useState<any | null>(null);
@@ -2676,105 +2677,280 @@ export default function AdminDashboardPage() {
           {/* =========================================================
               ADMIN VIEW 3: WITHDRAWALS MANAGEMENT
              ========================================================= */}
-          {activeTab === "withdrawals" && (
-            <div className={`${ROYALTY_CARD} animate-card-enter`}>
-              <h3 className="text-base font-semibold text-white mb-1">
-                Artist Royalty Withdrawal Requests
-              </h3>
-              <p className="text-xs text-white/75 mb-4 pb-3 border-b border-white/15">
-                Approve bank & e-wallet payouts (BCA, Mandiri, OVO, GoPay, DANA)
-              </p>
+          {activeTab === "withdrawals" && (() => {
+            const pendingWithdrawals = withdrawals.filter((w) => w.status === "Pending");
+            const approvedWithdrawals = withdrawals.filter((w) => w.status === "Approved");
+            const rejectedWithdrawals = withdrawals.filter((w) => w.status === "Rejected");
 
-              <div className="divide-y divide-white/15 text-xs">
-                {withdrawals.length === 0 ? (
-                  <div className="py-14 text-center text-white/70">
-                    <Wallet className="w-12 h-12 mx-auto text-white/25 mb-2" />
-                    <p className="font-semibold text-base text-white">Belum Ada Permintaan Payout</p>
-                    <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-                      Permintaan pencairan royalti dari artis akan muncul di sini untuk Anda transfer dan setujui.
+            const currentWithdrawals =
+              withdrawalTab === "Pending"
+                ? pendingWithdrawals
+                : withdrawalTab === "Approved"
+                ? approvedWithdrawals
+                : withdrawalTab === "Rejected"
+                ? rejectedWithdrawals
+                : withdrawals;
+
+            const paginatedWithdrawals = currentWithdrawals.slice(
+              (pageWithdrawals - 1) * 5,
+              pageWithdrawals * 5
+            );
+
+            return (
+              <div className={`${ROYALTY_CARD} animate-card-enter space-y-4`}>
+                {/* Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/15">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-[#c8f560]/20 text-[#c8f560]">
+                        <Wallet className="w-5 h-5" />
+                      </span>
+                      <span>Artist Royalty Withdrawal Requests</span>
+                    </h3>
+                    <p className="text-xs text-white/75 mt-0.5">
+                      Kelola dan verifikasi pembayaran transfer royalti artis (BCA, Mandiri, BRI, BNI, OVO, GoPay, DANA)
                     </p>
                   </div>
-                ) : (
-                  withdrawals.slice((pageWithdrawals - 1) * 5, pageWithdrawals * 5).map((w) => (
-                    <div
-                      key={w.id}
-                      onClick={() => setSelectedWithdrawalForVisaModal(w)}
-                      className="py-3.5 px-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 bg-white/5 border border-white/10 rounded-2xl transition-all cursor-pointer group"
+
+                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-semibold text-white">
+                    Total Permintaan: <strong className="text-[#c8f560]">{withdrawals.length}</strong>
+                  </span>
+                </div>
+
+                {/* Sub-tabs: Pending, Approved, Rejected, All */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
+                  {/* TAB 1: PENDING (MENUNGGU ACC) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawalTab("Pending");
+                      setPageWithdrawals(1);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                      withdrawalTab === "Pending"
+                        ? "bg-[#fde08d] text-[#312042] shadow-md ring-2 ring-[#fde08d]/50 font-extrabold scale-102"
+                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Menunggu ACC (Pending)</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        withdrawalTab === "Pending"
+                          ? "bg-[#312042] text-[#fde08d]"
+                          : "bg-[#fde08d]/25 text-[#fde08d]"
+                      }`}
                     >
-                      {/* Left: User Profile Avatar Logo + Name + Amount */}
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#312042] to-[#483363] border border-[#c8f560]/40 flex items-center justify-center font-bold text-sm text-[#c8f560] shadow-sm shrink-0 overflow-hidden">
-                          {w.user?.avatar ? (
-                            <img
-                              src={w.user.avatar}
-                              alt={w.user.name || "Artist"}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{(w.user?.name || "A").slice(0, 2).toUpperCase()}</span>
-                          )}
-                        </div>
+                      {pendingWithdrawals.length}
+                    </span>
+                  </button>
 
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate">
-                              {w.accountHolder || w.user?.name || "Artist Account"}
-                            </h4>
-                            <span className="text-[10px] text-white/50">{w.date}</span>
-                          </div>
-                          <p className="text-[11px] text-white/70 truncate">
-                            Artis: {w.user?.name || "-"}
+                  {/* TAB 2: APPROVED (SUDAH DI-ACC) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawalTab("Approved");
+                      setPageWithdrawals(1);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                      withdrawalTab === "Approved"
+                        ? "bg-[#c8f560] text-[#312042] shadow-md ring-2 ring-[#c8f560]/50 font-extrabold scale-102"
+                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Disetujui (Approved)</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        withdrawalTab === "Approved"
+                          ? "bg-[#312042] text-[#c8f560]"
+                          : "bg-[#c8f560]/25 text-[#c8f560]"
+                      }`}
+                    >
+                      {approvedWithdrawals.length}
+                    </span>
+                  </button>
+
+                  {/* TAB 3: REJECTED (DITOLAK) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawalTab("Rejected");
+                      setPageWithdrawals(1);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                      withdrawalTab === "Rejected"
+                        ? "bg-red-500 text-white shadow-md ring-2 ring-red-400/50 font-extrabold scale-102"
+                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
+                    }`}
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Ditolak (Rejected)</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        withdrawalTab === "Rejected"
+                          ? "bg-[#312042] text-red-200"
+                          : "bg-red-500/25 text-red-200"
+                      }`}
+                    >
+                      {rejectedWithdrawals.length}
+                    </span>
+                  </button>
+
+                  {/* TAB 4: SEMUA (ALL) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawalTab("All");
+                      setPageWithdrawals(1);
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                      withdrawalTab === "All"
+                        ? "bg-white text-[#312042] shadow-md ring-2 ring-white/50 font-extrabold scale-102"
+                        : "bg-white/10 hover:bg-white/15 text-white/90 border border-white/15"
+                    }`}
+                  >
+                    <span>Semua Payout</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        withdrawalTab === "All"
+                          ? "bg-[#312042] text-white"
+                          : "bg-white/20 text-white"
+                      }`}
+                    >
+                      {withdrawals.length}
+                    </span>
+                  </button>
+                </div>
+
+                {/* List Container */}
+                <div className="divide-y divide-white/15 text-xs pt-1">
+                  {currentWithdrawals.length === 0 ? (
+                    <div className="py-14 text-center text-white/70">
+                      {withdrawalTab === "Pending" ? (
+                        <>
+                          <CheckCircle2 className="w-12 h-12 mx-auto text-[#c8f560] mb-2" />
+                          <p className="font-semibold text-base text-white">Semua Payout Sudah Diproses!</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Tidak ada antrean payout pending. Semua permintaan withdraw musisi sudah di-ACC atau ditolak.
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="font-bold text-sm text-[#c8f560]">
-                              Rp {w.amount.toLocaleString("id-ID")}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/15 text-white/90 font-medium">
-                              {w.method}
-                            </span>
+                        </>
+                      ) : withdrawalTab === "Approved" ? (
+                        <>
+                          <Wallet className="w-12 h-12 mx-auto text-[#c8f560]/40 mb-2" />
+                          <p className="font-semibold text-base text-white">Belum Ada Payout yang Disetujui</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Permintaan penarikan yang telah Anda transfer & ACC akan tercatat di sini.
+                          </p>
+                        </>
+                      ) : withdrawalTab === "Rejected" ? (
+                        <>
+                          <XCircle className="w-12 h-12 mx-auto text-red-300/40 mb-2" />
+                          <p className="font-semibold text-base text-white">Tidak Ada Payout yang Ditolak</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Semua pencairan dana berjalan lancar tanpa ada permintaan yang ditolak.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Wallet className="w-12 h-12 mx-auto text-white/25 mb-2" />
+                          <p className="font-semibold text-base text-white">Belum Ada Permintaan Payout</p>
+                          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
+                            Permintaan pencairan royalti dari artis akan muncul di sini.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    paginatedWithdrawals.map((w) => (
+                      <div
+                        key={w.id}
+                        onClick={() => setSelectedWithdrawalForVisaModal(w)}
+                        className="py-3.5 px-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 bg-white/5 border border-white/10 rounded-2xl transition-all cursor-pointer group"
+                      >
+                        {/* Left: User Profile Avatar Logo + Name + Amount */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#312042] to-[#483363] border border-[#c8f560]/40 flex items-center justify-center font-bold text-sm text-[#c8f560] shadow-sm shrink-0 overflow-hidden">
+                            {w.user?.avatar ? (
+                              <img
+                                src={w.user.avatar}
+                                alt={w.user.name || "Artist"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>{(w.user?.name || "A").slice(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate">
+                                {w.accountHolder || w.user?.name || "Artist Account"}
+                              </h4>
+                              <span className="text-[10px] text-white/50">{w.date}</span>
+                            </div>
+                            <p className="text-[11px] text-white/70 truncate">
+                              Artis: {w.user?.name || "-"} • No. Rek: <span className="font-mono text-white/90">{w.accountNumber}</span>
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="font-bold text-sm text-[#c8f560]">
+                                Rp {w.amount.toLocaleString("id-ID")}
+                              </span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/15 text-white/90 font-medium">
+                                {w.method}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right: Status Badge & Detail Button */}
-                      <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                        <span
-                          className={`px-3 py-1 rounded-full text-[11px] font-bold ${
-                            w.status === "Approved"
-                              ? "bg-[#c8f560] text-[#312042]"
+                        {/* Right: Status Badge & Detail Button */}
+                        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                          <span
+                            className={`px-3 py-1 rounded-full text-[11px] font-bold ${
+                              w.status === "Approved"
+                                ? "bg-[#c8f560] text-[#312042]"
+                                : w.status === "Rejected"
+                                ? "bg-red-500/30 text-red-200 border border-red-500/40"
+                                : "bg-[#fde08d] text-[#312042]"
+                            }`}
+                          >
+                            {w.status === "Approved"
+                              ? "✓ Approved"
                               : w.status === "Rejected"
-                              ? "bg-red-500/30 text-red-200 border border-red-500/40"
-                              : "bg-[#fde08d] text-[#312042]"
-                          }`}
-                        >
-                          {w.status}
-                        </span>
+                              ? "✕ Rejected"
+                              : "⏳ Pending ACC"}
+                          </span>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedWithdrawalForVisaModal(w);
-                          }}
-                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#312042] via-[#483363] to-[#312042] border border-[#c8f560]/50 text-[#c8f560] hover:text-white hover:border-[#c8f560] font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
-                        >
-                          <span>💳 Detail & ACC</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWithdrawalForVisaModal(w);
+                            }}
+                            className={`px-3.5 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 shadow-md transition-all ${
+                              w.status === "Pending"
+                                ? "bg-[#c8f560] text-[#312042] border-[#c8f560] hover:bg-[#d8ff75] animate-pulse"
+                                : "bg-gradient-to-r from-[#312042] via-[#483363] to-[#312042] border-[#c8f560]/50 text-[#c8f560] hover:text-white hover:border-[#c8f560]"
+                            }`}
+                          >
+                            <span>💳 {w.status === "Pending" ? "Periksa & ACC" : "Detail Payout"}</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    ))
+                  )}
+                </div>
 
-              {/* Pagination Payouts */}
-              <Pagination
-                currentPage={pageWithdrawals}
-                totalItems={withdrawals.length}
-                pageSize={5}
-                onPageChange={setPageWithdrawals}
-              />
-            </div>
-          )}
+                {/* Pagination Payouts (5 per halaman) */}
+                <Pagination
+                  currentPage={pageWithdrawals}
+                  totalItems={currentWithdrawals.length}
+                  pageSize={5}
+                  onPageChange={setPageWithdrawals}
+                />
+              </div>
+            );
+          })()}
 
           {/* =========================================================
               ADMIN VIEW 4: DAFTAR ARTIS DENGAN RILISAN AKTIF
