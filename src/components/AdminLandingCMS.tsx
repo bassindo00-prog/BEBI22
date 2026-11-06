@@ -39,6 +39,7 @@ import {
   type ContactSectionData,
   type LandingPageData,
 } from "@/lib/landingDefaults";
+import { resolveDspPlatform } from "@/lib/dspPlatforms";
 
 const ROYALTY_CARD =
   "bg-[#8a88b5]/70 border border-white/20 rounded-[28px] p-6 text-white shadow-lg";
@@ -776,22 +777,38 @@ export default function AdminLandingCMS({ showNotice }: AdminLandingCMSProps) {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-2">
-            {platforms.map((p, idx) => (
-              <span
-                key={idx}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 border border-white/15 text-xs text-white"
-              >
-                <i>✦</i> {p}
-                <button
-                  onClick={() => setPlatforms((prev) => prev.filter((_, i) => i !== idx))}
-                  className="hover:text-rose-400 ml-1 text-xs font-bold"
-                  title="Hapus"
+          <div className="flex flex-wrap gap-2.5 pt-2">
+            {platforms.map((p, idx) => {
+              const info = resolveDspPlatform(p);
+              return (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/20 text-xs text-white"
                 >
-                  ×
-                </button>
-              </span>
-            ))}
+                  <img
+                    src={info.logoUrl}
+                    alt={p}
+                    className="w-4 h-4 rounded-full object-contain bg-white p-0.5"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                  <span className="font-semibold">{info.name}</span>
+                  {info.badge && (
+                    <span className="text-[9px] px-1.5 py-0.5 bg-[#ff7fab]/25 text-[#ff7fab] font-bold rounded">
+                      {info.badge}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setPlatforms((prev) => prev.filter((_, i) => i !== idx))}
+                    className="hover:text-rose-400 ml-1 text-xs font-bold"
+                    title="Hapus"
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

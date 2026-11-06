@@ -535,3 +535,91 @@ export const ALL_DSP_PLATFORMS: DspPlatform[] = [
   },
 ];
 
+export function resolveDspPlatform(raw: string): {
+  id: string;
+  name: string;
+  domain: string;
+  badge?: string;
+  sub?: string;
+  logoUrl: string;
+} {
+  const query = (raw || "").trim().toLowerCase();
+  if (!query) {
+    return {
+      id: "dsp",
+      name: "DSP",
+      domain: "spotify.com",
+      badge: "VERIFIED",
+      sub: "Digital Streaming Partner",
+      logoUrl: "https://www.google.com/s2/favicons?domain=spotify.com&sz=128",
+    };
+  }
+
+  // 1. Direct match with id or name
+  const exact = ALL_DSP_PLATFORMS.find(
+    (p) => p.id.toLowerCase() === query || p.name.toLowerCase() === query
+  );
+  if (exact) return exact;
+
+  // 2. Priority key mapping
+  if (query.includes("spotify")) return ALL_DSP_PLATFORMS.find((p) => p.id === "spotify")!;
+  if (query.includes("apple") || query.includes("itunes")) return ALL_DSP_PLATFORMS.find((p) => p.id === "apple_music")!;
+  if (query.includes("youtube") || query.includes("yt")) return ALL_DSP_PLATFORMS.find((p) => p.id === "youtube_music")!;
+  if (query.includes("tiktok") || query.includes("tik tok")) return ALL_DSP_PLATFORMS.find((p) => p.id === "tiktok")!;
+  if (query.includes("amazon")) return ALL_DSP_PLATFORMS.find((p) => p.id === "amazon_music")!;
+  if (query.includes("deezer")) return ALL_DSP_PLATFORMS.find((p) => p.id === "deezer")!;
+  if (query.includes("tidal")) return ALL_DSP_PLATFORMS.find((p) => p.id === "tidal")!;
+  if (query.includes("soundcloud")) return ALL_DSP_PLATFORMS.find((p) => p.id === "soundcloud")!;
+  if (query.includes("joox")) return ALL_DSP_PLATFORMS.find((p) => p.id === "joox") || {
+    id: "joox",
+    name: "JOOX",
+    domain: "joox.com",
+    badge: "ASIA",
+    sub: "Hong Kong, Malaysia, Indonesia",
+    logoUrl: "https://www.google.com/s2/favicons?domain=joox.com&sz=128",
+  };
+  if (query.includes("shazam")) return ALL_DSP_PLATFORMS.find((p) => p.id === "shazam") || {
+    id: "shazam",
+    name: "Shazam",
+    domain: "shazam.com",
+    badge: "DISCOVERY",
+    sub: "Music Recognition App",
+    logoUrl: "https://www.google.com/s2/favicons?domain=shazam.com&sz=128",
+  };
+  if (query.includes("beatport")) return ALL_DSP_PLATFORMS.find((p) => p.id === "beatport") || {
+    id: "beatport",
+    name: "Beatport",
+    domain: "beatport.com",
+    badge: "ELECTRONIC",
+    sub: "EDM & Club Music DJ Store",
+    logoUrl: "https://www.google.com/s2/favicons?domain=beatport.com&sz=128",
+  };
+  if (query.includes("instagram") || query.includes("reels")) return ALL_DSP_PLATFORMS.find((p) => p.id === "instagram") || {
+    id: "instagram",
+    name: "Instagram Music",
+    domain: "instagram.com",
+    badge: "META",
+    sub: "Stories & Reels Audio",
+    logoUrl: "https://www.google.com/s2/favicons?domain=instagram.com&sz=128",
+  };
+
+  // 3. Partial fallback match
+  const partial = ALL_DSP_PLATFORMS.find((p) => {
+    const pName = p.name.toLowerCase();
+    const pId = p.id.toLowerCase();
+    return query.includes(pId) || pId.includes(query) || query.includes(pName) || pName.includes(query);
+  });
+  if (partial) return partial;
+
+  // 4. Fallback for custom names
+  const cleanDomain = query.replace(/[^a-z0-9]/g, "");
+  return {
+    id: cleanDomain,
+    name: raw,
+    domain: `${cleanDomain}.com`,
+    badge: "DSP",
+    sub: "Official Streaming Distribution",
+    logoUrl: `https://www.google.com/s2/favicons?domain=${cleanDomain}.com&sz=128`,
+  };
+}
+

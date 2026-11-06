@@ -20,6 +20,7 @@ import {
   type RosterArtist,
   type ContactSectionData,
 } from "@/lib/landingDefaults";
+import { resolveDspPlatform } from "@/lib/dspPlatforms";
 
 const STYLES = `
   :root {
@@ -448,35 +449,91 @@ const STYLES = `
     color: var(--ink);
   }
   
-  /* 1. PLATFORMS */
+  /* 1. PLATFORMS WITH ORIGINAL LOGOS */
   .platforms-section {
-    background: var(--ink);
+    background: #0d0b0d;
     color: #fff;
-    padding: 40px 0;
+    padding: 30px 0;
     overflow: hidden;
     position: relative;
     z-index: 10;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .platform-track {
     display: flex;
     width: max-content;
-    animation: scroll-left-fast 25s linear infinite;
+    animation: scroll-left-fast 30s linear infinite;
+  }
+  .platform-track:hover {
+    animation-play-state: paused;
   }
   .platform-track > div {
     display: flex;
+    align-items: center;
   }
-  .platform-track span {
-    font-size: 22px;
-    font-weight: 500;
-    padding: 0 32px;
+  .platform-item {
     display: inline-flex;
     align-items: center;
     gap: 12px;
+    padding: 8px 20px 8px 10px;
+    margin: 0 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    transition: background 0.25s, border-color 0.25s, transform 0.25s;
     white-space: nowrap;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   }
-  .platform-track span i {
-    color: var(--accent);
-    font-style: normal;
+  .platform-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 127, 171, 0.5);
+    transform: translateY(-2px);
+  }
+  .platform-logo-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 4px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  .platform-logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+  }
+  .platform-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .platform-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .platform-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 127, 171, 0.2);
+    color: #ff7fab;
+    letter-spacing: 0.06em;
   }
   @keyframes scroll-left-fast {
     from { transform: translateX(0); }
@@ -889,6 +946,36 @@ const STYLES = `
     .btn-listen { font-size: 12px; padding: 8px 12px; }
   }
 `;
+
+function PlatformLogoItem({ name }: { name: string }) {
+  const info = resolveDspPlatform(name);
+  const [imgErr, setImgErr] = useState(false);
+
+  return (
+    <div className="platform-item" title={`${info.name} • ${info.sub || "Partner Resmi BREAKOUT"}`}>
+      <div className="platform-logo-box">
+        {!imgErr ? (
+          <img
+            src={info.logoUrl}
+            alt={info.name}
+            onError={() => setImgErr(true)}
+            loading="lazy"
+          />
+        ) : (
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#141114" }}>
+            {info.name.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </div>
+      <div className="platform-info">
+        <span className="platform-name">
+          {info.name}
+          {info.badge && <span className="platform-badge">{info.badge}</span>}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function BreakoutApp({
   initialData = DEFAULT_LANDING_DATA,
@@ -1431,23 +1518,19 @@ export default function BreakoutApp({
       </section>
       <div className="cursor" id="cursor" ref={cursorRef} />
 
-      {/* BAR 2: PLATFORMS MARQUEE (SYNC DENGAN CMS) */}
+      {/* BAR 2: PLATFORMS MARQUEE (SYNC DENGAN CMS DENGAN LOGO ASLI) */}
       <section className="platforms-section" id="platforms">
         <div className="platform-track">
           {/* First Set */}
           <div>
             {platforms.map((p, idx) => (
-              <span key={`p1-${idx}`}>
-                <i>✦</i> {p}
-              </span>
+              <PlatformLogoItem key={`p1-${idx}`} name={p} />
             ))}
           </div>
           {/* Second Set (Duplicate for seamless continuous loop) */}
           <div>
             {platforms.map((p, idx) => (
-              <span key={`p2-${idx}`}>
-                <i>✦</i> {p}
-              </span>
+              <PlatformLogoItem key={`p2-${idx}`} name={p} />
             ))}
           </div>
         </div>

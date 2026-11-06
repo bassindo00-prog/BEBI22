@@ -62,10 +62,14 @@ export const DEFAULT_PLATFORMS: string[] = [
   "Spotify",
   "Apple Music",
   "TikTok",
-  "YouTube",
+  "YouTube Music",
   "Amazon Music",
   "Deezer",
   "Tidal",
+  "SoundCloud",
+  "JOOX",
+  "Beatport",
+  "Shazam",
 ];
 
 export const DEFAULT_RELEASES: ReleaseItem[] = [
