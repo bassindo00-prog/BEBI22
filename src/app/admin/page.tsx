@@ -130,6 +130,9 @@ export default function AdminDashboardPage() {
   // Visa Withdrawal Card Modal State
   const [selectedWithdrawalForVisaModal, setSelectedWithdrawalForVisaModal] = useState<any | null>(null);
 
+  // Artist Detail Modal State
+  const [selectedArtistDetail, setSelectedArtistDetail] = useState<any | null>(null);
+
   // Bulk Selection & Deletion State
   const [selectedReleaseIds, setSelectedReleaseIds] = useState<string[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
@@ -969,6 +972,266 @@ export default function AdminDashboardPage() {
           }
         }}
       />
+
+      {/* MODAL: DETAIL LENGKAP ARTIS & AKUN */}
+      {selectedArtistDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-card-enter">
+          <div className="relative w-full max-w-3xl bg-[#2e243d] border border-white/25 rounded-3xl p-6 sm:p-7 text-white shadow-2xl max-h-[92vh] overflow-y-auto">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/15">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 rounded-full bg-[#c8f560] text-[#312042] text-xs font-bold">
+                  Profil & Detail Musisi
+                </span>
+                <span className="text-xs text-white/60 font-mono">ID: {selectedArtistDetail.id}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedArtistDetail(null)}
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer transition-colors"
+                title="Tutup Modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Top Identity Banner */}
+            <div className="my-5 p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+              <img
+                src={
+                  selectedArtistDetail.avatar ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80"
+                }
+                alt={getArtistDisplayName(selectedArtistDetail)}
+                className="w-20 h-20 rounded-2xl object-cover border-2 border-[#c8f560]/60 shadow-lg shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h2 className="text-xl font-bold text-white">
+                    {getArtistDisplayName(selectedArtistDetail)}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#312042] text-[#c8f560] text-[11px] font-bold border border-[#c8f560]/40">
+                    Artis Terverifikasi
+                  </span>
+                </div>
+                <p className="text-xs text-white/70 mt-1 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <span>Email: <strong className="text-white">{selectedArtistDetail.email}</strong></span>
+                  <span>•</span>
+                  <span>Nama Akun: <strong className="text-white">{selectedArtistDetail.name || "-"}</strong></span>
+                </p>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-xs text-white/60">
+                  <span>
+                    Terdaftar:{" "}
+                    <strong className="text-white/80">
+                      {selectedArtistDetail.createdAt
+                        ? new Date(selectedArtistDetail.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "-"}
+                    </strong>
+                  </span>
+                  <span>•</span>
+                  <span>
+                    Role Akun: <strong className="text-[#c8f560]">{selectedArtistDetail.role}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Financial & Stream Stats Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              <div className="p-3.5 rounded-2xl bg-[#312042]/80 border border-[#c8f560]/35">
+                <span className="text-[10px] text-white/70 block uppercase tracking-wider font-semibold">
+                  Saldo Siap Tarik
+                </span>
+                <span className="text-base sm:text-lg font-bold text-[#c8f560] tabular-nums mt-0.5 block">
+                  Rp {Number(selectedArtistDetail.royaltyBalance || 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-white/70 block uppercase tracking-wider font-semibold">
+                  Total Streams
+                </span>
+                <span className="text-base sm:text-lg font-bold text-white tabular-nums mt-0.5 block">
+                  {Number(selectedArtistDetail.totalStreams || 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-white/70 block uppercase tracking-wider font-semibold">
+                  Royalti Pending
+                </span>
+                <span className="text-base sm:text-lg font-bold text-[#fde08d] tabular-nums mt-0.5 block">
+                  Rp {Number(selectedArtistDetail.royaltyPending || 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-[10px] text-white/70 block uppercase tracking-wider font-semibold">
+                  Total Dicairkan
+                </span>
+                <span className="text-base sm:text-lg font-bold text-white tabular-nums mt-0.5 block">
+                  Rp {Number(selectedArtistDetail.totalWithdrawn || 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+            </div>
+
+            {/* Releases of this Artist */}
+            <div className="mb-5 space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Disc3 className="w-4 h-4 text-[#c8f560]" />
+                  <span>
+                    Daftar Rilisan Lagu ({releases.filter((r) => r.userId === selectedArtistDetail.id).length} Track)
+                  </span>
+                </h4>
+              </div>
+
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                {releases.filter((r) => r.userId === selectedArtistDetail.id).length === 0 ? (
+                  <p className="text-xs text-white/50 italic py-3 text-center">
+                    Belum ada lagu yang diupload oleh musisi ini.
+                  </p>
+                ) : (
+                  releases
+                    .filter((r) => r.userId === selectedArtistDetail.id)
+                    .map((rel) => (
+                      <div
+                        key={rel.id}
+                        onClick={() => setSelectedRelease(rel)}
+                        className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between gap-3 text-xs transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={rel.coverUrl}
+                            alt={rel.title}
+                            className="w-10 h-10 rounded-lg object-cover border border-white/20 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-white group-hover:text-[#c8f560] transition-colors truncate">
+                              {rel.title}
+                            </p>
+                            <p className="text-[10px] text-white/70 truncate">
+                              {rel.genre} • ISRC: {rel.isrc || "-"} • UPC: {rel.upc || "-"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              rel.status === "Approved"
+                                ? "bg-[#c8f560] text-[#312042]"
+                                : rel.status === "Rejected"
+                                ? "bg-red-500/25 border border-red-500/40 text-red-200"
+                                : "bg-[#fde08d] text-[#312042]"
+                            }`}
+                          >
+                            {rel.status}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedRelease(rel);
+                            }}
+                            className="p-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25"
+                            title="Buka Detail Rilisan & MP3"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </div>
+
+            {/* Withdrawals of this Artist */}
+            <div className="mb-5 space-y-2">
+              <div className="flex items-center justify-between pb-1 border-b border-white/10">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Wallet className="w-4 h-4 text-[#c8f560]" />
+                  <span>Riwayat Penarikan Dana (Withdrawals)</span>
+                </h4>
+              </div>
+
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {withdrawals.filter((w) => w.userId === selectedArtistDetail.id).length === 0 ? (
+                  <p className="text-xs text-white/50 italic py-3 text-center">
+                    Belum ada riwayat penarikan dana dari artis ini.
+                  </p>
+                ) : (
+                  withdrawals
+                    .filter((w) => w.userId === selectedArtistDetail.id)
+                    .map((wd) => (
+                      <div
+                        key={wd.id}
+                        className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div>
+                          <p className="font-semibold text-white">
+                            Rp {Number(wd.amount || 0).toLocaleString("id-ID")} • {wd.method}
+                          </p>
+                          <p className="text-[10px] text-white/60">
+                            Rek: {wd.accountNumber} a/n {wd.accountHolder}
+                          </p>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            wd.status === "Approved"
+                              ? "bg-[#c8f560] text-[#312042]"
+                              : wd.status === "Rejected"
+                              ? "bg-red-500/25 border border-red-500/40 text-red-200"
+                              : "bg-[#fde08d] text-[#312042]"
+                          }`}
+                        >
+                          {wd.status}
+                        </span>
+                      </div>
+                    ))
+                )}
+              </div>
+            </div>
+
+            {/* Footer Admin Action Buttons */}
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-4 border-t border-white/15">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUserForRoyalty(selectedArtistDetail.id);
+                  setInputRoyaltyBalance(selectedArtistDetail.royaltyBalance || 0);
+                  setInputRoyaltyPending(selectedArtistDetail.royaltyPending || 0);
+                  setInputTotalStreams(selectedArtistDetail.totalStreams || 0);
+                  setSelectedArtistDetail(null);
+                  setActiveTab("royalty-input");
+                }}
+                className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#b8e450] transition-colors shadow cursor-pointer"
+              >
+                Input / Edit Royalty & Streams
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMsgTargetUser(selectedArtistDetail.id);
+                  setSelectedArtistDetail(null);
+                  setActiveTab("inbox");
+                }}
+                className="px-4 py-2 rounded-xl bg-[#312042] text-[#c8f560] border border-[#c8f560]/40 font-semibold text-xs hover:bg-[#432d5b] transition-colors cursor-pointer"
+              >
+                Kirim Pesan Inbox
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedArtistDetail(null)}
+                className="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-medium text-xs transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Full Screen Layout: Viewport Locked, Zero Window Scroll */}
       <div className="w-full h-full flex overflow-hidden">
@@ -3172,109 +3435,243 @@ export default function AdminDashboardPage() {
              ========================================================= */}
           {activeTab === "users" && (
             <div className={`${ROYALTY_CARD} animate-card-enter`}>
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/15">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-white/15">
                 <div>
-                  <h3 className="text-base font-semibold text-white mb-1">
-                    Daftar Artis Rilis Aktif ({releasedArtists.length})
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-0.5 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#c8f560]" />
+                    <span>Daftar Artis Rilis Aktif ({releasedArtists.length})</span>
                   </h3>
                   <p className="text-xs text-white/75">
-                    Menampilkan hanya kreator dan musisi yang telah memiliki rilisan lagu resmi
+                    Menampilkan musisi resmi yang telah memiliki rilisan aktif • Klik pada artis untuk membuka detail profil & katalog
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab("royalty-input")}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#b5e050] transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs hover:bg-[#b8e450] transition-colors shadow cursor-pointer flex items-center gap-1.5"
                 >
-                  + Input Royalty/Streams
+                  <Banknote className="w-4 h-4" />
+                  <span>+ Input Royalty / Streams</span>
                 </button>
               </div>
 
-              <div className="divide-y divide-white/15 text-xs">
-                {releasedArtists.length === 0 ? (
-                  <div className="py-12 text-center text-white/70 space-y-2">
-                    <Users className="w-10 h-10 mx-auto text-white/30" />
-                    <p className="font-semibold text-sm text-white">Belum Ada Artis yang Merilis Lagu</p>
-                    <p className="text-xs text-white/60">
-                      Hanya akun artis yang telah mengajukan/merilis lagu yang akan ditampilkan pada daftar ini.
-                    </p>
-                  </div>
-                ) : (
-                  releasedArtists.slice((pageUsers - 1) * 5, pageUsers * 5).map((u) => (
-                    <div
-                      key={u.id}
-                      className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={
-                            u.avatar ||
-                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
-                          }
-                          alt={getArtistDisplayName(u)}
-                          className="w-11 h-11 rounded-full object-cover border border-white/30 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm text-white truncate">{getArtistDisplayName(u)}</p>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#312042] text-[#c8f560] shrink-0">
-                              {approvedReleases.filter(r => r.userId === u.id).length} Rilisan ACC
-                            </span>
+              {releasedArtists.length === 0 ? (
+                <div className="py-14 text-center text-white/70 space-y-2">
+                  <Users className="w-12 h-12 mx-auto text-white/25" />
+                  <p className="font-semibold text-base text-white">Belum Ada Artis yang Merilis Lagu</p>
+                  <p className="text-xs text-white/60">
+                    Hanya akun artis yang telah mengajukan/merilis lagu yang akan ditampilkan pada daftar ini.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* MOBILE VIEW (< md): Clean Responsive Cards */}
+                  <div className="md:hidden space-y-3.5 pt-2">
+                    {releasedArtists.slice((pageUsers - 1) * 5, pageUsers * 5).map((u) => {
+                      const userApprovedCount = approvedReleases.filter((r) => r.userId === u.id).length;
+                      return (
+                        <div
+                          key={u.id}
+                          onClick={() => setSelectedArtistDetail(u)}
+                          className="p-4 rounded-2xl bg-white/5 border border-white/15 hover:bg-white/10 transition-all cursor-pointer space-y-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={
+                                u.avatar ||
+                                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
+                              }
+                              alt={getArtistDisplayName(u)}
+                              className="w-13 h-13 rounded-2xl object-cover border-2 border-white/30 shrink-0 shadow"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <h4 className="font-bold text-sm text-white truncate flex items-center gap-1.5">
+                                  <span>{getArtistDisplayName(u)}</span>
+                                  <Eye className="w-3.5 h-3.5 text-[#c8f560]" />
+                                </h4>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#312042] text-[#c8f560] border border-[#c8f560]/30 shrink-0">
+                                  {userApprovedCount} ACC
+                                </span>
+                              </div>
+                              <p className="text-xs text-white/70 truncate mt-0.5">{u.email}</p>
+                              <span className="text-[10px] text-[#c8f560] font-semibold">Artis Terverifikasi</span>
+                            </div>
                           </div>
-                          <p className="text-[#c8f560] truncate text-[11px] font-medium">Artis Terverifikasi</p>
+
+                          {/* Stats Grid */}
+                          <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-black/25 border border-white/10 text-center">
+                            <div>
+                              <span className="text-[10px] text-white/60 block">Saldo Royalti</span>
+                              <span className="font-bold text-xs text-[#c8f560] tabular-nums block truncate">
+                                Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-white/60 block">Streams</span>
+                              <span className="font-bold text-xs text-white tabular-nums block truncate">
+                                {Number(u.totalStreams || 0).toLocaleString("id-ID")}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-white/60 block">Dicairkan</span>
+                              <span className="font-bold text-xs text-white/90 tabular-nums block truncate">
+                                Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Quick Actions */}
+                          <div
+                            className="flex items-center gap-2 pt-2 border-t border-white/10"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setSelectedArtistDetail(u)}
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-xs flex items-center justify-center gap-1 shadow cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Detail Lengkap</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedUserForRoyalty(u.id);
+                                setInputRoyaltyBalance(u.royaltyBalance || 0);
+                                setInputRoyaltyPending(u.royaltyPending || 0);
+                                setInputTotalStreams(u.totalStreams || 0);
+                                setActiveTab("royalty-input");
+                              }}
+                              className="py-1.5 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-xs transition-colors cursor-pointer"
+                            >
+                              Edit Saldo
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMsgTargetUser(u.id);
+                                setActiveTab("inbox");
+                              }}
+                              className="py-1.5 px-3 rounded-xl bg-[#312042] text-[#c8f560] border border-[#c8f560]/30 font-semibold text-xs hover:bg-[#432d5b] transition-colors cursor-pointer"
+                            >
+                              Pesan
+                            </button>
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* DESKTOP VIEW (md:block): Spacious Executive Table */}
+                  <div className="hidden md:block overflow-x-auto pt-2">
+                    <div className="min-w-[820px]">
+                      {/* Table Headers */}
+                      <div className="grid grid-cols-12 text-xs font-semibold uppercase tracking-wider text-white/70 pb-3 border-b border-white/20 px-3">
+                        <div className="col-span-4">Musisi & Akun</div>
+                        <div className="col-span-2 text-center">Saldo Royalti</div>
+                        <div className="col-span-2 text-center">Total Streams</div>
+                        <div className="col-span-2 text-center">Total Dicairkan</div>
+                        <div className="col-span-2 text-right">Aksi & Detail</div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                        <div>
-                          <p className="text-white/65 text-[10px] sm:text-[11px]">Royalty Balance</p>
-                          <p className="font-bold text-xs sm:text-sm text-[#c8f560]">
-                            Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-white/65 text-[10px] sm:text-[11px]">Streams</p>
-                          <p className="font-semibold text-white text-xs sm:text-sm">
-                            {(Number(u.totalStreams || 0) / 1000).toFixed(0)}K
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-white/65 text-[10px] sm:text-[11px]">Withdrawn</p>
-                          <p className="font-semibold text-white text-xs sm:text-sm">
-                            Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
-                          </p>
-                        </div>
-                      </div>
+                      {/* Rows */}
+                      <div className="divide-y divide-white/15">
+                        {releasedArtists.slice((pageUsers - 1) * 5, pageUsers * 5).map((u) => {
+                          const userApprovedCount = approvedReleases.filter((r) => r.userId === u.id).length;
+                          return (
+                            <div
+                              key={u.id}
+                              onClick={() => setSelectedArtistDetail(u)}
+                              className="grid grid-cols-12 items-center py-3.5 px-3 hover:bg-white/10 rounded-2xl transition-colors cursor-pointer group"
+                            >
+                              {/* Col 1: Musisi & Akun */}
+                              <div className="col-span-4 flex items-center gap-3.5 min-w-0 pr-3">
+                                <img
+                                  src={
+                                    u.avatar ||
+                                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
+                                  }
+                                  alt={getArtistDisplayName(u)}
+                                  className="w-12 h-12 rounded-2xl object-cover border border-white/25 shrink-0 group-hover:scale-105 transition-transform shadow"
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-bold text-sm text-white group-hover:text-[#c8f560] transition-colors truncate">
+                                      {getArtistDisplayName(u)}
+                                    </p>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#312042] text-[#c8f560] border border-[#c8f560]/30 shrink-0">
+                                      {userApprovedCount} ACC
+                                    </span>
+                                  </div>
+                                  <p className="text-white/70 text-xs truncate mt-0.5">{u.email}</p>
+                                  <span className="text-[10px] text-[#c8f560] font-medium">Artis Terverifikasi</span>
+                                </div>
+                              </div>
 
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedUserForRoyalty(u.id);
-                            setInputRoyaltyBalance(u.royaltyBalance || 0);
-                            setInputRoyaltyPending(u.royaltyPending || 0);
-                            setInputTotalStreams(u.totalStreams || 0);
-                            setActiveTab("royalty-input");
-                          }}
-                          className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-xs transition-colors"
-                        >
-                          Edit Royalty
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMsgTargetUser(u.id);
-                            setActiveTab("inbox");
-                          }}
-                          className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl bg-[#312042] text-[#c8f560] font-semibold text-xs hover:bg-[#422c58] transition-colors"
-                        >
-                          Kirim Pesan
-                        </button>
+                              {/* Col 2: Saldo Royalti */}
+                              <div className="col-span-2 text-center font-bold text-[#c8f560] text-sm tabular-nums whitespace-nowrap">
+                                Rp {Number(u.royaltyBalance || 0).toLocaleString("id-ID")}
+                              </div>
+
+                              {/* Col 3: Total Streams */}
+                              <div className="col-span-2 text-center font-bold text-white text-xs tabular-nums whitespace-nowrap">
+                                {Number(u.totalStreams || 0).toLocaleString("id-ID")} Streams
+                              </div>
+
+                              {/* Col 4: Total Dicairkan */}
+                              <div className="col-span-2 text-center font-medium text-white/85 text-xs tabular-nums whitespace-nowrap">
+                                Rp {Number(u.totalWithdrawn || 0).toLocaleString("id-ID")}
+                              </div>
+
+                              {/* Col 5: Aksi */}
+                              <div
+                                className="col-span-2 flex items-center justify-end gap-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedArtistDetail(u)}
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#c8f560] text-[#312042] font-bold text-[11px] flex items-center gap-1 shadow hover:bg-[#b8e450] transition-colors cursor-pointer"
+                                  title="Lihat Detail Profil & Rilisan Artis"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Detail</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUserForRoyalty(u.id);
+                                    setInputRoyaltyBalance(u.royaltyBalance || 0);
+                                    setInputRoyaltyPending(u.royaltyPending || 0);
+                                    setInputTotalStreams(u.totalStreams || 0);
+                                    setActiveTab("royalty-input");
+                                  }}
+                                  className="px-2 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-semibold text-[11px] transition-colors cursor-pointer"
+                                  title="Input / Edit Royalti & Stream"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setMsgTargetUser(u.id);
+                                    setActiveTab("inbox");
+                                  }}
+                                  className="p-1.5 rounded-xl bg-[#312042] text-[#c8f560] border border-[#c8f560]/30 hover:bg-[#432d5b] transition-colors cursor-pointer"
+                                  title="Kirim Pesan Inbox ke Artis"
+                                >
+                                  <Mail className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                </>
+              )}
 
               {/* Pagination Artis */}
               <Pagination
