@@ -452,7 +452,7 @@ const STYLES = `
     font-style: italic;
     margin-bottom: 24px;
     line-height: 1.6;
-    color: var(--ink);
+    color: #000000;
   }
   .testi-author {
     font-weight: 600;
@@ -460,6 +460,10 @@ const STYLES = `
     display: flex;
     align-items: center;
     gap: 12px;
+    color: #000000 !important;
+  }
+  .testi-author span {
+    color: #000000 !important;
   }
   .testi-author img {
     width: 44px;
@@ -1308,7 +1312,7 @@ export default function BreakoutApp({
                       "https://placehold.co/100x100/ff7fab/ffffff?text=A";
                   }}
                 />
-                <span>{testi.author}</span>
+                <span style={{ color: "#000000" }} className="text-black font-semibold">{testi.author}</span>
               </div>
             </div>
           ))}
