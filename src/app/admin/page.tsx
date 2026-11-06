@@ -652,6 +652,86 @@ export default function AdminDashboardPage() {
     .filter((w) => w.status === "Pending")
     .reduce((acc, w) => acc + Number(w.amount || 0), 0);
 
+  // Synchronized Monthly Approved Payout Royalty Data
+  const currentMonthIdx = useMemo(() => new Date().getMonth(), []);
+  const [hoveredPayoutMonth, setHoveredPayoutMonth] = useState<number>(new Date().getMonth());
+
+  const monthlyApprovedPayoutData = useMemo(() => {
+    const approved = withdrawals.filter((w) => w.status === "Approved");
+    const monthTotals = Array(12).fill(0);
+    const monthCounts = Array(12).fill(0);
+
+    approved.forEach((w) => {
+      let mIdx = -1;
+      if (w.date && typeof w.date === "string") {
+        const parts = w.date.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            // YYYY-MM-DD
+            mIdx = parseInt(parts[1], 10) - 1;
+          } else {
+            // DD-MM-YYYY
+            mIdx = parseInt(parts[1], 10) - 1;
+          }
+        }
+      }
+      if (mIdx < 0 || isNaN(mIdx) || mIdx > 11) {
+        if (w.createdAt) {
+          mIdx = new Date(w.createdAt).getMonth();
+        } else {
+          mIdx = currentMonthIdx;
+        }
+      }
+      if (mIdx >= 0 && mIdx < 12) {
+        monthTotals[mIdx] += Number(w.amount) || 0;
+        monthCounts[mIdx] += 1;
+      }
+    });
+
+    const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const FULL_MONTH_LABELS = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
+    const maxVal = Math.max(...monthTotals, 1);
+    const totalAll = monthTotals.reduce((a, b) => a + b, 0);
+
+    const items = MONTH_LABELS.map((label, idx) => {
+      const val = monthTotals[idx];
+      const count = monthCounts[idx];
+      const heightPct = val > 0 ? Math.max(12, Math.round((val / maxVal) * 100)) : 6;
+      return {
+        idx,
+        label,
+        fullName: FULL_MONTH_LABELS[idx],
+        val,
+        count,
+        heightPct,
+        isCurrent: idx === currentMonthIdx,
+      };
+    });
+
+    // Peak Month
+    let peakIdx = 0;
+    let peakVal = 0;
+    monthTotals.forEach((t, i) => {
+      if (t > peakVal) {
+        peakVal = t;
+        peakIdx = i;
+      }
+    });
+
+    return {
+      items,
+      totalAll,
+      maxVal,
+      peakMonth: FULL_MONTH_LABELS[peakIdx],
+      peakVal,
+      approvedList: approved,
+    };
+  }, [withdrawals, currentMonthIdx]);
+
   // Helper to extract artist display name (prefer registered Artist profile over generic account name)
   const getArtistDisplayName = (u: any) => {
     if (!u) return "Artis";
@@ -1973,111 +2053,185 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Right: Withdrawal Requests Approval — Menampilkan 5 Terbaru */}
+              {/* Right: Grafik Bulanan Royalti yang Sudah di-ACC (Live Sync Prisma) */}
               <div
                 className={`lg:col-span-5 ${ROYALTY_CARD} flex flex-col justify-between animate-card-enter`}
                 style={{ animationDelay: "310ms" }}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
-                    <div>
-                      <h3 className="text-sm font-semibold text-white">Withdrawal Payout Queue</h3>
-                      <p className="text-[11px] text-white/70">5 antrean payout terbaru</p>
+                  {/* Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#c8f560]/20 border border-[#c8f560]/40 flex items-center justify-center text-[#c8f560]">
+                        <TrendingUp className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>Grafik Bulanan Royalti ACC</span>
+                          <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-pulse" />
+                        </h3>
+                        <p className="text-[11px] text-white/70">
+                          Sinkron otomatis tiap ACC WD • Tahun {new Date().getFullYear()}
+                        </p>
+                      </div>
                     </div>
 
-                    {pendingWithdrawals.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg bg-black/25 border border-white/15 text-[11px] font-mono text-[#c8f560] font-bold">
+                        {monthlyApprovedPayoutData.approvedList.length} Payout ACC
+                      </span>
                       <button
                         type="button"
-                        disabled={bulkProcessingWithdrawals}
-                        onClick={handleApproveAllPendingWithdrawals}
-                        className="px-3 py-1.5 rounded-xl bg-[#c8f560] hover:bg-[#d8ff75] text-[#312042] font-extrabold text-[11px] flex items-center gap-1 shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
-                        title="Setujui (ACC) Semua Permintaan Penarikan Pending Sekaligus"
+                        onClick={() => setActiveTab("withdrawals")}
+                        className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-[11px] transition-all cursor-pointer"
+                        title="Buka menu kelola payout lengkap"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#312042]" />
-                        <span>
-                          {bulkProcessingWithdrawals
-                            ? "Memproses..."
-                            : `⚡ ALL ACC (${pendingWithdrawals.length})`}
-                        </span>
+                        Buka Menu
                       </button>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {withdrawals.length === 0 ? (
-                      <div className="py-10 text-center text-white/70">
-                        <Wallet className="w-9 h-9 mx-auto text-white/25 mb-2" />
-                        <p className="font-semibold text-xs text-white">Tidak Ada Antrean Payout</p>
-                        <p className="text-[11px] text-white/55 mt-0.5">Semua permintaan pencairan telah diproses.</p>
-                      </div>
-                    ) : (
-                      withdrawals.slice(0, 5).map((w) => (
-                        <div
-                          key={w.id}
-                          onClick={() => setSelectedWithdrawalForVisaModal(w)}
-                          className="p-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-between gap-3 text-xs cursor-pointer transition-colors"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-xl bg-[#312042] border border-[#c8f560]/40 flex items-center justify-center font-bold text-xs text-[#c8f560] shrink-0 overflow-hidden">
-                              {w.user?.avatar ? (
-                                <img
-                                  src={w.user.avatar}
-                                  alt={w.user.name || "Artist"}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span>{(w.user?.name || "A").slice(0, 2).toUpperCase()}</span>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-bold text-white truncate text-xs">
-                                {w.accountHolder || w.user?.name || "Artist Account"}
-                              </p>
-                              <p className="text-[10px] text-white/70 truncate">
-                                Artis: {w.user?.name || "-"}
-                              </p>
-                              <p className="text-[11px] text-[#c8f560] font-semibold">
-                                Rp {w.amount.toLocaleString("id-ID")} • {w.method}
-                              </p>
-                            </div>
-                          </div>
+                  {/* Summary Stat Pills */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="p-2.5 rounded-xl bg-black/25 border border-white/10">
+                      <span className="text-[10px] text-white/60 block">Total Royalti Di-ACC</span>
+                      <span className="text-sm sm:text-base font-extrabold text-[#c8f560] tabular-nums block mt-0.5 truncate">
+                        Rp {totalPayoutAmount.toLocaleString("id-ID")}
+                      </span>
+                    </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="p-2.5 rounded-xl bg-black/25 border border-white/10">
+                      <span className="text-[10px] text-[#fde08d] block truncate">
+                        {monthlyApprovedPayoutData.items[hoveredPayoutMonth]?.fullName || "Bulan Ini"}
+                      </span>
+                      <span className="text-sm sm:text-base font-extrabold text-white tabular-nums block mt-0.5 truncate">
+                        Rp {(monthlyApprovedPayoutData.items[hoveredPayoutMonth]?.val || 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Monthly Bar Chart with Interactive Hover */}
+                  <div className="p-3 rounded-2xl bg-black/20 border border-white/10 my-2">
+                    <div className="flex items-center justify-between text-[10px] text-white/60 mb-2">
+                      <span className="uppercase font-semibold tracking-wider">Tren Payout Per Bulan (Rp)</span>
+                      <span className="text-[#c8f560] font-bold">
+                        {monthlyApprovedPayoutData.items[hoveredPayoutMonth]?.count || 0} Pencairan di-{monthlyApprovedPayoutData.items[hoveredPayoutMonth]?.label}
+                      </span>
+                    </div>
+
+                    {/* Bars Container */}
+                    <div className="h-32 flex items-end justify-between gap-1 sm:gap-1.5 pt-4 pb-1 relative">
+                      {monthlyApprovedPayoutData.items.map((m) => {
+                        const isHovered = hoveredPayoutMonth === m.idx;
+                        const isCurrent = m.isCurrent;
+                        const hasVal = m.val > 0;
+
+                        return (
+                          <div
+                            key={m.idx}
+                            onMouseEnter={() => setHoveredPayoutMonth(m.idx)}
+                            onClick={() => setHoveredPayoutMonth(m.idx)}
+                            className="flex-1 flex flex-col items-center h-full justify-end cursor-pointer group relative"
+                            title={`${m.fullName}: Rp ${m.val.toLocaleString("id-ID")} (${m.count} payout)`}
+                          >
+                            {/* Bar Pillar */}
+                            <div className="w-full relative flex items-end justify-center h-full">
+                              <div
+                                style={{
+                                  height: `${hasVal ? m.heightPct * animProgress : 6}%`,
+                                }}
+                                className={`w-full max-w-[18px] rounded-t-lg transition-all duration-500 ${
+                                  isHovered
+                                    ? "bg-[#c8f560] shadow-lg shadow-[#c8f560]/40 scale-105"
+                                    : isCurrent
+                                    ? "bg-gradient-to-t from-[#c8f560]/50 to-[#c8f560]"
+                                    : hasVal
+                                    ? "bg-gradient-to-t from-[#8a88b5] to-[#c4c3f0]"
+                                    : "bg-white/10"
+                                }`}
+                              />
+                            </div>
+
+                            {/* Month Label */}
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                w.status === "Approved"
-                                  ? "bg-[#c8f560] text-[#312042]"
-                                  : w.status === "Rejected"
-                                  ? "bg-red-500/30 text-red-200"
-                                  : "bg-[#fde08d] text-[#312042]"
+                              className={`text-[9px] sm:text-[10px] font-bold mt-1.5 transition-colors select-none ${
+                                isHovered
+                                  ? "text-[#c8f560]"
+                                  : isCurrent
+                                  ? "text-[#c8f560] underline underline-offset-2"
+                                  : "text-white/60 group-hover:text-white"
                               }`}
                             >
-                              {w.status}
+                              {m.label}
                             </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedWithdrawalForVisaModal(w);
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-[#c8f560] hover:text-[#312042] text-white font-semibold text-[10px] transition-colors"
-                            >
-                              Detail
-                            </button>
                           </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3 Transaksi ACC Terakhir yang Tersinkron */}
+                  <div className="pt-2">
+                    <div className="text-[11px] font-semibold text-white/80 mb-2 flex items-center justify-between">
+                      <span>3 Payout Terakhir yang Di-ACC:</span>
+                      {pendingWithdrawals.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("withdrawals");
+                            setWithdrawalTab("Pending");
+                          }}
+                          className="text-[10px] text-[#fde08d] font-bold hover:underline cursor-pointer"
+                        >
+                          {pendingWithdrawals.length} Menunggu ACC →
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {monthlyApprovedPayoutData.approvedList.length === 0 ? (
+                        <div className="py-4 text-center text-white/50 text-xs">
+                          Belum ada transaksi withdraw yang di-ACC.
                         </div>
-                      ))
-                    )}
+                      ) : (
+                        monthlyApprovedPayoutData.approvedList.slice(0, 3).map((w) => (
+                          <div
+                            key={w.id}
+                            onClick={() => setSelectedWithdrawalForVisaModal(w)}
+                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between gap-2 text-xs transition-colors cursor-pointer"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-semibold text-white truncate text-[11px]">
+                                {w.accountHolder || w.user?.name || "Musisi"} •{" "}
+                                <span className="text-[#c8f560] font-bold">
+                                  Rp {w.amount.toLocaleString("id-ID")}
+                                </span>
+                              </p>
+                              <p className="text-[10px] text-white/60 truncate">
+                                {w.date} • {w.method}
+                              </p>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-md bg-[#c8f560]/20 text-[#c8f560] text-[10px] font-bold shrink-0">
+                              ✓ ACC
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-5 p-4 rounded-2xl bg-white/15 border border-white/20 text-xs flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-white">Admin Session Active</p>
-                    <p className="text-[11px] text-[#c8f560] font-medium">Verified Master Administrator</p>
+                {/* Footer Status Pill */}
+                <div className="mt-4 p-3 rounded-2xl bg-white/10 border border-white/15 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#c8f560] animate-ping" />
+                    <div>
+                      <p className="font-semibold text-white text-[11px]">Auto-Sync Settlement</p>
+                      <p className="text-[10px] text-[#c8f560]">Setiap ACC otomatis terekam ke grafik</p>
+                    </div>
                   </div>
-                  <span className="px-3.5 py-1.5 rounded-full bg-[#312042] text-[#c8f560] text-[11px] font-medium border border-[#c8f560]/30">
-                    Console Secure
+                  <span className="px-3 py-1 rounded-full bg-[#312042] text-[#c8f560] text-[10px] font-bold border border-[#c8f560]/30">
+                    Realtime DB
                   </span>
                 </div>
               </div>
