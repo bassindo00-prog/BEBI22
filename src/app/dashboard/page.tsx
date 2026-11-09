@@ -830,8 +830,12 @@ export default function UserDashboardPage() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/me", { method: "DELETE" });
-    router.push("/login");
+    try {
+      await fetch("/api/auth/me", { method: "DELETE" });
+    } catch (e) {
+      console.error("Logout API error:", e);
+    }
+    window.location.href = "/login";
   };
 
   const releases = user?.releases || [];

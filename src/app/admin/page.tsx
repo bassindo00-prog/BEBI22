@@ -119,6 +119,8 @@ export default function AdminDashboardPage() {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkCsvText, setBulkCsvText] = useState("");
   const [catSearch, setCatSearch] = useState("");
+  const [excelUploading, setExcelUploading] = useState(false);
+  const [excelProgress, setExcelProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Pagination State (5 items per page)
   const [pageReleases, setPageReleases] = useState(1);
@@ -575,6 +577,76 @@ export default function AdminDashboardPage() {
       }
     } finally {
       setUploadingCatalog(false);
+    }
+  };
+
+  // Excel upload handler — parses .xlsx file client-side, sends JSON to /api/catalog in batches
+  const handleExcelUpload = async (file: File) => {
+    if (!file) return;
+    setExcelUploading(true);
+    setExcelProgress(null);
+    try {
+      const XLSX = await import("xlsx");
+      const arrayBuffer = await file.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: "array" });
+
+      // Collect rows from ALL sheets
+      const allItems: { songId: string; title: string; artist: string; publisher: string; status: string; youtubeLink: string | null; driveLink: string | null }[] = [];
+
+      for (const sheetName of wb.SheetNames) {
+        const ws = wb.Sheets[sheetName];
+        const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        // Skip header row (index 0), process from row 1 onwards
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length < 3) continue;
+          const songId = row[1] ? String(row[1]).trim() : "";
+          const title = row[2] ? String(row[2]).trim() : "";
+          if (!songId || !title) continue;
+          allItems.push({
+            songId,
+            title,
+            artist: row[5] ? String(row[5]).trim() : "BREAKOUT Artist",
+            publisher: row[4] ? String(row[4]).trim() : sheetName,
+            status: "Aktif",
+            youtubeLink: row[6] ? String(row[6]).trim() : null,
+            driveLink: null,
+          });
+        }
+      }
+
+      if (allItems.length === 0) {
+        showNotice("Tidak ada data valid di file Excel. Pastikan kolom: No, Song ID, Judul, Composer, Publisher, Artis, YouTube.");
+        return;
+      }
+
+      // Send in batches of 100
+      const BATCH = 100;
+      let totalDone = 0;
+      setExcelProgress({ done: 0, total: allItems.length });
+
+      for (let i = 0; i < allItems.length; i += BATCH) {
+        const batch = allItems.slice(i, i + BATCH);
+        const res = await fetch("/api/catalog", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: batch }),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          totalDone += d.count;
+          setExcelProgress({ done: totalDone, total: allItems.length });
+        }
+      }
+
+      await fetchAdminData();
+      showNotice(`✅ ${totalDone} lagu berhasil diimport dari Excel ke katalog!`);
+    } catch (err: any) {
+      console.error("Excel upload error:", err);
+      showNotice(`❌ Gagal upload Excel: ${err?.message || "Unknown error"}`);
+    } finally {
+      setExcelUploading(false);
+      setExcelProgress(null);
     }
   };
 
@@ -2732,6 +2804,64 @@ export default function AdminDashboardPage() {
                   <span className="px-3.5 py-2 rounded-xl bg-[#c8f560]/20 border border-[#c8f560]/40 text-[#c8f560] text-xs font-bold">
                     {catalogs.length} Lagu Terdaftar
                   </span>
+                </div>
+              </div>
+
+              {/* Upload Excel Section */}
+              <div className={`${ROYALTY_CARD} border border-[#c8f560]/30 bg-[#312042]/60`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/15">
+                  <span className="text-sm font-bold text-white flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-[#c8f560]" />
+                    Import Katalog dari File Excel (.xlsx)
+                  </span>
+                  <span className="text-[10px] text-white/60 font-mono bg-white/10 px-2 py-0.5 rounded-full">
+                    Format: No | Song ID | Judul | Composer | Publisher | Artis | YouTube
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <label
+                    htmlFor="catalog-excel-input"
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl cursor-pointer text-sm font-bold transition-all shadow-md ${
+                      excelUploading
+                        ? "bg-white/20 text-white/50 cursor-not-allowed"
+                        : "bg-[#c8f560] text-[#312042] hover:bg-[#b0dc4c] active:scale-95"
+                    }`}
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    {excelUploading ? "Memproses..." : "Pilih File Excel"}
+                  </label>
+                  <input
+                    id="catalog-excel-input"
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    disabled={excelUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleExcelUpload(file);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                  {excelProgress && (
+                    <div className="flex items-center gap-2 text-xs text-white/80">
+                      <div className="w-32 h-2 rounded-full bg-white/20 overflow-hidden">
+                        <div
+                          className="h-full bg-[#c8f560] rounded-full transition-all"
+                          style={{ width: `${Math.round((excelProgress.done / excelProgress.total) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="font-mono font-bold text-[#c8f560]">
+                        {excelProgress.done} / {excelProgress.total} lagu
+                      </span>
+                    </div>
+                  )}
+                  {!excelUploading && !excelProgress && (
+                    <span className="text-xs text-white/50">
+                      Mendukung semua sheet — semua publisher akan diimport sekaligus.
+                    </span>
+                  )}
                 </div>
               </div>
 
